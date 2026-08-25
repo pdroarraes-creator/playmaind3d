@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#FAF6EE" />
+    <title>PlayMind 3d</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="PlayMind 3d" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div class="logo" id="logoBox"><b></b></div>
+        <div>
+          <h1 id="brandName">PlayMind 3D</h1>
+          <p>Costos, precios y ventas</p>
+        </div>
+        <a class="verCat" href="/?admin=1" title="Ver el catálogo como lo ve el cliente"
+          >Ver catálogo ↗</a
+        >
+        <button class="salirBtn" onclick="salir()" title="Cerrar sesión en este equipo">
+          Salir
+        </button>
+        <div class="sync" id="syncBox"><i></i><span id="syncTxt">Solo este equipo</span></div>
+      </header>
+
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="cat" aria-selected="true">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" rx="2" />
+            <rect x="14" y="3" width="7" height="7" rx="2" />
+            <rect x="3" y="14" width="7" height="7" rx="2" />
+            <rect x="14" y="14" width="7" height="7" rx="2" /></svg
+          >Catálogo
+        </button>
+        <button role="tab" data-tab="calc" aria-selected="false">
+          <svg viewBox="0 0 24 24">
+            <rect x="4" y="2" width="16" height="20" rx="3" />
+            <path d="M8 7h8M8 12h3M8 16h3M15 12v4" /></svg
+          >Calcular
+        </button>
+        <button role="tab" data-tab="ped" aria-selected="false">
+          <svg viewBox="0 0 24 24">
+            <path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z" />
+            <path d="M4 6h16M16 10a4 4 0 0 1-8 0" /></svg
+          >Pedido
+        </button>
+        <button role="tab" data-tab="vit" aria-selected="false">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M3 9h18M5 9V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"
+            />
+            <path d="M9 13h6" /></svg
+          >Vitrina
+        </button>
+        <button role="tab" data-tab="rad" aria-selected="false">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 3v4M12 17v4M3 12h4M17 12h4" /></svg
+          >Radar
+        </button>
+        <button role="tab" data-tab="ven" aria-selected="false">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 17l6-6 4 4 7-7" />
+            <path d="M14 8h6v6" /></svg
+          >Ventas
+        </button>
+        <button role="tab" data-tab="cfg" aria-selected="false">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 7 2.6h.1A1.7 1.7 0 0 0 9 1V1a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 17 2.6h.1a1.7 1.7 0 0 0 1.9-.3l.1.1"
+            /></svg
+          >Ajustes
+        </button>
+      </nav>
+
+      <!-- ========= CATÁLOGO ========= -->
+      <section id="tab-cat">
+        <div class="card">
+          <div id="avisos"></div>
+          <h2><i class="dot" style="background: var(--deep)"></i> Mis piezas</h2>
+          <p class="hint">
+            Tocá una pieza para verla, editarla o sumarla al pedido. Los precios se actualizan solos
+            cuando cambia el filamento o la luz.
+          </p>
+          <input
+            type="search"
+            id="q"
+            placeholder="Buscar por nombre o marca…"
+            style="margin-bottom: 10px"
+          />
+          <div id="catList"></div>
+          <div class="acts" style="margin-top: 14px">
+            <button class="btn" onclick="nuevaPieza()">+ Pieza nueva</button>
+            <button class="btn ghost" onclick="pegarLink()">Desde un link</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========= CALCULAR ========= -->
+      <section id="tab-calc" hidden>
+        <div class="card">
+          <h2>
+            <i class="dot" style="background: var(--deep)"></i>
+            <span id="calcTitle">Pieza nueva</span>
+          </h2>
+          <p class="hint">Todo lo que ponés acá se recalcula al instante.</p>
+
+          <div class="acts" style="margin-bottom: 14px">
+            <div class="thumb" id="fotoBox" style="width: 74px; height: 74px">📷</div>
+            <div>
+              <button class="btn ghost mini" onclick="document.getElementById('fFoto').click()">
+                Agregar fotos
+              </button>
+              <div class="mut" style="margin-top: 5px">
+                La primera es la portada: es la que se ve en el catálogo. Tocá otra para ponerla de
+                portada.
+              </div>
+            </div>
+            <input type="file" id="fFoto" accept="image/*" multiple hidden />
+          </div>
+          <div id="fotoTira" class="tira"></div>
+
+          <div class="grid">
+            <div>
+              <label class="f" for="c_nome">Nombre</label
+              ><input id="c_nome" type="text" placeholder="Estrella flexible" />
+            </div>
+            <div>
+              <label class="f" for="c_ref">Modelo o link</label
+              ><input id="c_ref" type="text" placeholder="MakerWorld o propio" />
+            </div>
+            <div>
+              <label class="f" for="c_cat">Categoría</label>
+              <input id="c_cat" type="text" list="cats" placeholder="Sensoriales" />
+              <datalist id="cats">
+                <option value="Sensoriales"></option>
+                <option value="Personalizados"></option>
+                <option value="Creaciones"></option>
+              </datalist>
+            </div>
+            <div>
+              <label class="f" for="c_fil">Filamento</label
+              ><select id="c_fil"></select>
+            </div>
+            <div>
+              <label class="f" for="c_imp">Impresora</label
+              ><select id="c_imp"></select>
+            </div>
+            <div class="suffix">
+              <label class="f" for="c_peso">Peso del slicer</label
+              ><input id="c_peso" type="text" inputmode="decimal" placeholder="41,5" /><em>g</em>
+            </div>
+            <div>
+              <label class="f" for="c_h">Tiempo de impresión</label>
+              <div class="dual">
+                <span class="suffix"
+                  ><input id="c_h" type="text" inputmode="decimal" placeholder="17,80" /><em
+                    >h</em
+                  ></span
+                >
+                <span class="suffix"
+                  ><input id="c_m" type="text" inputmode="numeric" placeholder="0" /><em
+                    >min</em
+                  ></span
+                >
+              </div>
+            </div>
+            <div>
+              <label class="f" for="c_medida">Tamaño</label
+              ><input id="c_medida" type="text" placeholder="12 cm" />
+            </div>
+            <div>
+              <label class="f" for="c_video">Video (link)</label
+              ><input id="c_video" type="text" placeholder="YouTube, Drive o Instagram" />
+            </div>
+            <div>
+              <label class="f" for="c_tags">Etiquetas</label
+              ><input id="c_tags" type="text" placeholder="sensorial, articulada, regalo" />
+            </div>
+            <div class="suffix">
+              <label class="f" for="c_mo">Tu trabajo</label
+              ><input id="c_mo" type="number" inputmode="numeric" min="0" step="1" /><em>min</em>
+            </div>
+            <div class="suffix">
+              <label class="f" for="c_risk">Riesgo de falla</label
+              ><input id="c_risk" type="number" inputmode="numeric" min="0" max="90" step="1" /><em
+                >%</em
+              >
+            </div>
+          </div>
+
+          <p class="mut" style="margin: 10px 0 0">
+            Copiá peso y tiempo tal cual del slicer. El desperdicio se suma solo.
+          </p>
+
+          <label class="chk" for="c_libre" style="margin-top: 12px"
+            ><input type="checkbox" id="c_libre" /> El cliente elige el color al pedir</label
+          >
+
+          <div style="margin-top: 14px">
+            <label class="f" for="c_desc">Cómo se la contás a un amigo</label>
+            <textarea
+              id="c_desc"
+              rows="2"
+              maxlength="140"
+              placeholder="Tiene botones y ruedas para no parar de tocar."
+            ></textarea>
+            <div class="mut" style="margin-top: 4px">
+              Una frase corta. Es lo que se ve en la tarjeta del catálogo.
+            </div>
+
+            <label class="f" for="c_detalle" style="margin-top: 14px">Si quieren saber más</label>
+            <textarea
+              id="c_detalle"
+              rows="4"
+              maxlength="600"
+              placeholder="Cómo se usa, de qué está hecha, para quién es, qué tiene de especial…"
+            ></textarea>
+            <div class="mut" style="margin-top: 4px">
+              Se ve cuando el cliente toca la pieza en el catálogo.
+            </div>
+          </div>
+
+          <label class="f" style="margin-top: 16px">Insumos que van con la pieza</label>
+          <div id="insResumen" class="chips"></div>
+          <button class="btn ghost mini" style="margin-top: 8px" onclick="abrirInsumos()">
+            Elegir insumos
+          </button>
+
+          <hr />
+          <div class="grid">
+            <div class="suffix">
+              <label class="f" for="c_mult">Multiplicador sobre el costo</label
+              ><input id="c_mult" type="number" inputmode="decimal" min="1" step="0.1" /><em>×</em>
+            </div>
+            <div class="suffix">
+              <label class="f" for="c_cplx">Ajuste por complejidad</label
+              ><input id="c_cplx" type="number" inputmode="decimal" min="0.5" step="0.05" /><em
+                >×</em
+              >
+            </div>
+            <div class="suffix">
+              <label class="f" for="c_manual">Precio fijo (pisa el cálculo)</label
+              ><input
+                id="c_manual"
+                type="number"
+                inputmode="numeric"
+                min="0"
+                step="50"
+                placeholder="—"
+              /><em>$</em>
+            </div>
+            <div class="suffix">
+              <label class="f" for="c_mkt">Precio en el mercado</label
+              ><input
+                id="c_mkt"
+                type="number"
+                inputmode="numeric"
+                min="0"
+                step="50"
+                placeholder="—"
+              /><em>$</em>
+            </div>
+          </div>
+          <div class="acts" style="margin-top: 11px">
+            <button class="btn ghost mini" onclick="buscarMercado()">Ver a cuánto lo venden</button>
+            <span class="mut"
+              >Anotá lo que cobran otros por algo parecido. Sirve para saber si estás cara o
+              regalada.</span
+            >
+          </div>
+          <div id="mktBox"></div>
+        </div>
+
+        <div class="result">
+          <h2>Precio de venta</h2>
+          <div class="price" id="r_preco">$0</div>
+          <div class="sub" id="r_sub">—</div>
+          <div class="kpis">
+            <div class="kpi"><u>Costo real</u><b id="r_custo">$0</b></div>
+            <div class="kpi"><u>Ganancia</u><b id="r_lucro">$0</b></div>
+            <div class="kpi"><u>Margen</u><b id="r_margem">0%</b></div>
+            <div class="kpi"><u>Por hora de máquina</u><b id="r_hora">$0</b></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--sand)"></i> De qué está hecho el costo</h2>
+          <p class="hint">La capa más gruesa es la que hay que atacar para bajar el precio.</p>
+          <div class="stack" id="stack"></div>
+          <div class="legend">
+            <span><i style="background: var(--deep)"></i>Material</span>
+            <span><i style="background: var(--teal)"></i>Luz</span>
+            <span><i style="background: var(--sand)"></i>Desgaste</span>
+            <span><i style="background: var(--clay)"></i>Trabajo</span>
+            <span><i style="background: var(--leaf)"></i>Insumos</span>
+            <span><i style="background: #cfc3ae"></i>Reserva por fallas</span>
+          </div>
+          <div class="acts" style="margin-top: 16px">
+            <button class="btn" id="bSave">Guardar pieza</button>
+            <button class="btn ghost" onclick="addAlPedido()">Sumar al pedido</button>
+            <button class="btn danger mini" id="bDel" hidden>Borrar</button>
+          </div>
+          <div class="acts" style="margin-top: 10px">
+            <button class="btn ghost mini" onclick="gastoSinVenta()">
+              La imprimí sin venderla
+            </button>
+            <span class="mut"
+              >Falló, la regalaste o fue una prueba: descuenta del stock igual.</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- ========= PEDIDO ========= -->
+      <section id="tab-ped" hidden>
+        <div class="card">
+          <h2><i class="dot" style="background: var(--clay)"></i> Pedido en armado</h2>
+          <p class="hint">
+            Elegí cantidades, mandá el presupuesto y cuando cobre, registrá la venta.
+          </p>
+          <div id="pedList"></div>
+          <hr />
+          <div class="grid">
+            <div>
+              <label class="f" for="p_cli">Cliente</label
+              ><input id="p_cli" type="text" placeholder="Nombre" />
+            </div>
+            <div>
+              <label class="f" for="p_canal">Canal</label
+              ><select id="p_canal"></select>
+            </div>
+            <div class="suffix">
+              <label class="f" for="p_desc">Descuento</label
+              ><input
+                id="p_desc"
+                type="number"
+                inputmode="numeric"
+                min="0"
+                max="90"
+                step="1"
+                value="0"
+              /><em>%</em>
+            </div>
+            <div class="suffix">
+              <label class="f" for="p_envio">Envío</label
+              ><input
+                id="p_envio"
+                type="number"
+                inputmode="numeric"
+                min="0"
+                step="50"
+                value="0"
+              /><em>$</em>
+            </div>
+          </div>
+        </div>
+        <div class="result">
+          <h2>Total del pedido</h2>
+          <div class="price" id="p_total">$0</div>
+          <div class="sub" id="p_sub">—</div>
+          <div class="kpis">
+            <div class="kpi"><u>Costo</u><b id="p_custo">$0</b></div>
+            <div class="kpi"><u>Ganancia</u><b id="p_lucro">$0</b></div>
+            <div class="kpi"><u>Impresión</u><b id="p_horas">0h</b></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="acts">
+            <button class="btn" onclick="mandarWA()">Mandar por WhatsApp</button>
+            <button class="btn ghost" onclick="registrarVenta()">Registrar como venta</button>
+            <button class="btn danger mini" onclick="vaciarPedido()">Vaciar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========= VITRINA ========= -->
+      <section id="tab-vit" hidden>
+        <div class="card vitcard">
+          <div class="vithead">
+            <img id="vitLogo" alt="" />
+            <div>
+              <h2 style="font-size: 19px; color: var(--deep)" id="vitTitulo">PlayMind 3d</h2>
+              <p class="hint" style="margin: 2px 0 0">
+                Juguetes sensoriales y creaciones en 3D, hechos a pedido.
+              </p>
+            </div>
+          </div>
+          <div id="vitList"></div>
+        </div>
+        <div class="card">
+          <div class="acts">
+            <button class="btn" onclick="compartirVitrina()">
+              Mandar el catálogo por WhatsApp
+            </button>
+            <button class="btn ghost" onclick="bajarVitrina()">
+              Bajar catálogo para compartir
+            </button>
+          </div>
+          <p class="mut" style="margin: 10px 0 0">
+            El archivo que baja es solo el catálogo: fotos, nombres y precios. No lleva costos, ni
+            ganancias, ni ventas.
+          </p>
+        </div>
+      </section>
+
+      <!-- ========= RADAR ========= -->
+      <section id="tab-rad" hidden>
+        <div class="card">
+          <h2><i class="dot" style="background: var(--clay)"></i> Radar de ideas</h2>
+          <p class="hint">
+            Lo que se está vendiendo afuera, para probar antes que los demás. Cada idea guarda desde
+            cuándo la seguís y en qué quedó.
+          </p>
+          <div class="g2" style="margin-bottom: 12px">
+            <div>
+              <label class="f" for="radOrigen">De dónde</label>
+              <select id="radOrigen">
+                <option value="">Todas</option>
+                <option value="radar">Del radar del mes</option>
+                <option value="propia">Mías</option>
+                <option value="auto">De la máquina</option>
+              </select>
+            </div>
+            <div id="radMesWrap" hidden>
+              <label class="f" for="radMes">Cuándo</label>
+              <select id="radMes"></select>
+            </div>
+          </div>
+          <div id="radList"></div>
+          <div class="acts" style="margin-top: 14px">
+            <button class="btn" onclick="abrirPegar()">Pegar radar del mes</button>
+            <button class="btn ghost" onclick="pegarLink()">Pegar un link</button>
+            <button class="btn ghost" onclick="nuevaIdea()">+ Idea</button>
+            <button class="btn ghost" id="bSemilla" onclick="cargarRadarAgosto()">
+              Cargar radar de agosto 2026
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <h2><i class="dot" style="background: var(--teal)"></i> Lo que junta la máquina sola</h2>
+          <p class="hint">
+            Modelos populares en el mundo, traídos automáticamente cada lunes. Es una lista cruda:
+            la mayoría no sirve para vender, pero de vez en cuando aparece algo bueno.
+          </p>
+          <div id="mundoList"></div>
+          <div class="acts" style="margin-top: 12px">
+            <button class="btn ghost" onclick="traerMundo()">Traer lo último</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--teal)"></i> Cómo se usa</h2>
+          <p class="hint" style="margin-bottom: 0">
+            Una idea nace en <b>Anotada</b>. Si te gusta, pasa a <b>Para probar</b>. Cuando la
+            imprimís, <b>Probada</b>. Si se vende, <b>Se vende</b> y la convertís en pieza del
+            catálogo. Si no funcionó, <b>Descartada</b> — y queda anotado, para no volver a intentar
+            lo mismo el año que viene.
+          </p>
+        </div>
+      </section>
+
+      <!-- ========= VENTAS ========= -->
+      <section id="tab-ven" hidden>
+        <button class="btn wide vender" onclick="abrirPOS()">Vender ahora</button>
+        <div class="acts salirventa" style="margin: -4px 0 13px">
+          <button class="btn ghost mini" onclick="salirModoVenta()">Ir al sistema completo</button>
+          <button class="btn danger mini" onclick="salir()">Cerrar sesión</button>
+        </div>
+
+        <div class="result">
+          <h2 id="v_titulo">Este mes</h2>
+          <div class="price" id="v_fat">$0</div>
+          <div class="sub" id="v_sub">—</div>
+          <div class="kpis">
+            <div class="kpi"><u>Ganancia</u><b id="v_lucro">$0</b></div>
+            <div class="kpi"><u>Piezas vendidas</u><b id="v_qtd">0</b></div>
+            <div class="kpi"><u>Por cobrar</u><b id="v_pend">$0</b></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2><i class="dot" style="background: var(--leaf)"></i> Lo más vendido</h2>
+          <p class="hint">Todo lo registrado hasta hoy.</p>
+          <div id="topList"></div>
+        </div>
+        <div class="card">
+          <h2><i class="dot" style="background: var(--deep)"></i> Ventas registradas</h2>
+          <p class="hint">Tocá una venta para marcarla cobrada o entregada.</p>
+          <div id="venList"></div>
+        </div>
+      </section>
+
+      <!-- ========= AJUSTES ========= -->
+      <section id="tab-cfg" hidden>
+        <div class="card">
+          <h2><i class="dot" style="background: var(--leaf)"></i> Tu sesión</h2>
+          <p class="hint">
+            Los datos se guardan solos en la nube. Podés entrar desde cualquier celular con tu mail
+            y tu clave.
+          </p>
+          <p id="quienSoy" class="mut" style="margin: 0 0 12px"></p>
+          <div class="acts">
+            <button class="btn ghost mini" onclick="bajarDeLaNube()">Traer de la nube</button>
+            <button class="btn ghost mini" onclick="subirAhora()">Subir ahora</button>
+            <button class="btn ghost mini" onclick="exportar()">Copia de seguridad</button>
+            <button class="btn ghost mini" onclick="document.getElementById('fImp').click()">
+              Restaurar
+            </button>
+            <button class="btn danger mini" onclick="salir()">Cerrar sesión</button>
+            <input type="file" id="fImp" accept="application/json" hidden />
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--teal)"></i> Los tres accesos</h2>
+          <p class="hint">
+            Los tres son el mismo sitio. Instalá en el celular de ella sólo el verde.
+          </p>
+          <div id="accesos"></div>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--clay)"></i> Marca</h2>
+          <p class="hint">El nombre y el logo que ve el cliente.</p>
+          <div class="grid">
+            <div>
+              <label class="f" for="s_marca">Nombre del emprendimiento</label
+              ><input id="s_marca" type="text" />
+            </div>
+            <div>
+              <label class="f" for="s_wa">WhatsApp para pedidos</label
+              ><input id="s_wa" type="text" placeholder="+54 9 11 …" />
+            </div>
+            <div>
+              <label class="f" for="s_cat">Link del catálogo</label
+              ><input id="s_cat" type="text" placeholder="playmind3d-catalogo.netlify.app" />
+            </div>
+          </div>
+          <div class="acts" style="margin-top: 12px">
+            <button class="btn ghost mini" onclick="document.getElementById('fLogo').click()">
+              Subir logo
+            </button>
+            <button
+              class="btn danger mini"
+              onclick="
+                D.cfg.logo = LOGO;
+                save();
+                pintarMarca();
+                toast('Volvió el logo original.');
+              "
+            >
+              Restaurar logo
+            </button>
+            <input type="file" id="fLogo" accept="image/*" hidden />
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--teal)"></i> Costos generales</h2>
+          <p class="hint">Estos números mandan sobre todo el catálogo.</p>
+          <div class="grid">
+            <div class="suffix">
+              <label class="f" for="s_kwh">Precio de la luz</label
+              ><input id="s_kwh" type="number" inputmode="decimal" min="0" step="1" /><em>$/kWh</em>
+            </div>
+            <div class="suffix">
+              <label class="f" for="s_mo">Tu hora de trabajo</label
+              ><input id="s_mo" type="number" inputmode="numeric" min="0" step="100" /><em>$/h</em>
+            </div>
+            <div class="suffix">
+              <label class="f" for="s_merma">Desperdicio (soportes y purga)</label
+              ><input id="s_merma" type="number" inputmode="numeric" min="0" max="60" step="1" /><em
+                >%</em
+              >
+            </div>
+            <div class="suffix">
+              <label class="f" for="s_risk">Riesgo de falla</label
+              ><input id="s_risk" type="number" inputmode="numeric" min="0" max="90" step="1" /><em
+                >%</em
+              >
+            </div>
+            <div class="suffix">
+              <label class="f" for="s_mult">Multiplicador</label
+              ><input id="s_mult" type="number" inputmode="decimal" min="1" step="0.1" /><em>×</em>
+            </div>
+            <div class="suffix">
+              <label class="f" for="s_round">Redondear a</label
+              ><input id="s_round" type="number" inputmode="numeric" min="1" step="50" /><em>$</em>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--deep)"></i> Filamentos</h2>
+          <p class="hint">Marca, color y lo que pagaste por kilo.</p>
+          <input
+            type="search"
+            id="qFil"
+            class="buscador"
+            placeholder="Buscar marca, tipo o color…"
+          />
+          <div id="filList"></div>
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="addFil()">
+            + Filamento
+          </button>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--sand)"></i> Impresoras</h2>
+          <p class="hint">Se usa para calcular cuánto se gasta la máquina en cada impresión.</p>
+          <div id="impList"></div>
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="addImp()">
+            + Impresora
+          </button>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--leaf)"></i> Insumos</h2>
+          <p class="hint">
+            Bolsitas, etiquetas, argollas. Cargá el paquete entero y la app saca el costo por
+            unidad.
+          </p>
+          <div class="warn">
+            El stock es una estimación, no un inventario. Descuenta cuando registrás una venta o
+            tocás “la imprimí sin venderla”. Todo lo demás (pruebas, regalos, purga del cambio de
+            color) no lo ve. Cada tanto contá lo que hay de verdad y corregí el número a mano.
+          </div>
+          <input type="search" id="qIns" class="buscador" placeholder="Buscar insumo…" />
+          <div id="insList"></div>
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="addIns()">
+            + Insumo
+          </button>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--leaf)"></i> Packs</h2>
+          <p class="hint">
+            Vender de a tres rinde más que vender de a uno: el cliente gasta más y vos imprimís todo
+            en la misma tanda. Aparecen arriba de todo en el catálogo.
+          </p>
+          <div id="packList"></div>
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="addPack()">
+            + Pack
+          </button>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--sand)"></i> Lo que dicen los clientes</h2>
+          <p class="hint">
+            Cuando alguien te escribe algo lindo por WhatsApp, copialo acá con su nombre. Aparece en
+            el catálogo. Sacá el visto para esconderlo sin borrarlo.
+          </p>
+          <div id="opiList"></div>
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="addOpi()">
+            + Comentario
+          </button>
+        </div>
+
+        <div class="card">
+          <h2><i class="dot" style="background: var(--clay)"></i> Canales de venta</h2>
+          <p class="hint">
+            Cada canal se queda con una comisión distinta. La escuela no cobra nada; un marketplace
+            sí.
+          </p>
+          <div id="canList"></div>
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="addCanal()">
+            + Canal
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div class="entrada" id="entrada" hidden>
+      <div>
+        <img id="entLogo" alt="" />
+        <h1>Play Mind <i>3d</i></h1>
+        <p>Entrá con tu mail y tu clave para usar el sistema.</p>
+        <label for="entMail">Mail</label>
+        <input
+          id="entMail"
+          type="email"
+          inputmode="email"
+          autocomplete="username"
+          placeholder="tumail@gmail.com"
+        />
+        <label for="entClave">Clave</label>
+        <input
+          id="entClave"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Tu clave"
+        />
+        <button class="btn wide" id="entBtn" style="margin-top: 16px">Entrar</button>
+        <p class="err" id="entErr" hidden></p>
+        <p class="mut" style="margin-top: 14px">
+          El catálogo público no pide clave. Esta pantalla protege los costos, los precios y las
+          ventas.
+        </p>
+      </div>
+    </div>
+
+    <div class="pos" id="pos" hidden>
+      <header>
+        <h2>Punto de venta</h2>
+        <button class="cerrarpos" onclick="cerrarPOS()" title="Cerrar">×</button>
+      </header>
+      <div class="posbuscar"><input id="posQ" type="search" placeholder="Buscar la pieza…" /></div>
+      <div class="posgrid" id="posGrid"></div>
+      <div class="pospie">
+        <div class="postotal"><span id="posCant">Nada elegido</span><b id="posTotal">$0</b></div>
+        <div class="formas" id="posFormas">
+          <button data-forma="efectivo" class="on">Efectivo</button>
+          <button data-forma="transferencia">Transferencia</button>
+        </div>
+        <input
+          id="posCliente"
+          type="text"
+          placeholder="Nombre (opcional)"
+          style="margin-bottom: 11px"
+        />
+        <button class="btn wide vender" id="posCobrar" style="margin: 0">Cobré</button>
+      </div>
+    </div>
+
+    <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
+    <div class="toast" id="toast"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

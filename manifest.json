@@ -1,0 +1,25 @@
+{
+  "name": "Play Mind 3d — Vender",
+  "short_name": "Vender",
+  "description": "Registrar una venta en dos toques",
+  "start_url": "/app/?modo=venta",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#FAF6EE",
+  "theme_color": "#8FBF7F",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/vender/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/vender/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
