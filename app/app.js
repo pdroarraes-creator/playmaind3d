@@ -2291,6 +2291,17 @@ function cargarRadarAgosto() {
 var POS = {},
   POS_FORMA = "efectivo";
 
+/** Cuántas se vendieron de cada pieza, para poner arriba las que más salen. */
+function masVendidas() {
+  const c = {};
+  (D.vendas || []).forEach((v) =>
+    (v.itens || []).forEach((i) => {
+      if (i.id) c[i.id] = num(c[i.id]) + num(i.qtd);
+    }),
+  );
+  return c;
+}
+
 function abrirPOS() {
   POS = {};
   POS_FORMA = "efectivo";
@@ -2328,7 +2339,9 @@ function pintarPOS() {
     );
     return;
   }
-  // primero las elegidas, después las que hay hechas
+  // primero las elegidas, después las que hay hechas, y entre ésas las que más salen:
+  // en la feria las campeonas tienen que quedar arriba, sin scrollear
+  const vendidas = masVendidas();
   const lista = D.produtos
     .filter(
       (p) =>
@@ -2337,7 +2350,8 @@ function pintarPOS() {
     .sort(
       (a, b) =>
         (num(POS[b.id]) > 0 ? 1 : 0) - (num(POS[a.id]) > 0 ? 1 : 0) ||
-        (num(b.stock) > 0 ? 1 : 0) - (num(a.stock) > 0 ? 1 : 0),
+        (num(b.stock) > 0 ? 1 : 0) - (num(a.stock) > 0 ? 1 : 0) ||
+        num(vendidas[b.id]) - num(vendidas[a.id]),
     );
   if (!lista.length) {
     g.appendChild(

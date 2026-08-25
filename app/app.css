@@ -14,6 +14,21 @@
   --r: 18px;
   --shadow: 0 2px 0 rgba(58, 58, 56, 0.04), 0 12px 30px rgba(58, 58, 56, 0.1);
   --safe: env(safe-area-inset-bottom, 0px);
+
+  /* Escala de tamaños. Antes había 18 medidas sueltas (9,5 · 10,5 · 11 · 11,5 …):
+     diferencias de medio píxel que nadie ve y que no hay cómo mantener.
+     Piso de 12px en todo lo que se lee: el celular se usa parada y al sol. */
+  --t-micro: 10px; /* sellos sobre miniaturas: no se leen, se reconocen */
+  --t-xs: 12px; /* pastillas, rótulos, la barra de abajo */
+  --t-sm: 13.5px; /* textos de ayuda y renglones de apoyo */
+  --t-md: 15px; /* el tamaño de base */
+  --t-lg: 17px; /* títulos de tarjeta y precios de mostrador */
+  --t-xl: 19px; /* títulos de sección */
+  --t-2xl: 27px;
+  --t-3xl: 30px; /* el total del mostrador */
+  --t-4xl: 40px; /* el precio del calculador */
+  /* 16px es el mínimo que evita que iOS haga zoom solo al tocar un campo */
+  --t-input: 16px;
 }
 * {
   box-sizing: border-box;
@@ -28,7 +43,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font:
-    15px/1.55 Nunito,
+    var(--t-md)/1.55 Nunito,
     system-ui,
     -apple-system,
     "Segoe UI",
@@ -68,6 +83,11 @@ header.top {
   gap: 11px;
   margin-bottom: 14px;
 }
+/* el bloque del nombre es el que cede: sin esto empuja a los botones */
+header.top > div:not(.logo):not(.sync) {
+  flex: 1;
+  min-width: 0;
+}
 .logo {
   width: 52px;
   height: 52px;
@@ -93,7 +113,7 @@ header.top {
 header.top h1 {
   font-family: Fredoka, sans-serif;
   font-weight: 600;
-  font-size: 19px;
+  font-size: var(--t-xl);
   letter-spacing: -0.005em;
   color: #1f5758;
 }
@@ -104,14 +124,14 @@ header.top h1 i {
 }
 header.top p {
   margin: 1px 0 0;
-  font-size: 12px;
+  font-size: var(--t-sm);
   color: var(--soft);
 }
 .verCat {
   margin-left: auto;
   font-family: Fredoka, sans-serif;
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--t-sm);
   color: var(--deep);
   text-decoration: none;
   border: 1.5px solid var(--line);
@@ -123,7 +143,7 @@ header.top p {
   margin-left: 8px;
   font-family: Fredoka, sans-serif;
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--t-sm);
   color: var(--soft);
   background: none;
   border: 1.5px solid var(--line);
@@ -141,7 +161,7 @@ body.modoventa .salirBtn {
 }
 .sync {
   margin-left: 10px;
-  font-size: 11px;
+  font-size: var(--t-xs);
   color: var(--soft);
   text-align: right;
   line-height: 1.3;
@@ -149,6 +169,20 @@ body.modoventa .salirBtn {
 @media (max-width: 430px) {
   .sync span {
     display: none;
+  }
+}
+/* En el celular el encabezado no entra y partía "Play Mind 3d" en tres renglones.
+   Se va lo que no hace falta ahí: el subtítulo no dice nada que ella no sepa, y
+   el catálogo ya está en Ajustes › Los tres accesos, con su botón Abrir. */
+@media (max-width: 560px) {
+  header.top p,
+  .verCat {
+    display: none;
+  }
+  header.top h1 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 .sync i {
@@ -187,7 +221,7 @@ nav.tabs button {
   padding: 7px 1px;
   border-radius: 10px;
   font-family: Fredoka, sans-serif;
-  font-size: 10.5px;
+  font-size: var(--t-xs);
   font-weight: 500;
   color: var(--soft);
   display: grid;
@@ -227,7 +261,7 @@ nav.tabs button:focus-visible {
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 14px;
+    font-size: var(--t-md);
     padding: 9px;
   }
   .wrap {
@@ -246,7 +280,7 @@ nav.tabs button:focus-visible {
 .card > h2 {
   font-family: Fredoka, sans-serif;
   font-weight: 600;
-  font-size: 19px;
+  font-size: var(--t-xl);
   color: #1f5758;
   display: flex;
   align-items: center;
@@ -254,7 +288,7 @@ nav.tabs button:focus-visible {
   letter-spacing: -0.01em;
 }
 .card > .hint {
-  font-size: 13.5px;
+  font-size: var(--t-sm);
   line-height: 1.55;
   color: var(--soft);
   margin: 6px 0 16px;
@@ -292,7 +326,7 @@ nav.tabs button:focus-visible {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 .grid.ins label.f {
-  font-size: 11.5px;
+  font-size: var(--t-sm);
   line-height: 1.3;
 }
 .tira {
@@ -330,7 +364,7 @@ nav.tabs button:focus-visible {
   background: var(--deep);
   color: #fff;
   font:
-    800 8.5px Nunito,
+    800 var(--t-micro) Nunito,
     sans-serif;
   text-align: center;
   padding: 2px 0;
@@ -347,7 +381,7 @@ nav.tabs button:focus-visible {
   border: 0;
   background: rgba(32, 64, 78, 0.82);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--t-sm);
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -362,7 +396,7 @@ nav.tabs button:focus-visible {
   color: var(--deep);
   border-radius: 20px;
   padding: 4px 11px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   font-weight: 600;
 }
 .chips .none {
@@ -385,7 +419,7 @@ nav.tabs button:focus-visible {
   align-items: center;
   gap: 8px;
   margin-top: 8px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   color: var(--soft);
   cursor: pointer;
 }
@@ -405,7 +439,7 @@ nav.tabs button:focus-visible {
 
 label.f {
   display: block;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   font-weight: 700;
   color: var(--soft);
   margin-bottom: 6px;
@@ -415,7 +449,7 @@ select,
 textarea {
   width: 100%;
   font:
-    15px/1.4 Nunito,
+    var(--t-input)/1.4 Nunito,
     sans-serif;
   color: var(--ink);
   background: #fdfbf6;
@@ -447,7 +481,7 @@ textarea:focus {
   display: flex;
   align-items: center;
   font-style: normal;
-  font-size: 11px;
+  font-size: var(--t-xs);
   color: var(--soft);
   pointer-events: none;
 }
@@ -457,7 +491,7 @@ textarea:focus {
 
 button.btn {
   font-family: Fredoka, sans-serif;
-  font-size: 15px;
+  font-size: var(--t-md);
   font-weight: 600;
   cursor: pointer;
   border: 1.5px solid var(--deep);
@@ -475,7 +509,7 @@ button.btn.ghost {
 }
 button.btn.mini {
   padding: 7px 15px;
-  font-size: 13.5px;
+  font-size: var(--t-sm);
   border-radius: 999px;
 }
 button.btn.danger {
@@ -511,7 +545,7 @@ button.btn:focus-visible {
   justify-content: space-between;
   padding: 0 10px;
   color: #25203f;
-  font-size: 12px;
+  font-size: var(--t-sm);
   font-weight: 600;
   min-width: 118px;
   overflow: hidden;
@@ -527,7 +561,7 @@ button.btn:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  font-size: 11.5px;
+  font-size: var(--t-sm);
   color: var(--soft);
 }
 .legend i {
@@ -540,7 +574,7 @@ button.btn:focus-visible {
 
 button.btn.vender {
   width: 100%;
-  font-size: 19px;
+  font-size: var(--t-xl);
   padding: 16px;
   margin-bottom: 13px;
   background: var(--leaf);
@@ -568,14 +602,14 @@ button.btn.vender {
 }
 .pos header h2 {
   font-family: Fredoka, sans-serif;
-  font-size: 19px;
+  font-size: var(--t-xl);
   color: #1f5758;
   flex: 1;
 }
 .pos .cerrarpos {
   border: 0;
   background: none;
-  font-size: 26px;
+  font-size: var(--t-2xl);
   line-height: 1;
   color: var(--soft);
   cursor: pointer;
@@ -597,7 +631,7 @@ button.btn.vender {
   border-radius: 14px;
   background: #fff;
   font-family: Nunito, sans-serif;
-  font-size: 15px;
+  font-size: var(--t-input);
 }
 .posgrid {
   flex: 1;
@@ -628,15 +662,16 @@ button.btn.vender {
   border-color: var(--leaf);
   box-shadow: 0 0 0 2px rgba(143, 191, 127, 0.3);
 }
-/* 1) foto: cuadrada, entera, sin recortar el resto */
+/* 1) foto: apaisada. Cuadrada entraban 2 piezas y media en pantalla; así entran
+   el doble, que es lo que importa parada en la feria con alguien esperando. */
 .postile .im {
   width: 100%;
-  aspect-ratio: 1/1;
+  aspect-ratio: 4/3;
   background: var(--deep-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30px;
+  font-size: var(--t-3xl);
   overflow: hidden;
 }
 .postile .im img {
@@ -650,7 +685,7 @@ button.btn.vender {
   display: block;
   padding: 9px 10px 0;
   font:
-    600 13.5px/1.3 Fredoka,
+    600 var(--t-sm)/1.3 Fredoka,
     sans-serif;
   color: var(--ink);
   word-break: break-word;
@@ -661,7 +696,7 @@ button.btn.vender {
   padding: 5px 10px 0;
   text-decoration: none;
   font-weight: 800;
-  font-size: 16px;
+  font-size: var(--t-lg);
   color: var(--deep);
 }
 /* 4) stock */
@@ -669,9 +704,11 @@ button.btn.vender {
   display: block;
   padding: 3px 10px 11px;
   font-style: normal;
-  font-size: 10.5px;
+  font-size: var(--t-xs);
   font-weight: 800;
-  color: var(--soft);
+  /* "a pedido" no es un detalle gris: es la que hay que imprimir y gasta
+     filamento. Que se note antes de cobrarla, no después. */
+  color: #8a5320;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -688,7 +725,7 @@ button.btn.vender {
   background: var(--leaf);
   color: #fff;
   font-weight: 800;
-  font-size: 13.5px;
+  font-size: var(--t-sm);
   display: grid;
   place-items: center;
   box-shadow: 0 2px 6px rgba(58, 58, 56, 0.25);
@@ -703,7 +740,7 @@ button.btn.vender {
   background: rgba(58, 58, 56, 0.6);
   color: #fff;
   font-weight: 800;
-  font-size: 16px;
+  font-size: var(--t-lg);
   display: grid;
   place-items: center;
 }
@@ -720,13 +757,13 @@ button.btn.vender {
 }
 .postotal span {
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--t-md);
   color: var(--soft);
 }
 .postotal b {
   font-family: Fredoka, sans-serif;
   font-weight: 700;
-  font-size: 30px;
+  font-size: var(--t-3xl);
   color: #1f5758;
 }
 .formas {
@@ -742,7 +779,7 @@ button.btn.vender {
   background: #fff;
   font-family: Fredoka, sans-serif;
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--t-md);
   color: var(--soft);
   cursor: pointer;
 }
@@ -761,21 +798,21 @@ button.btn.vender {
 }
 .result h2 {
   font-family: Fredoka, sans-serif;
-  font-size: 14px;
+  font-size: var(--t-md);
   color: #bfd8e2;
   font-weight: 500;
 }
 .price {
   font-family: Fredoka, sans-serif;
   font-weight: 700;
-  font-size: 40px;
+  font-size: var(--t-4xl);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.1;
   margin: 5px 0 2px;
 }
 .result .sub {
-  font-size: 12px;
+  font-size: var(--t-sm);
   color: #a8c4cf;
 }
 .kpis {
@@ -792,13 +829,13 @@ button.btn.vender {
 .kpi u {
   display: block;
   text-decoration: none;
-  font-size: 10.5px;
+  font-size: var(--t-xs);
   color: #a8c4cf;
   margin-bottom: 2px;
 }
 .kpi b {
   font-family: Nunito, sans-serif;
-  font-size: 15px;
+  font-size: var(--t-md);
   font-weight: 700;
 }
 
@@ -834,7 +871,7 @@ button.btn.vender {
   display: grid;
   place-items: center;
   overflow: hidden;
-  font-size: 19px;
+  font-size: var(--t-xl);
 }
 .thumb img {
   width: 100%;
@@ -847,14 +884,14 @@ button.btn.vender {
 }
 .item .info b {
   display: block;
-  font-size: 14.5px;
+  font-size: var(--t-md);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .item .info span {
-  font-size: 11.5px;
+  font-size: var(--t-sm);
   color: var(--soft);
 }
 .item .val {
@@ -863,11 +900,11 @@ button.btn.vender {
 }
 .item .val b {
   font-family: Nunito, sans-serif;
-  font-size: 15px;
+  font-size: var(--t-md);
   display: block;
 }
 .item .val span {
-  font-size: 11px;
+  font-size: var(--t-xs);
   color: var(--soft);
 }
 .qty {
@@ -882,7 +919,7 @@ button.btn.vender {
   border-radius: 9px;
   border: 1.5px solid var(--line);
   background: #fff;
-  font-size: 17px;
+  font-size: var(--t-lg);
   line-height: 1;
   color: var(--deep);
   cursor: pointer;
@@ -897,7 +934,7 @@ button.btn.vender {
   margin: 0;
 }
 .stlbl {
-  font-size: 9.5px;
+  font-size: var(--t-xs);
   font-weight: 800;
   color: var(--soft);
   text-transform: uppercase;
@@ -907,28 +944,28 @@ button.btn.vender {
 .qty.chico button {
   width: 28px;
   height: 28px;
-  font-size: 15px;
+  font-size: var(--t-md);
 }
 .stnum {
   font-style: normal;
   min-width: 22px;
   text-align: center;
   font-weight: 800;
-  font-size: 14px;
+  font-size: var(--t-md);
   color: var(--soft);
 }
 .stnum.hay {
   color: var(--leaf);
 }
 .qty input {
-  width: 44px;
+  width: 48px;
   text-align: center;
   padding: 6px 2px;
-  font-size: 14px;
+  font-size: var(--t-input);
 }
 .pill {
   display: inline-block;
-  font-size: 11px;
+  font-size: var(--t-xs);
   font-weight: 800;
   padding: 3px 11px;
   border-radius: 999px;
@@ -947,7 +984,7 @@ button.btn.vender {
   width: 34px;
   height: 34px;
   padding: 0;
-  font-size: 16px;
+  font-size: var(--t-lg);
   line-height: 1;
   border-radius: 10px;
 }
@@ -958,7 +995,7 @@ button.btn.vender {
 .empty {
   text-align: center;
   color: var(--soft);
-  font-size: 13.5px;
+  font-size: var(--t-sm);
   padding: 22px 8px;
 }
 .warn {
@@ -966,7 +1003,7 @@ button.btn.vender {
   border: 1.5px solid #efd8b8;
   border-radius: 12px;
   padding: 11px 13px;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   color: #7a5a2e;
   margin-bottom: 12px;
 }
@@ -1006,7 +1043,7 @@ button.btn.vender {
 .entrada h1 {
   font-family: Fredoka, sans-serif;
   font-weight: 600;
-  font-size: 27px;
+  font-size: var(--t-2xl);
   color: #1f5758;
 }
 .entrada h1 i {
@@ -1016,13 +1053,13 @@ button.btn.vender {
 }
 .entrada p {
   color: var(--soft);
-  font-size: 14px;
+  font-size: var(--t-md);
   margin: 8px 0 20px;
 }
 .entrada label {
   display: block;
   text-align: left;
-  font-size: 12.5px;
+  font-size: var(--t-sm);
   font-weight: 700;
   color: var(--soft);
   margin: 12px 0 6px;
@@ -1030,11 +1067,11 @@ button.btn.vender {
 .entrada .err {
   color: #a8483a;
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: var(--t-sm);
   margin: 12px 0 0;
 }
 .entrada .mut {
-  font-size: 12px;
+  font-size: var(--t-sm);
   margin-top: 16px;
 }
 .toast {
@@ -1048,7 +1085,7 @@ button.btn.vender {
   color: #fff;
   padding: 11px 18px;
   border-radius: 12px;
-  font-size: 13.5px;
+  font-size: var(--t-sm);
   box-shadow: var(--shadow);
   z-index: 60;
   transition: transform 0.3s;
@@ -1092,7 +1129,7 @@ button.btn.vender {
   }
 }
 .mut {
-  font-size: 11.5px;
+  font-size: var(--t-sm);
   color: var(--soft);
 }
 .ficha {
@@ -1113,7 +1150,7 @@ button.btn.vender {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: var(--t-md);
 }
 .ficha > summary::-webkit-details-marker {
   display: none;
@@ -1122,7 +1159,7 @@ button.btn.vender {
   content: "›";
   margin-left: auto;
   color: var(--soft);
-  font-size: 19px;
+  font-size: var(--t-xl);
   line-height: 1;
   transform: rotate(90deg);
   flex: none;
@@ -1139,7 +1176,7 @@ button.btn.vender {
 }
 .ficha > summary .det {
   font:
-    400 11.5px/1.2 Nunito,
+    400 var(--t-sm)/1.2 Nunito,
     sans-serif;
   color: var(--soft);
   white-space: nowrap;
@@ -1187,7 +1224,7 @@ button.btn.vender {
 }
 .vitcat {
   font:
-    600 13px Fredoka,
+    600 var(--t-sm) Fredoka,
     sans-serif;
   color: var(--clay);
   margin: 20px 0 10px;
@@ -1221,7 +1258,7 @@ button.btn.vender {
   background: var(--deep-soft);
   display: grid;
   place-items: center;
-  font-size: 30px;
+  font-size: var(--t-3xl);
 }
 .vitem .ph img {
   position: absolute;
@@ -1245,7 +1282,7 @@ button.btn.vender {
   border: 0;
   background: rgba(255, 255, 255, 0.9);
   color: var(--deep);
-  font-size: 17px;
+  font-size: var(--t-lg);
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -1264,7 +1301,7 @@ button.btn.vender {
   background: rgba(58, 58, 56, 0.6);
   color: #fff;
   font:
-    800 10px Nunito,
+    800 var(--t-micro) Nunito,
     sans-serif;
   padding: 2px 7px;
   border-radius: 999px;
@@ -1280,7 +1317,7 @@ button.btn.vender {
   border: 0;
   background: rgba(31, 87, 88, 0.88);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--t-sm);
   cursor: pointer;
   padding: 0;
   line-height: 34px;
@@ -1296,13 +1333,13 @@ button.btn.vender {
 .vitem .txt b {
   display: block;
   font:
-    600 13.5px Fredoka,
+    600 var(--t-sm) Fredoka,
     sans-serif;
   color: var(--ink);
 }
 .vitem .txt p {
   margin: 3px 0 7px;
-  font-size: 11.5px;
+  font-size: var(--t-sm);
   line-height: 1.4;
   color: var(--soft);
   min-height: 2.4em;
@@ -1310,7 +1347,7 @@ button.btn.vender {
 .vitem .txt u {
   text-decoration: none;
   font:
-    700 14px Nunito,
+    700 var(--t-md) Nunito,
     sans-serif;
   color: var(--deep);
 }
@@ -1360,7 +1397,7 @@ button.btn.vender {
 .mkt .mk b,
 .mkt .yo b {
   font:
-    700 10.5px Nunito,
+    700 var(--t-xs) Nunito,
     sans-serif;
   display: block;
   margin-top: 3px;
@@ -1373,7 +1410,7 @@ button.btn.vender {
 }
 .mkt p {
   margin: 8px 0 0;
-  font-size: 13px;
+  font-size: var(--t-sm);
   line-height: 1.45;
 }
 .mkt.alta {
