@@ -125,6 +125,7 @@ const defaults = () => ({
   packs: [],
   opiniones: [],
   v: 2,
+  _sucio: false,
 });
 let D = defaults(),
   editId = null,
@@ -3359,9 +3360,7 @@ async function entrar() {
   D.cfg.api = SERVIDOR;
   await local.set(D);
   $("#entrada").hidden = true;
-  listoParaSubir = false;
-  setSync("", "Trayendo de la nube…");
-  await bajarDeLaNube();
+  await sincronizarAlAbrir();
 }
 /** La clave guardada dejó de servir (la cambiaron en el servidor). */
 function claveVencida() {
@@ -3406,6 +3405,19 @@ function setSync(state, txt) {
   b.className = "sync" + (state ? " " + state : "");
   $("#syncTxt").textContent = txt;
 }
+let reintentoTimer = null;
+let avisoSyncPendiente = false;
+/** Si quedó algo sin subir (por ej. sin señal), reintenta solo más tarde. */
+function programarReintento() {
+  if (reintentoTimer) return;
+  reintentoTimer = setTimeout(() => {
+    reintentoTimer = null;
+    if (D._sucio && listoParaSubir) subirALaNube();
+  }, 20000);
+}
+window.addEventListener("online", () => {
+  if (D._sucio && listoParaSubir) subirALaNube();
+});
 async function subirALaNube() {
   const url = (D.cfg.api || "").trim();
   if (!url) return;
@@ -3462,6 +3474,9 @@ async function subirALaNube() {
         renderCat();
         renderVit();
       }
+      D._sucio = false;
+      avisoSyncPendiente = false;
+      local.set(D);
       setSync(
         "on",
         "En la nube · " +
@@ -3469,11 +3484,34 @@ async function subirALaNube() {
       );
     } else if (j && j.error === "clave") {
       claveVencida();
-    } else setSync("err", "Error al guardar");
+    } else {
+      setSync("err", "Error al guardar");
+      if (!avisoSyncPendiente) {
+        avisoSyncPendiente = true;
+        toast("No pude guardar en la nube. Se va a reintentar solo.");
+      }
+      programarReintento();
+    }
   } catch (e) {
     setSync("err", "No se pudo guardar");
-    toast("No pude guardar en la nube. Tocá “Subir ahora” en Ajustes.");
+    if (!avisoSyncPendiente) {
+      avisoSyncPendiente = true;
+      toast("No pude guardar en la nube. Se va a reintentar solo.");
+    }
+    programarReintento();
   }
+}
+/** Botón manual: si hay algo sin subir todavía, avisa antes de pisarlo. */
+async function traerDeLaNubeManual() {
+  if (
+    D._sucio &&
+    !confirm(
+      "Hay cambios acá que todavía no se subieron a la nube (por ej. una venta). " +
+        "Si traés la nube ahora, se pierden. ¿Traer igual?",
+    )
+  )
+    return;
+  await bajarDeLaNube();
 }
 async function subirAhora() {
   if (!D.cfg.api) {
@@ -3530,8 +3568,32 @@ async function bajarDeLaNube() {
     toast("No se pudo conectar.");
   }
 }
+/**
+ * Se llama al abrir la app o al entrar. Si hay algo grabado acá que todavía
+ * no llegó a la nube (por ej. una venta con el celular sin señal), lo sube
+ * primero: bajar de la nube en ese momento pisaría eso sin avisar.
+ */
+async function sincronizarAlAbrir() {
+  listoParaSubir = false;
+  if (D._sucio) {
+    setSync("", "Subiendo cambios pendientes…");
+    listoParaSubir = true;
+    await subirALaNube();
+  }
+  if (D._sucio) {
+    setSync("err", "Sin subir · va a reintentar solo");
+    if (MODO_VENTA) {
+      showTab("ven");
+      abrirPOS();
+    }
+    return;
+  }
+  setSync("", "Trayendo de la nube…");
+  await bajarDeLaNube();
+}
 var listoParaSubir = false; // recién true cuando ya bajamos lo que hay en la nube
 function save() {
+  D._sucio = true;
   local.set(D);
   if (D.cfg.api && listoParaSubir) {
     clearTimeout(syncTimer);
@@ -3676,9 +3738,7 @@ if ("serviceWorker" in navigator) {
   if (MODO_VENTA) document.body.classList.add("modoventa");
   D.cfg.api = SERVIDOR;
   if (D.cfg.token) {
-    listoParaSubir = false;
-    setSync("", "Trayendo de la nube…");
-    await bajarDeLaNube();
+    await sincronizarAlAbrir();
   } else {
     listoParaSubir = false;
     mostrarEntrada();
