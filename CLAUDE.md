@@ -9,7 +9,7 @@ devem seguir em espanhol. Conversas com o dono do projeto são em português.
 
 ## Arquitetura em uma frase
 
-PWA estático (HTML+JS puro, sem framework, sem build) hospedado no Cloudflare Pages,
+PWA estático (HTML+JS puro, sem framework, sem build) hospedado no GitHub Pages,
 que fala com um Google Apps Script publicado como Web App, que guarda **todo o estado
 da aplicação como um único JSON dentro de uma célula do Google Sheets**.
 
@@ -31,6 +31,8 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `vender/index.html` | Página curta de venda. |
 | `assets/` | Imagens. `logo-app.png` e `logo-app-full.png` são usados pela app. |
 | `server/Codigo.gs` | O Apps Script. **Não roda daqui** — é copiado e colado no editor. |
+| `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
+| `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
 
 ## Seções de `app/app.js`
 
@@ -66,6 +68,11 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    o usuário disso.
 6. **`sw.js`:** qualquer arquivo novo em `app/` precisa entrar em `ARCHIVOS` e o
    `CACHE` precisa mudar de versão, senão os usuários ficam com a versão antiga.
+7. **Hospedagem = GitHub Pages, servindo a branch `main` na raiz.** Push na `main`
+   já publica. O domínio é do Wix, que **não deixa trocar os nameservers** dos
+   próprios domínios — por isso não dá para usar Cloudflare Workers nem o apex do
+   Cloudflare Pages, que exigem nameservers da Cloudflare. O DNS fica no Wix:
+   quatro registros A para os IPs do GitHub e um CNAME de `www`.
 
 ## Dívidas conhecidas (não corrigir sem combinar)
 

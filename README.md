@@ -16,8 +16,14 @@ python3 -m http.server 8080
 
 ## Publicar
 
-O site é estático. O Cloudflare Pages serve a raiz do repositório como está —
-não há build. Faça push na branch principal.
+O site é estático. O GitHub Pages serve a raiz da branch `main` como está —
+não há build. Faça push na `main` e no minuto seguinte já está no ar em
+`playmind3d.com`.
+
+O DNS fica no Wix (que não deixa trocar os nameservers dos domínios dele):
+quatro registros A na raiz apontando para os IPs do GitHub Pages, e um CNAME
+de `www` para `pdroarraes-creator.github.io`. O arquivo `CNAME` na raiz do
+repositório é o que fixa o domínio — não apague.
 
 O servidor é separado: copie `server/Codigo.gs` para o editor do Apps Script e
 publique uma **nova versão** da implementação (salvar não basta).
