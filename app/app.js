@@ -556,6 +556,8 @@ function ventaRapida(p) {
     pago: true,
     entregue: true,
     consumo: null,
+    desdeStock: true,
+    stockUsado: { [p.id]: 1 },
   });
   p.stock = num(p.stock) - 1;
   save();
@@ -1159,6 +1161,8 @@ function registrarVenta() {
     pago: false,
     entregue: false,
     consumo: consumoDe(t.it),
+    desdeStock: false, // el pedido se imprime a propósito, no sale de lo ya hecho
+    stockUsado: {},
   };
   aplicarConsumo(v.consumo, -1);
   D.vendas.unshift(v);
@@ -2417,14 +2421,12 @@ function cobrar() {
     toast("Elegí al menos una pieza.");
     return;
   }
-  const itens = [],
-    items = [];
+  const itens = [];
   for (const id in POS) {
     const p = prod(id);
     if (!p) continue;
     const r = calc(p);
     itens.push({ id: p.id, nome: p.nome, qtd: POS[id], preco: r.preco, custo: r.custo });
-    items.push({ p, q: POS[id] });
   }
   const costo = itens.reduce((a, i) => a + i.custo * i.qtd, 0);
   const canal = D.canais[0] || { id: "" };
@@ -2444,21 +2446,12 @@ function cobrar() {
     pago: true,
     entregue: true,
     consumo: null,
+    desdeStock: true,
+    stockUsado: {},
   };
 
   // si había piezas hechas, se descuentan; si no, se descuenta el material
-  const faltantes = [];
-  items.forEach(({ p, q }) => {
-    const hay = Math.min(num(p.stock), q);
-    p.stock = num(p.stock) - hay;
-    if (q - hay > 0) faltantes.push({ p, q: q - hay });
-  });
-  if (faltantes.length) {
-    const c = consumoDe(faltantes);
-    aplicarConsumo(c, -1);
-    v.consumo = c;
-    v.sinStock = faltantes.map((f) => f.q + "x " + f.p.nome).join(", ");
-  }
+  aplicarVenta(v);
 
   D.vendas.unshift(v);
   save();
@@ -2472,6 +2465,86 @@ function cobrar() {
 }
 
 /* ---------- ventas ---------- */
+/** Devuelve al inventario todo lo que esta venta había sacado. */
+function revertirVenta(v) {
+  for (const id in v.stockUsado || {}) {
+    const p = prod(id);
+    if (p) p.stock = num(p.stock) + num(v.stockUsado[id]);
+  }
+  aplicarConsumo(v.consumo, 1);
+}
+/** Vuelve a descontar del inventario, respetando cómo se hizo la venta:
+    las de mostrador salen de lo que ya está hecho; las de pedido se imprimen. */
+function aplicarVenta(v) {
+  const faltantes = [],
+    usado = {};
+  (v.itens || []).forEach((i) => {
+    const p = prod(i.id);
+    if (!p) return;
+    const q = num(i.qtd);
+    const hay = v.desdeStock ? Math.min(num(p.stock), q) : 0;
+    if (hay > 0) {
+      p.stock = num(p.stock) - hay;
+      usado[p.id] = num(usado[p.id]) + hay;
+    }
+    if (q - hay > 0) faltantes.push({ p, q: q - hay });
+  });
+  v.stockUsado = usado;
+  if (faltantes.length) {
+    v.consumo = consumoDe(faltantes);
+    aplicarConsumo(v.consumo, -1);
+    // "fuera de stock" sólo tiene sentido en las de mostrador: la de pedido siempre se imprime
+    v.sinStock = v.desdeStock ? faltantes.map((f) => f.q + "x " + f.p.nome).join(", ") : "";
+  } else {
+    v.consumo = null;
+    v.sinStock = "";
+  }
+}
+/** Rehace las cuentas con los precios que tenía la venta, no con los de hoy. */
+function recalcVenta(v) {
+  let bruto = 0,
+    custo = 0;
+  (v.itens || []).forEach((i) => {
+    bruto += num(i.preco) * num(i.qtd);
+    custo += num(i.custo) * num(i.qtd);
+  });
+  const envio = num(v.envio),
+    com = num(v.comision);
+  v.total = bruto * (1 - Math.min(num(v.desconto), 0.9)) + envio;
+  v.custo = custo;
+  v.lucro = (v.total - envio) * (1 - com) - custo;
+}
+/** Las ventas viejas no anotaban qué salió de lo ya hecho: se deduce del registro. */
+function migrarStockVentas() {
+  (D.vendas || []).forEach((v) => {
+    if (v.stockUsado) return;
+    v.stockUsado = {};
+    if (v.consumo == null) {
+      // mostrador o venta rápida: no se gastó material, salió todo de lo hecho
+      v.desdeStock = true;
+      (v.itens || []).forEach((i) => {
+        if (i.id) v.stockUsado[i.id] = num(v.stockUsado[i.id]) + num(i.qtd);
+      });
+    } else if (v.sinStock) {
+      // mostrador mezclado: sinStock dice qué hubo que imprimir, el resto estaba hecho
+      v.desdeStock = true;
+      const falta = {};
+      String(v.sinStock)
+        .split(",")
+        .forEach((t) => {
+          const m = t.trim().match(/^(\d+)x\s+(.*)$/);
+          if (m) falta[m[2].trim()] = num(m[1]);
+        });
+      (v.itens || []).forEach((i) => {
+        const resto = num(i.qtd) - num(falta[String(i.nome || "").trim()]);
+        if (i.id && resto > 0) v.stockUsado[i.id] = num(v.stockUsado[i.id]) + resto;
+      });
+    } else {
+      // pedido: se imprimió a propósito, no se tocó lo que había hecho
+      v.desdeStock = false;
+    }
+  });
+}
 function renderVen() {
   const mes = hoy().slice(0, 7);
   const delMes = D.vendas.filter((v) => (v.data || "").slice(0, 7) === mes);
@@ -2543,10 +2616,10 @@ function renderVen() {
     lb.appendChild(
       el(
         "div",
-        { class: "item" },
+        { class: "item", style: "cursor:pointer", onclick: () => abrirVenta(v) },
         el(
           "div",
-          { class: "info", onclick: () => abrirVenta(v) },
+          { class: "info" },
           el("b", {}, v.cliente),
           el(
             "span",
@@ -2648,6 +2721,7 @@ function abrirVenta(v) {
         },
         v.entregue ? "Marcar no entregada" : "Marcar entregada",
       ),
+      el("button", { class: "btn ghost", onclick: () => editarVenta(v) }, "Editar"),
       el(
         "button",
         {
@@ -2665,7 +2739,7 @@ function abrirVenta(v) {
           class: "btn danger",
           onclick: () => {
             if (confirm("¿Borrar esta venta? Lo que había descontado del stock vuelve.")) {
-              aplicarConsumo(v.consumo, 1);
+              revertirVenta(v);
               D.vendas = D.vendas.filter((x) => x.id !== v.id);
               save();
               renderAll();
@@ -2682,6 +2756,205 @@ function abrirVenta(v) {
       "button",
       { class: "btn ghost wide", style: "margin-top:12px", onclick: cerrarSheet },
       "Cerrar",
+    ),
+  );
+  $("#sheet").classList.add("on");
+}
+/** Edita una venta ya registrada. Se trabaja sobre una copia: si cancela, no se toca nada. */
+function editarVenta(v) {
+  const b = $("#sheetBody");
+  b.textContent = "";
+  const bo = {
+    cliente: v.cliente || "",
+    data: v.data || hoy(),
+    forma: v.forma || "",
+    canal: v.canal || "",
+    desconto: Math.round(num(v.desconto) * 100),
+    envio: num(v.envio),
+    itens: (v.itens || []).map((i) => Object.assign({}, i)),
+  };
+  b.appendChild(el("h2", {}, "Editar venta"));
+  b.appendChild(
+    el(
+      "p",
+      { class: "mut" },
+      "Los precios quedan como estaban el día de la venta, aunque hoy valgan otra cosa.",
+    ),
+  );
+
+  const totLinea = el("b", { style: "font-size:19px" });
+  const pintarTotal = () => {
+    let bruto = 0;
+    bo.itens.forEach((i) => (bruto += num(i.preco) * num(i.qtd)));
+    totLinea.textContent = money(
+      bruto * (1 - Math.min(num(bo.desconto), 90) / 100) + num(bo.envio),
+    );
+  };
+  const campo = (lab, inp) => el("div", {}, el("label", { class: "f" }, lab), inp);
+
+  const iCli = el("input", {
+    type: "text",
+    value: bo.cliente,
+    oninput: (e) => (bo.cliente = e.target.value),
+  });
+  const iFecha = el("input", {
+    type: "date",
+    value: bo.data,
+    oninput: (e) => (bo.data = e.target.value),
+  });
+  const sForma = el("select", { onchange: (e) => (bo.forma = e.target.value) });
+  const formas = ["efectivo", "transferencia"];
+  if (bo.forma && formas.indexOf(bo.forma) === -1) formas.push(bo.forma);
+  sForma.appendChild(el("option", { value: "" }, "Sin especificar"));
+  formas.forEach((f) => sForma.appendChild(el("option", { value: f }, f)));
+  sForma.value = bo.forma;
+  const sCanal = el("select", { onchange: (e) => (bo.canal = e.target.value) });
+  D.canais.forEach((c) => sCanal.appendChild(el("option", { value: c.id }, c.nome)));
+  sCanal.value = bo.canal;
+  b.appendChild(
+    el(
+      "div",
+      { class: "grid" },
+      campo("Cliente", iCli),
+      campo("Fecha", iFecha),
+      campo("Cómo pagó", sForma),
+      campo("Canal", sCanal),
+    ),
+  );
+
+  const lista = el("div", { style: "margin:12px 0" });
+  const pintarItems = () => {
+    lista.textContent = "";
+    bo.itens.forEach((i) => {
+      lista.appendChild(
+        el(
+          "div",
+          { class: "item", style: num(i.qtd) > 0 ? "" : "opacity:.45" },
+          thumb(prod(i.id)),
+          el(
+            "div",
+            { class: "info" },
+            el("b", {}, i.nome),
+            el("span", {}, money(i.preco) + " c/u"),
+          ),
+          el(
+            "div",
+            { class: "qty" },
+            el(
+              "button",
+              {
+                onclick: () => {
+                  i.qtd = Math.max(0, num(i.qtd) - 1);
+                  pintarItems();
+                  pintarTotal();
+                },
+              },
+              "−",
+            ),
+            el("input", {
+              type: "number",
+              inputmode: "numeric",
+              min: "0",
+              value: i.qtd,
+              oninput: (e) => {
+                i.qtd = Math.max(0, num(e.target.value));
+                pintarTotal();
+              },
+            }),
+            el(
+              "button",
+              {
+                onclick: () => {
+                  i.qtd = num(i.qtd) + 1;
+                  pintarItems();
+                  pintarTotal();
+                },
+              },
+              "+",
+            ),
+          ),
+          el("div", { class: "val" }, el("b", {}, money(num(i.preco) * num(i.qtd)))),
+        ),
+      );
+    });
+  };
+  pintarItems();
+  b.appendChild(lista);
+  b.appendChild(el("p", { class: "mut" }, "Poné una pieza en 0 para sacarla de la venta."));
+
+  const iDesc = el("input", {
+    type: "number",
+    inputmode: "decimal",
+    min: "0",
+    max: "90",
+    value: bo.desconto,
+    oninput: (e) => {
+      bo.desconto = num(e.target.value);
+      pintarTotal();
+    },
+  });
+  const iEnvio = el("input", {
+    type: "number",
+    inputmode: "decimal",
+    min: "0",
+    value: bo.envio,
+    oninput: (e) => {
+      bo.envio = num(e.target.value);
+      pintarTotal();
+    },
+  });
+  b.appendChild(
+    el("div", { class: "grid" }, campo("Descuento (%)", iDesc), campo("Envío ($)", iEnvio)),
+  );
+  pintarTotal();
+  b.appendChild(
+    el(
+      "p",
+      { style: "margin:14px 0 0;display:flex;justify-content:space-between;align-items:center" },
+      el("span", { class: "mut" }, "Total"),
+      totLinea,
+    ),
+  );
+
+  b.appendChild(
+    el(
+      "div",
+      { class: "acts", style: "margin-top:14px" },
+      el(
+        "button",
+        {
+          class: "btn",
+          onclick: () => {
+            const quedan = bo.itens.filter((i) => num(i.qtd) > 0);
+            if (!quedan.length) {
+              toast("Así quedaría vacía. Si no va más, borrala.");
+              return;
+            }
+            // se devuelve al inventario lo viejo y se descuenta lo nuevo
+            revertirVenta(v);
+            v.cliente = bo.cliente.trim() || "Sin nombre";
+            v.data = bo.data || hoy();
+            v.forma = bo.forma;
+            v.canal = bo.canal;
+            v.itens = quedan;
+            v.desconto = Math.min(Math.max(num(bo.desconto), 0), 90) / 100;
+            v.envio = num(bo.envio);
+            const canal = D.canais.find((c) => c.id === bo.canal);
+            v.comision = canal ? num(canal.comision) / 100 : 0;
+            aplicarVenta(v);
+            recalcVenta(v);
+            // si le cambió la fecha, que no quede fuera de lugar en la lista
+            D.vendas.sort((a, c) => String(c.data || "").localeCompare(String(a.data || "")));
+            save();
+            renderAll();
+            cerrarSheet();
+            const al = alertasStock();
+            toast(al.length ? "Venta actualizada. " + al[0].txt : "Venta actualizada.");
+          },
+        },
+        "Guardar cambios",
+      ),
+      el("button", { class: "btn ghost", onclick: () => abrirVenta(v) }, "Cancelar"),
     ),
   );
   $("#sheet").classList.add("on");
@@ -3542,6 +3815,7 @@ async function bajarDeLaNube() {
       D.cfg.token = tk;
       if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
       migrarInsumos();
+      migrarStockVentas();
       await local.set(D);
       cargarPieza(null);
       bindCfg();
@@ -3626,6 +3900,7 @@ $("#fImp").addEventListener("change", (e) => {
       D.cfg.token = tk;
       if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
       migrarInsumos();
+      migrarStockVentas();
       cargarPieza(null);
       bindCfg();
       save();
@@ -3728,6 +4003,7 @@ if ("serviceWorker" in navigator) {
   if (!D.packs) D.packs = [];
   if (!D.opiniones) D.opiniones = [];
   if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
+  migrarStockVentas();
   if (D.cfg.merma === undefined || D.cfg.merma === null) D.cfg.merma = 12;
   if (!D.canais || !D.canais.length) D.canais = defaults().canais;
   bindCfg();
