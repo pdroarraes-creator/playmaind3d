@@ -400,6 +400,10 @@ function moverFotosADrive_(data) {
   if (data.cfg && data.cfg.logo && String(data.cfg.logo).indexOf('data:image') === 0) {
     data.cfg.logo = subir(data.cfg.logo, 'logo');
   }
+  if (data.cfg && data.cfg.leti && data.cfg.leti.foto &&
+      String(data.cfg.leti.foto).indexOf('data:image') === 0) {
+    data.cfg.leti.foto = subir(data.cfg.leti.foto, 'leti');
+  }
   return data;
 }
 
@@ -490,7 +494,12 @@ function catalogoPublico_() {
     wa: (data.cfg && data.cfg.wa) || '',
     colores: colores,
     packs: packs,
-    piezas: piezas
+    piezas: piezas,
+    leti: {
+      cita: (data.cfg && data.cfg.leti && data.cfg.leti.cita) || '',
+      historia: (data.cfg && data.cfg.leti && data.cfg.leti.historia) || '',
+      foto: (data.cfg && data.cfg.leti && data.cfg.leti.foto) || ''
+    }
   };
 }
 

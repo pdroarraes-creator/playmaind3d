@@ -79,6 +79,7 @@ const defaults = () => ({
     merma: 12,
     api: "",
     token: "",
+    leti: { cita: "", historia: "", foto: "" },
   },
   canais: [
     { id: "c1", nome: "Escuela", comision: 0 },
@@ -289,6 +290,17 @@ $("#fLogo").addEventListener("change", (e) => {
   });
   e.target.value = "";
 });
+$("#fLetiFoto").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  leerFoto(f, (d) => {
+    D.cfg.leti.foto = d;
+    save();
+    pintarLeti();
+    toast("Foto actualizada.");
+  });
+  e.target.value = "";
+});
 function quitarFoto(i) {
   fotosTmp.splice(i, 1);
   pintarFoto();
@@ -343,6 +355,20 @@ function pintarMarca() {
   else lb.appendChild(el("b", {}));
   $("#brandName").textContent = D.cfg.marca || "PlayMind 3D";
   document.title = D.cfg.marca || "PlayMind 3D";
+}
+function pintarLeti() {
+  const b = $("#letiFotoBox");
+  if (!b) return;
+  b.textContent = "";
+  if (D.cfg.leti && D.cfg.leti.foto)
+    b.appendChild(
+      el("img", {
+        src: D.cfg.leti.foto,
+        alt: "",
+        style: "width:100%;height:100%;object-fit:cover",
+      }),
+    );
+  else b.textContent = "🧑‍🎨";
 }
 const thumb = (p) => {
   const t = el("div", { class: "thumb" });
@@ -2694,6 +2720,8 @@ function bindCfg() {
   $("#s_marca").value = D.cfg.marca || "";
   $("#s_wa").value = D.cfg.wa || "";
   $("#s_cat").value = D.cfg.catalogo || "";
+  $("#s_letiCita").value = D.cfg.leti.cita || "";
+  $("#s_letiHistoria").value = D.cfg.leti.historia || "";
   const q = $("#quienSoy");
   if (q)
     q.textContent = D.cfg.email
@@ -2725,6 +2753,14 @@ function bindCfg() {
   });
   $("#s_cat").addEventListener("input", () => {
     D.cfg.catalogo = $("#s_cat").value.trim();
+    save();
+  });
+  $("#s_letiCita").addEventListener("input", () => {
+    D.cfg.leti.cita = $("#s_letiCita").value;
+    save();
+  });
+  $("#s_letiHistoria").addEventListener("input", () => {
+    D.cfg.leti.historia = $("#s_letiHistoria").value;
     save();
   });
 }
@@ -3466,12 +3502,14 @@ async function bajarDeLaNube() {
       D = Object.assign(defaults(), j.data);
       D.cfg.api = api;
       D.cfg.token = tk;
+      if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
       migrarInsumos();
       await local.set(D);
       cargarPieza(null);
       bindCfg();
       renderAll();
       pintarMarca();
+      pintarLeti();
       listoParaSubir = true;
       setSync("on", "En la nube");
       toast("Datos traídos de la nube.");
@@ -3524,12 +3562,14 @@ $("#fImp").addEventListener("change", (e) => {
       D = Object.assign(defaults(), d);
       D.cfg.api = api;
       D.cfg.token = tk;
+      if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
       migrarInsumos();
       cargarPieza(null);
       bindCfg();
       save();
       renderAll();
       pintarMarca();
+      pintarLeti();
       toast("Copia restaurada.");
     } catch (err) {
       toast("Ese archivo no sirve.");
@@ -3625,10 +3665,12 @@ if ("serviceWorker" in navigator) {
   if (!D.radar) D.radar = [];
   if (!D.packs) D.packs = [];
   if (!D.opiniones) D.opiniones = [];
+  if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
   if (D.cfg.merma === undefined || D.cfg.merma === null) D.cfg.merma = 12;
   if (!D.canais || !D.canais.length) D.canais = defaults().canais;
   bindCfg();
   pintarMarca();
+  pintarLeti();
   cargarPieza(null);
   renderAll();
   if (MODO_VENTA) document.body.classList.add("modoventa");

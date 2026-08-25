@@ -299,14 +299,15 @@
     <div class="leti-grid">
       <div class="leti-photo">
         <!-- Foto de las manos trabajando o de la impresora, NO de su cara. -->
-        <div class="ph">FOTO DE LAS MANOS<br>armando una pieza,<br>o de la impresora trabajando</div>
+        <div class="ph" id="letiPh">FOTO DE LAS MANOS<br>armando una pieza,<br>o de la impresora trabajando</div>
+        <img id="letiFoto" alt="" hidden>
         <div class="leti-badge">✦ La artista detrás de Playmind</div>
       </div>
       <div>
         <div class="eyebrow">La historia</div>
         <h2>Cada pieza la diseño e imprimo yo.</h2>
-        <p class="quote">«Me encanta crear. Dibujo la idea, la modelo en 3D y la veo nacer <em>capa por capa</em> en mi impresora. Cada pieza que te llega pasó por mis manos.»</p>
-        <p class="story">Playmind 3d nació de la curiosidad y las ganas de hacer de una chica de la casa: artista, creadora y emprendedora. Lo que empezó como un juego se convirtió en un pequeño taller donde el arte y la tecnología se encuentran — y de donde salen mundos para jugar, regalar y coleccionar.</p>
+        <p class="quote" id="letiQuote">«Me encanta crear. Dibujo la idea, la modelo en 3D y la veo nacer <em>capa por capa</em> en mi impresora. Cada pieza que te llega pasó por mis manos.»</p>
+        <p class="story" id="letiStory">Playmind 3d nació de la curiosidad y las ganas de hacer de una chica de la casa: artista, creadora y emprendedora. Lo que empezó como un juego se convirtió en un pequeño taller donde el arte y la tecnología se encuentran — y de donde salen mundos para jugar, regalar y coleccionar.</p>
       </div>
     </div>
   </div>
@@ -754,6 +755,19 @@
       card.classList.toggle('elegido', !!CAR[nom]);
     });
   }
+  function pintarLeti(l){
+    l=l||{};
+    var foto=document.getElementById('letiFoto'), ph=document.getElementById('letiPh');
+    if(l.foto && foto){
+      foto.src=l.foto;
+      foto.hidden=false;
+      if(ph) ph.hidden=true;
+    }
+    var quote=document.getElementById('letiQuote');
+    if(l.cita && quote) quote.textContent='«'+l.cita+'»';
+    var story=document.getElementById('letiStory');
+    if(l.historia && story) story.textContent=l.historia;
+  }
   function opiniones(lista){
     var caja=document.getElementById('opiniones');
     if(!caja) return;
@@ -877,6 +891,7 @@
       });
 
       pintarPacks(c.packs||[]);
+      pintarLeti(c.leti);
 
       var piezas=(c.piezas||[]).slice().sort(function(a,b){
         return ((b.fotos&&b.fotos.length?2:0)+(b.desc?1:0)) -
