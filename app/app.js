@@ -2590,6 +2590,19 @@ function renderVen() {
   $("#v_qtd").textContent = qtd;
   $("#v_pend").textContent = money(pend);
 
+  let stockVal = 0,
+    stockCusto = 0;
+  D.produtos.forEach((p) => {
+    const q = num(p.stock);
+    if (q > 0) {
+      const c = calc(p);
+      stockVal += c.preco * q;
+      stockCusto += c.custo * q;
+    }
+  });
+  $("#v_stockVal").textContent = money(stockVal);
+  $("#v_stockCusto").textContent = money(stockCusto);
+
   const acc = {};
   D.vendas.forEach((v) =>
     (v.itens || []).forEach((i) => {
