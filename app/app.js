@@ -2380,8 +2380,9 @@ function pintarPOS() {
       });
       im.appendChild(img);
     } else im.textContent = "🧩";
-    t.appendChild(im);
     const hay = num(p.stock);
+    if (hay > 0) im.appendChild(el("span", { class: "stockBadge" }, String(hay)));
+    t.appendChild(im);
     t.appendChild(el("b", {}, p.nome || "Sin nombre"));
     t.appendChild(el("u", {}, money(r.preco)));
     t.appendChild(
