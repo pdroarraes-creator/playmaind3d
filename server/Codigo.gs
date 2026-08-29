@@ -129,6 +129,12 @@ function doPost(e) {
     if (body.action === 'editarPieza') {
       return json_(editarPieza_(body.pieza, body.campos));
     }
+    // Sólo confirma que el token todavía sirve — la usa el Worker del chat de
+    // cadastro para no tener que reimplementar la verificación de sesión.
+    if (body.action === 'validarSesion') return json_({ ok: true });
+    if (body.action === 'agregarPieza') {
+      return json_(agregarPieza_(body.pieza));
+    }
     if (body.action === 'save') {
       var limpio = guardarEstado_(body.data);
       return json_({ ok: true, actualizado: new Date().toISOString(), data: limpio });
@@ -369,6 +375,50 @@ function editarPieza_(nombre, campos) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/** Agrega una pieza nueva (usada por el cadastro por chat, Worker externo).
+    No toma lock propio: guardarEstado_ ya toma el suyo — tomar dos locks acá
+    (uno propio y el de adentro) se pisaría con el que ya tiene editarPieza_. */
+function agregarPieza_(pieza) {
+  if (!pieza || !String(pieza.nome || '').trim()) {
+    return { ok: false, error: 'falta el nombre' };
+  }
+  var data = leerEstado_();
+  if (!data) return { ok: false, error: 'sin datos' };
+  data.produtos = data.produtos || [];
+  var fil = (data.filamentos || [])[0];
+  var imp = (data.impressoras || [])[0];
+  var fotos = pieza.fotos || (pieza.foto ? [pieza.foto] : []);
+  var p = {
+    id: Utilities.getUuid(),
+    nome: String(pieza.nome).trim(),
+    ref: '',
+    foto: fotos[0] || null,
+    fotos: fotos,
+    fil: pieza.fil || (fil && fil.id) || null,
+    imp: pieza.imp || (imp && imp.id) || null,
+    peso: Number(pieza.peso) || 0,
+    h: Number(pieza.h) || 0,
+    m: Number(pieza.m) || 0,
+    mo: Number(pieza.mo) || 0,
+    insumos: pieza.insumos || {},
+    risco: null,
+    mult: null,
+    cplx: Number(pieza.cplx) || 1,
+    manual: pieza.manual != null && pieza.manual !== '' ? Number(pieza.manual) : null,
+    mercado: null,
+    cat: String(pieza.cat || '').trim(),
+    desc: String(pieza.desc || '').trim(),
+    libre: !!pieza.libre,
+    medida: String(pieza.medida || '').trim(),
+    video: '',
+    detalle: String(pieza.detalle || '').trim(),
+    tags: String(pieza.tags || '').trim()
+  };
+  data.produtos.push(p);
+  guardarEstado_(data); // sube la foto a Drive, guarda y regenera las hojas
+  return { ok: true, id: p.id };
 }
 
 /** Las fotos pesadas van a Drive; en la planilla queda sólo el link. */
