@@ -243,11 +243,11 @@ function menuAlta() {
   var r2 = ui.prompt('Nombre (como la saluda el sistema)', ui.ButtonSet.OK_CANCEL);
   if (r2.getSelectedButton() !== ui.Button.OK) return;
 
-  var r3 = ui.prompt('Clave nueva (mínimo 8 caracteres, distinta para cada persona)',
+  var r3 = ui.prompt('Clave nueva (mínimo 4 caracteres, distinta para cada persona)',
                      ui.ButtonSet.OK_CANCEL);
   if (r3.getSelectedButton() !== ui.Button.OK) return;
   var clave = String(r3.getResponseText() || '');
-  if (clave.length < 8) { ui.alert('Esa clave es muy corta. Mínimo 8 caracteres.'); return; }
+  if (clave.length < 4) { ui.alert('Esa clave es muy corta. Mínimo 4 caracteres.'); return; }
 
   var sal = Utilities.getUuid();
   var lista = leerUsuarios_().filter(function (u) { return normMail_(u.email) !== email; });

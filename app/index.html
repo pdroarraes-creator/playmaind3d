@@ -63,7 +63,7 @@
             <path d="M9 13h6" /></svg
           >Vitrina
         </button>
-        <button role="tab" data-tab="rad" aria-selected="false">
+        <button role="tab" data-tab="rad" aria-selected="false" hidden>
           <svg viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="9" />
             <circle cx="12" cy="12" r="4" />
@@ -532,7 +532,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" hidden>
           <h2><i class="dot" style="background: var(--teal)"></i> Los tres accesos</h2>
           <p class="hint">
             Los tres son el mismo sitio. Instalá en el celular de ella sólo el verde.
@@ -552,7 +552,7 @@
               <label class="f" for="s_wa">WhatsApp para pedidos</label
               ><input id="s_wa" type="text" placeholder="+54 9 11 …" />
             </div>
-            <div>
+            <div hidden style="display: none">
               <label class="f" for="s_cat">Link del catálogo</label
               ><input id="s_cat" type="text" placeholder="playmind3d-catalogo.netlify.app" />
             </div>
@@ -710,7 +710,7 @@
           </button>
         </div>
 
-        <div class="card">
+        <div class="card" hidden>
           <h2><i class="dot" style="background: var(--leaf)"></i> Packs</h2>
           <p class="hint">
             Vender de a tres rinde más que vender de a uno: el cliente gasta más y vos imprimís todo
@@ -762,12 +762,17 @@
           placeholder="tumail@gmail.com"
         />
         <label for="entClave">Clave</label>
-        <input
-          id="entClave"
-          type="password"
-          autocomplete="current-password"
-          placeholder="Tu clave"
-        />
+        <div class="suffix">
+          <input
+            id="entClave"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Tu clave"
+          />
+          <button type="button" class="verClave" id="bVerClave" tabindex="-1" onclick="alternarClave()">
+            Ver
+          </button>
+        </div>
         <button class="btn wide" id="entBtn" style="margin-top: 16px">Entrar</button>
         <p class="err" id="entErr" hidden></p>
         <p class="mut" style="margin-top: 14px">

@@ -3606,6 +3606,13 @@ const addImp = () => {
 };
 
 /* ---------- entrada ---------- */
+function alternarClave() {
+  const i = $("#entClave"),
+    b = $("#bVerClave");
+  const mostrar = i.type === "password";
+  i.type = mostrar ? "text" : "password";
+  b.textContent = mostrar ? "Ocultar" : "Ver";
+}
 async function probarLogin(email, clave) {
   try {
     const r = await fetch(SERVIDOR, {

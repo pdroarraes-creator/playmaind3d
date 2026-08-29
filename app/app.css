@@ -247,6 +247,9 @@ nav.tabs button:focus-visible {
   outline: 2px solid var(--deep);
   outline-offset: -2px;
 }
+nav.tabs button[data-tab="rad"] {
+  display: none;
+}
 @media (min-width: 700px) {
   nav.tabs {
     position: static;
@@ -487,6 +490,20 @@ textarea:focus {
 }
 .suffix input {
   padding-right: 42px;
+}
+.suffix button.verClave {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  height: 33px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--deep);
+  font-family: Fredoka, sans-serif;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 button.btn {
