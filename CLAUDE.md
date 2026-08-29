@@ -68,11 +68,20 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    o usuário disso.
 6. **`sw.js`:** qualquer arquivo novo em `app/` precisa entrar em `ARCHIVOS` e o
    `CACHE` precisa mudar de versão, senão os usuários ficam com a versão antiga.
-7. **Hospedagem = GitHub Pages, servindo a branch `main` na raiz.** Push na `main`
-   já publica. O domínio é do Wix, que **não deixa trocar os nameservers** dos
-   próprios domínios — por isso não dá para usar Cloudflare Workers nem o apex do
-   Cloudflare Pages, que exigem nameservers da Cloudflare. O DNS fica no Wix:
-   quatro registros A para os IPs do GitHub e um CNAME de `www`.
+7. **Hospedagem do domínio próprio = GitHub Pages, servindo a branch `main` na
+   raiz.** Push na `main` já publica. O domínio é do Wix, que **não deixa trocar
+   os nameservers** dos próprios domínios — por isso não dá para apontar
+   `playmind3d.com` para Cloudflare Workers nem para o apex do Cloudflare Pages,
+   que exigem nameservers da Cloudflare. O DNS fica no Wix: quatro registros A
+   para os IPs do GitHub e um CNAME de `www`.
+8. **`wrangler.toml` e `.assetsignore` existem de novo, mas não competem com o
+   GitHub Pages.** Publicam o mesmo repositório em paralelo em
+   `playmind3d.pdroarraes.workers.dev` (subdomínio gratuito da Cloudflare, sem
+   depender de nameservers) — não em `playmind3d.com`. Serve como staging até o
+   domínio poder ser transferido pra Cloudflare (só depois de 60 dias da compra
+   no Wix). `.assetsignore` exclui `.git/`, `.wrangler/` e `wrangler.toml` do
+   deploy: sem isso, o Wrangler sobe a pasta `.git/` inteira como arquivo
+   estático público.
 
 ## Dívidas conhecidas (não corrigir sem combinar)
 
