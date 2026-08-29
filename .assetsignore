@@ -1,0 +1,11 @@
+.git
+.git/
+.git/**
+**/.git
+**/.git/**
+.wrangler
+.wrangler/
+.wrangler/**
+**/.wrangler
+**/.wrangler/**
+wrangler.toml

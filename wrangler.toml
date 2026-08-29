@@ -1,0 +1,7 @@
+name = "playmind3d"
+account_id = "11c2a64013fddc0e5a3eb6ffdfaeac08"
+compatibility_date = "2026-08-20"
+
+[assets]
+directory = "./"
+not_found_handling = "404-page"
