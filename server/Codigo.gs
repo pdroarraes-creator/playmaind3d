@@ -413,6 +413,57 @@ function carpetaFotos_() {
   return it.hasNext() ? it.next() : DriveApp.createFolder(nombre);
 }
 
+/* ============ LIMPIEZA DE FOTOS HUÉRFANAS (uso único) ============
+   El bug de fotos duplicadas (ya corregido en el cliente) dejaba subidas
+   repetidas de la misma foto en Drive, sin que ninguna pieza usara las
+   copias viejas. Esto junta qué fotos usa el estado actual (piezas, logo,
+   foto de Leti) y manda a la papelera cualquier archivo de la carpeta que
+   no esté en esa lista. Va a la papelera, no se borra directo: se puede
+   recuperar por ~30 días si hace falta.
+
+   Correr desde el editor: elegir la función en el desplegable y Ejecutar.
+   1) previsualizarLimpiezaFotos  — sólo cuenta, no borra nada.
+   2) limpiarFotosDuplicadas      — manda las huérfanas a la papelera.
+   El resultado queda en Ver > Registros (Logger.log). */
+function limpiarFotosHuerfanas_(soloContar) {
+  var data = leerEstado_();
+  var usados = {};
+  function marcar(url) {
+    var m = String(url || '').match(/\/d\/([\w-]+)/);
+    if (m) usados[m[1]] = true;
+  }
+  (data && data.produtos || []).forEach(function (p) {
+    (p.fotos || []).forEach(marcar);
+    marcar(p.foto);
+  });
+  if (data && data.cfg) {
+    marcar(data.cfg.logo);
+    if (data.cfg.leti) marcar(data.cfg.leti.foto);
+  }
+  var carpeta = carpetaFotos_();
+  var it = carpeta.getFiles();
+  var total = 0, huerfanas = 0, liberadoBytes = 0;
+  var nombres = [];
+  while (it.hasNext()) {
+    var f = it.next();
+    total++;
+    if (!usados[f.getId()]) {
+      huerfanas++;
+      liberadoBytes += f.getSize();
+      nombres.push(f.getName());
+      if (!soloContar) f.setTrashed(true);
+    }
+  }
+  var msg = 'Fotos en la carpeta: ' + total + '. Huérfanas: ' + huerfanas +
+    ' (~' + Math.round((liberadoBytes / 1024 / 1024) * 10) / 10 + ' MB). ' +
+    (soloContar ? 'Modo conteo: no se borró nada.' : 'Movidas a la papelera.');
+  Logger.log(msg);
+  if (nombres.length) Logger.log(nombres.join('\n'));
+  return msg;
+}
+function previsualizarLimpiezaFotos() { return limpiarFotosHuerfanas_(true); }
+function limpiarFotosDuplicadas() { return limpiarFotosHuerfanas_(false); }
+
 /* =====================================================================
    CATÁLOGO PÚBLICO
    ===================================================================== */
