@@ -3733,6 +3733,7 @@ async function subirALaNube() {
     setSync("err", "Esperando traer lo de la nube");
     return;
   }
+  const enviado = JSON.parse(JSON.stringify(D)); // foto exacta que se manda, para calzar la respuesta
   try {
     setSync("", "Guardando…");
     const r = await fetch(url, {
@@ -3741,43 +3742,60 @@ async function subirALaNube() {
         action: "save",
         email: D.cfg.email || "",
         token: D.cfg.token || "",
-        data: D,
+        data: enviado,
       }),
     });
     const j = await r.json();
     if (j && j.ok) {
       if (j.data && j.data.produtos) {
-        // cambiamos las fotos pesadas por los links que ya guardó el servidor
+        // Cambiamos las fotos pesadas por los links que ya guardó el servidor,
+        // calzando por el contenido (la foto en sí), no por la posición: si
+        // agregaste o sacaste una foto mientras esto subía, el largo ya no
+        // coincide, pero las fotos que sí se subieron igual quedan resueltas.
+        // Antes, ese desfasaje dejaba la foto en base64 para siempre y se
+        // volvía a subir a Drive en cada guardado siguiente.
+        const mapaFotosPorPieza = {};
         j.data.produtos.forEach(function (np) {
-          var p = D.produtos.find(function (x) {
-            return x.id === np.id;
-          });
-          if (!p || !np.fotos) return;
-          // sólo si la lista sigue teniendo el mismo largo: si editaste mientras subía, no tocamos nada
-          var mias = p.fotos && p.fotos.length ? p.fotos : p.foto ? [p.foto] : [];
-          if (mias.length !== np.fotos.length) return;
-          var nuevas = mias.map(function (f, i) {
-            return String(f).indexOf("data:image") === 0 &&
+          const viejo = enviado.produtos.find((x) => x.id === np.id);
+          if (!np.fotos || !viejo || !viejo.fotos) return;
+          const mapa = {};
+          viejo.fotos.forEach((f, i) => {
+            if (
+              String(f).indexOf("data:image") === 0 &&
               String(np.fotos[i]).indexOf("http") === 0
-              ? np.fotos[i]
-              : f;
+            )
+              mapa[f] = np.fotos[i];
           });
-          p.fotos = nuevas;
-          p.foto = nuevas[0];
+          mapaFotosPorPieza[np.id] = mapa;
+          const p = D.produtos.find((x) => x.id === np.id);
+          if (!p) return;
+          const mias = p.fotos && p.fotos.length ? p.fotos : p.foto ? [p.foto] : [];
+          let cambio = false;
+          const nuevas = mias.map((f) => {
+            if (mapa[f]) {
+              cambio = true;
+              return mapa[f];
+            }
+            return f;
+          });
+          if (cambio) {
+            p.fotos = nuevas;
+            p.foto = nuevas[0];
+          }
         });
         if (j.data.cfg && j.data.cfg.logo) D.cfg.logo = j.data.cfg.logo;
         local.set(D);
-        if (editId) {
-          var act = prod(editId);
-          if (act && act.fotos && act.fotos.length === fotosTmp.length) {
-            fotosTmp = fotosTmp.map(function (f, i) {
-              return String(f).indexOf("data:image") === 0 &&
-                String(act.fotos[i]).indexOf("http") === 0
-                ? act.fotos[i]
-                : f;
-            });
-            pintarFoto();
-          }
+        if (editId && mapaFotosPorPieza[editId]) {
+          const mapa = mapaFotosPorPieza[editId];
+          let cambio = false;
+          fotosTmp = fotosTmp.map((f) => {
+            if (mapa[f]) {
+              cambio = true;
+              return mapa[f];
+            }
+            return f;
+          });
+          if (cambio) pintarFoto();
         }
         renderCat();
         renderVit();
