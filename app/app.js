@@ -2487,7 +2487,29 @@ var CHAT = {
   contextoMakerWorld: null,
   propuesta: null, // últimos campos que el modelo propuso via function call
   acao: null, // nombre de la función que propuso (cadastrar_peca, etc)
+  saludo: "", // el "hola" de entrada: se dibuja, pero no viaja en el historial
 };
+
+/** El nombre viene del login; si la sesión es vieja y no lo tiene guardado,
+    se saca del mail antes del arroba. Vacío si no hay ninguno de los dos. */
+function nombreUsuario() {
+  const n = String(D.cfg.usuario || "").trim();
+  if (n) return n.split(/\s+/)[0];
+  const mail = String(D.cfg.email || "").trim();
+  if (!mail) return "";
+  const antes = mail.split("@")[0].replace(/[._\-0-9]+/g, " ").trim();
+  if (!antes) return "";
+  return antes.charAt(0).toUpperCase() + antes.slice(1);
+}
+
+/** Se arma acá y no se le pide al Gemini: gastar un pedido de la cuota y
+    hacer esperar dos segundos para decir "hola" no tiene sentido. */
+function saludoMind() {
+  const h = new Date().getHours();
+  const momento = h < 12 ? "Buen día" : h < 19 ? "Buenas tardes" : "Buenas noches";
+  const quien = nombreUsuario();
+  return momento + (quien ? ", " + quien : "") + ". ¿En qué te ayudo hoy?";
+}
 
 /* Las acciones que tocan piezas/ventas se ejecutan acá, no en el servidor:
    así reusan las mismas funciones que la app ya usa a mano (sumarStock,
@@ -2614,9 +2636,16 @@ function alternarTamanoMind() {
 }
 
 function abrirChatCad() {
-  CHAT = { historial: [], foto: null, contextoMakerWorld: null, propuesta: null, acao: null };
+  CHAT = {
+    historial: [],
+    foto: null,
+    contextoMakerWorld: null,
+    propuesta: null,
+    acao: null,
+    saludo: saludoMind(),
+  };
   $("#chatInput").value = "";
-  $("#chatFotoNome").textContent = "";
+  pintarFotoChat();
   $("#chatConfirmar").hidden = true;
   const bm = $("#chatBookmarklet");
   if (bm) bm.href = urlBookmarklet();
@@ -2629,23 +2658,68 @@ function cerrarChatCad() {
   $("#chatCad").hidden = true;
 }
 
+/** El modelo resalta los números escribiendo **así**. Se convierte en <b>
+    armando nodos a mano, nunca con innerHTML: ese texto viene del modelo y
+    de lo que se scrapeó del MakerWorld, no es nuestro como para confiarle
+    HTML. Sin esto se leía el asterisco crudo en pantalla. */
+function conNegritas(txt) {
+  return String(txt || "")
+    .split(/\*\*([\s\S]+?)\*\*/)
+    .map((parte, i) => (i % 2 ? el("b", {}, parte) : parte));
+}
+
 function pintarChatMsgs() {
   const box = $("#chatMsgs");
   const dica = $("#chatDica");
   if (dica) dica.hidden = !!CHAT.historial.length;
   box.textContent = "";
+  // El saludo se dibuja como un mensaje más, pero no está en el historial:
+  // ese arranca con el usuario, que es como la API espera la conversación.
+  if (CHAT.saludo) box.appendChild(el("div", { class: "chatMsg bot" }, CHAT.saludo));
   CHAT.historial.forEach((h) => {
-    box.appendChild(el("div", { class: "chatMsg " + (h.role === "user" ? "eu" : "bot") }, h.texto));
+    const esMio = h.role === "user";
+    box.appendChild(
+      el("div", { class: "chatMsg " + (esMio ? "eu" : "bot") }, esMio ? h.texto : conNegritas(h.texto)),
+    );
   });
   box.scrollTop = box.scrollHeight;
 }
 
-$("#fChatFoto").addEventListener("change", (e) => {
-  const f = (e.target.files || [])[0];
+function pintarFotoChat() {
+  const caja = $("#chatFoto");
+  if (CHAT.foto) $("#chatFotoPrev").src = CHAT.foto;
+  caja.hidden = !CHAT.foto;
+}
+function ponerFotoChat(dataUrl) {
+  CHAT.foto = dataUrl;
+  pintarFotoChat();
+}
+function quitarFotoChat() {
+  CHAT.foto = null;
+  pintarFotoChat();
+}
+
+// Dos entradas: la cámara (capture) y el carrete/archivos. En la compu el
+// capture se ignora y las dos abren el explorador, que es lo esperable.
+["#fChatCam", "#fChatFoto"].forEach((sel) => {
+  $(sel).addEventListener("change", (e) => {
+    const f = (e.target.files || [])[0];
+    e.target.value = ""; // si no, elegir la misma foto dos veces no dispara nada
+    if (f) leerFoto(f, ponerFotoChat);
+  });
+});
+
+/** Ctrl+V con una captura o una foto en el portapapeles. */
+$("#chatCad").addEventListener("paste", (e) => {
+  const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
+  const img = items.find((i) => i.type && i.type.indexOf("image/") === 0);
+  if (!img) return; // texto pegado: que siga de largo al input
+  const f = img.getAsFile();
   if (!f) return;
+  e.preventDefault();
   leerFoto(f, (d) => {
-    CHAT.foto = d;
-    $("#chatFotoNome").textContent = "📷 Foto anexada.";
+    ponerFotoChat(d);
+    toast("Foto pegada.");
   });
 });
 
@@ -3969,6 +4043,7 @@ async function entrar() {
     return;
   }
   D.cfg.email = email;
+  D.cfg.usuario = r.usuario || ""; // el nombre lindo, para que la Mind salude
   D.cfg.token = r.token; // token de sesión: la clave no se guarda en el equipo
   D.cfg.api = SERVIDOR;
   await local.set(D);

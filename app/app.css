@@ -715,6 +715,47 @@ button.btn.vender {
 }
 .chatBar input[type="text"] {
   flex: 1;
+  min-width: 0;
+}
+.chatBar .icono {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 17px;
+  display: grid;
+  place-items: center;
+}
+/* Miniatura de lo que se va a mandar: pegando con Ctrl+V no hay otra forma
+   de saber que la foto entró. */
+.chatFoto {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 9px;
+  font-size: var(--t-xs);
+  color: var(--soft);
+}
+.chatFoto[hidden] {
+  display: none !important;
+}
+.chatFoto img {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  flex: none;
+}
+.chatFoto button {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font-size: var(--t-lg);
+  line-height: 1;
+  color: var(--soft);
+  cursor: pointer;
+  padding: 0 4px;
 }
 
 /* El cerebro flotante: la Mind siempre a mano, en cualquier pestaña. */
@@ -724,18 +765,26 @@ button.btn.vender {
   /* la barra de abajo es fixed en el celular: el cerebro va arriba de ella */
   bottom: calc(74px + var(--safe));
   z-index: 45;
-  width: 54px;
-  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 18px 0 15px;
   border: 0;
-  border-radius: 50%;
+  border-radius: 999px;
   background: var(--deep);
-  font-size: 26px;
-  line-height: 1;
+  color: #fff;
+  font-family: Fredoka, sans-serif;
+  font-size: var(--t-sm);
+  font-weight: 600;
   cursor: pointer;
-  display: grid;
-  place-items: center;
   box-shadow: 0 4px 16px rgba(31, 87, 88, 0.38);
   transition: transform 0.12s;
+}
+.mindFab i {
+  font-style: normal;
+  font-size: 23px;
+  line-height: 1;
 }
 .mindFab:active {
   transform: scale(0.93);

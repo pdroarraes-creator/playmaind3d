@@ -844,35 +844,44 @@
         <div class="chatBar">
           <button
             type="button"
-            class="btn ghost mini"
-            onclick="document.getElementById('fChatFoto').click()"
-            title="Anexar foto"
+            class="btn ghost mini icono"
+            onclick="document.getElementById('fChatCam').click()"
+            title="Sacar una foto"
+            aria-label="Sacar una foto"
           >
             📷
           </button>
+          <button
+            type="button"
+            class="btn ghost mini icono"
+            onclick="document.getElementById('fChatFoto').click()"
+            title="Elegir una imagen"
+            aria-label="Elegir una imagen"
+          >
+            🖼️
+          </button>
+          <input type="file" id="fChatCam" accept="image/*" capture="environment" hidden />
           <input type="file" id="fChatFoto" accept="image/*" hidden />
           <input
             type="text"
             id="chatInput"
-            placeholder="Cole o link do MakerWorld ou escreva…"
+            placeholder="Escribí, pegá una foto o el link…"
             onkeydown="if(event.key==='Enter') enviarChatCad();"
           />
           <button class="btn mini" id="chatEnviarBtn" onclick="enviarChatCad()">Enviar</button>
         </div>
-        <div class="mut" id="chatFotoNome" style="margin-top: 6px"></div>
+        <div class="chatFoto" id="chatFoto" hidden>
+          <img id="chatFotoPrev" alt="" />
+          <span>Foto lista para mandar</span>
+          <button type="button" onclick="quitarFotoChat()" title="Sacar la foto">×</button>
+        </div>
       </div>
     </div>
 
     <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 
-    <button
-      class="mindFab"
-      id="mindFab"
-      onclick="abrirChatCad()"
-      title="Hablá con la Mind"
-      aria-label="Hablá con la Mind"
-    >
-      🧠
+    <button class="mindFab" id="mindFab" onclick="abrirChatCad()" aria-label="Hablá con la Mind">
+      <i>🧠</i><span>Hablá con la Mind</span>
     </button>
 
     <div class="toast" id="toast"></div>
