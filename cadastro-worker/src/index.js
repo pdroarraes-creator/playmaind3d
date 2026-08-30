@@ -2,10 +2,20 @@ import { validarSesion, agregarPieza } from "./appsscript.js";
 import { conversar } from "./gemini.js";
 import { BOOKMARKLET_JS } from "./bookmarklet.js";
 
+// El chat corre en playmind3d.com y este Worker vive en otro origen
+// (*.workers.dev) — sin estos headers el navegador bloquea la respuesta
+// antes de que el JS del chat la pueda leer (así se vio el bug: el fetch
+// tiraba una excepción genérica, "Failed to fetch", en cada mensaje).
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 function jsonResp(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
 
@@ -39,6 +49,10 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
 
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: CORS_HEADERS });
+    }
+
     // Servido para instalarse como bookmarklet — ver README para el link
     // "javascript:" que lo carga. Corre en el origen de makerworld.com
     // cuando el usuario lo clickea ahí, por eso puede leer __NEXT_DATA__
@@ -47,7 +61,7 @@ export default {
     // Google — probado en esta misma sesión).
     if (req.method === "GET" && url.pathname === "/bookmarklet.js") {
       return new Response(BOOKMARKLET_JS, {
-        headers: { "Content-Type": "application/javascript; charset=utf-8" },
+        headers: { "Content-Type": "application/javascript; charset=utf-8", ...CORS_HEADERS },
       });
     }
 
