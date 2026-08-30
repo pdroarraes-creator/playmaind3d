@@ -233,8 +233,18 @@
   .destacados .puntos button{width:8px;height:8px;padding:0;border:0;border-radius:999px;
     background:rgba(255,255,255,.55);cursor:pointer;transition:width .25s,background .25s;}
   .destacados .puntos button.on{width:22px;background:#fff;}
-  .stage.conDestacados .hero-fallback{display:none;}
+  /* con carrusel el recuadro pasa a ser dos cosas apiladas: el logo arriba,
+     que es la marca y no se toca, y las piezas rotando abajo */
+  .stage.conDestacados{display:flex;flex-direction:column;gap:16px;}
+  .stage.conDestacados .hero-fallback{display:flex;flex:none;height:auto;}
+  .stage.conDestacados .hero-fallback img{max-height:118px;max-width:74%;}
+  .stage.conDestacados .destacados{position:relative;inset:auto;flex:1 1 auto;min-height:0;}
   .stage.conDestacados .stage-caption{display:none;}
+  @media (max-width:900px){
+    .stage.conDestacados{height:auto;min-height:0;gap:12px;}
+    .stage.conDestacados .hero-fallback img{max-height:84px;}
+    .stage.conDestacados .destacados{height:44vh;min-height:280px;flex:none;}
+  }
 
   /* ---- filtros del catálogo ---- */
   .filtros{margin:0 0 22px;}
