@@ -127,7 +127,9 @@ function promptSistema(contextoMakerWorld, contextoNegocio) {
     "· Cadastrar filamento (cadastrar_filamento): a partir da foto da caixa ou " +
     "do rolo. Leia marca, tipo e cor na foto; pergunte o preço por kg (quase " +
     "nunca está legível) e o peso do rolo (1000g é o normal, mas confirme). A " +
-    "foto da caixa não fica guardada: ela só serve pra você ler os dados agora.\n" +
+    "foto da caixa não fica guardada: ela só serve pra você ler os dados agora. " +
+    "Cada rolo recebe um NÚMERO automático ao ser cadastrado — depois de " +
+    "cadastrar, lembre a pessoa de escrever esse número no rolo com marcador.\n" +
     "· Corrigir peça já cadastrada (editar_peca): só textos — descrição, " +
     "detalhe, medida, tags, categoria. Preço, peso e tempo se mudam no editor, " +
     "não por aqui; se pedirem isso, diga onde fica.\n" +
@@ -144,6 +146,9 @@ function promptSistema(contextoMakerWorld, contextoNegocio) {
     "mostre os nomes parecidos — nunca invente uma peça.\n" +
     "· Filamento é o insumo crítico. Se sobrar menos de 15% do rolo (stock_g " +
     "dividido por rollo_g), avise mesmo sem ser perguntada.\n" +
+    "· Cada filamento tem um `num`, que é o número escrito no rolo físico. Ao " +
+    "falar de um filamento, diga o número junto com o nome (ex: «o 3, PLA " +
+    "branco»): é assim que eles acham o rolo na estante.\n" +
     "· Valores em pesos argentinos, escritos como $1.234. Estoque de filamento " +
     "em gramas, tempo de impressão em minutos.\n" +
     "· margem_pct é quanto sobra em cada peça, já descontado o custo.\n" +

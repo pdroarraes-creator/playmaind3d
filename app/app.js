@@ -208,6 +208,18 @@ function migrarInsumos() {
     if (!f.rollo) f.rollo = 1000;
     if (f.stock === undefined || f.stock === null) f.stock = num(f.rollo);
   });
+  // El número es el que se escribe con marcador en el rollo, para saber de un
+  // vistazo cuál de la estantería es cuál. Se numeran los que no tenían,
+  // respetando los que ya venían con número puesto a mano.
+  let ultimo = proximoNumFil() - 1;
+  (D.filamentos || []).forEach((f) => {
+    if (!num(f.num)) f.num = ++ultimo;
+  });
+}
+/** El próximo libre: siempre uno más que el mayor, así borrar uno del medio
+    no hace que el número vuelva a usarse en otro rollo. */
+function proximoNumFil() {
+  return (D.filamentos || []).reduce((m, f) => Math.max(m, num(f.num)), 0) + 1;
 }
 
 /* ---------- stock ---------- */
@@ -570,7 +582,14 @@ function ventaRapida(p) {
 }
 const filName = (id) => {
   const f = D.filamentos.find((x) => x.id === id);
-  return f ? (f.marca ? f.marca + " " : "") + f.nome + (f.cor ? " · " + f.cor : "") : "—";
+  if (!f) return "—";
+  // el número va adelante: es lo que está escrito en el rollo de verdad
+  return (
+    (num(f.num) ? num(f.num) + " · " : "") +
+    (f.marca ? f.marca + " " : "") +
+    f.nome +
+    (f.cor ? " · " + f.cor : "")
+  );
 };
 
 /* ---------- editor ---------- */
@@ -592,10 +611,7 @@ function cargarPieza(p) {
   $("#c_ref").value = p ? p.ref || "" : "";
   fillSel(
     $("#c_fil"),
-    D.filamentos.map((f) => ({
-      id: f.id,
-      nome: (f.marca ? f.marca + " " : "") + f.nome + (f.cor ? " · " + f.cor : ""),
-    })),
+    D.filamentos.map((f) => ({ id: f.id, nome: filName(f.id) })),
     p ? p.fil : null,
   );
   fillSel($("#c_imp"), D.impressoras, p ? p.imp : null);
@@ -2839,7 +2855,7 @@ async function confirmarChatCad() {
     }
     toast(
       CHAT.acao === "cadastrar_filamento"
-        ? "Filamento cadastrado! Vai aparecer em Ajustes ao sincronizar."
+        ? "Filamento " + (j.num || "") + " cargado. Escribí ese número en el rollo."
         : "Peça cadastrada! Vai aparecer no editor ao sincronizar.",
     );
     cerrarChatCad();
@@ -3599,6 +3615,7 @@ function renderCfgLists() {
       fieldRow(
         f,
         [
+          ["num", "N° del rollo", "number"],
           ["marca", "Marca", "text"],
           ["nome", "Tipo", "text"],
           ["cor", "Color", "text"],
@@ -3661,6 +3678,7 @@ function renderCfgLists() {
               "b",
               {},
               (
+                (num(f.num) ? num(f.num) + " · " : "") +
                 (f.marca ? f.marca + " " : "") +
                 (f.nome || "") +
                 (f.cor ? " · " + f.cor : "")
@@ -3961,8 +3979,10 @@ function renderCfgLists() {
   fillSel($("#p_canal"), D.canais, $("#p_canal").value || D.canais[0].id);
 }
 const addFil = () => {
+  const n = proximoNumFil();
   D.filamentos.push({
     id: uid(),
+    num: n,
     marca: "",
     nome: "PLA",
     cor: "",
@@ -3973,6 +3993,7 @@ const addFil = () => {
   });
   save();
   renderAll();
+  toast("Filamento " + n + ". Escribí ese número en el rollo.");
 };
 const addIns = () => {
   D.insumos.push({ id: uid(), nome: "Insumo nuevo", pack: 1000, unid: 10, stock: 10 });
@@ -4413,10 +4434,7 @@ function renderAll() {
     ki = $("#c_imp").value;
   fillSel(
     $("#c_fil"),
-    D.filamentos.map((f) => ({
-      id: f.id,
-      nome: (f.marca ? f.marca + " " : "") + f.nome + (f.cor ? " · " + f.cor : ""),
-    })),
+    D.filamentos.map((f) => ({ id: f.id, nome: filName(f.id) })),
     kf,
   );
   fillSel($("#c_imp"), D.impressoras, ki);

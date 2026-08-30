@@ -520,8 +520,17 @@ function agregarFilamento_(fil) {
   if (!data) return { ok: false, error: 'sin datos' };
   data.filamentos = data.filamentos || [];
   var rollo = Number(fil.rollo) || 1000;
+  // el número que se escribe con marcador en el rollo: siempre uno más que el
+  // mayor, así borrar uno del medio no reusa su número en otro rollo
+  var proximo = 0;
+  data.filamentos.forEach(function (x) {
+    var v = Number(x.num) || 0;
+    if (v > proximo) proximo = v;
+  });
+  proximo++;
   var f = {
     id: Utilities.getUuid(),
+    num: proximo,
     marca: String(fil.marca || '').trim(),
     nome: String(fil.nome || '').trim(),
     cor: String(fil.cor || '').trim(),
@@ -532,7 +541,7 @@ function agregarFilamento_(fil) {
   };
   data.filamentos.push(f);
   guardarEstado_(data, leido.v);
-  return { ok: true, id: f.id };
+  return { ok: true, id: f.id, num: f.num };
 }
 
 /** Resumen liviano del negocio (piezas, filamentos, insumos, ventas) para
@@ -561,6 +570,7 @@ function resumenNegocio_() {
   // no duplicada acá: alertasStock() del cliente ya es la fuente de verdad.
   var filamentos = (data.filamentos || []).map(function (f) {
     return {
+      num: n(f.num) || null, // el número escrito en el rollo, para nombrarlo
       nome: ((f.marca || '') + ' ' + (f.nome || '') + (f.cor ? ' - ' + f.cor : '')).trim(),
       stock_g: n(f.stock),
       rollo_g: n(f.rollo) || 1000,
