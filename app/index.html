@@ -105,6 +105,7 @@
           <div class="acts" style="margin-top: 14px">
             <button class="btn" onclick="nuevaPieza()">+ Pieza nueva</button>
             <button class="btn ghost" onclick="pegarLink()">Desde un link</button>
+            <button class="btn ghost" onclick="abrirChatCad()">Cadastrar por chat</button>
           </div>
         </div>
       </section>
@@ -802,6 +803,53 @@
           style="margin-bottom: 11px"
         />
         <button class="btn wide vender" id="posCobrar" style="margin: 0">Cobré</button>
+      </div>
+    </div>
+
+    <div class="pos" id="chatCad" hidden>
+      <header>
+        <h2>Cadastrar por chat</h2>
+        <button class="cerrarpos" onclick="cerrarChatCad()" title="Cerrar">×</button>
+      </header>
+      <div class="chatDica" id="chatDica">
+        <p>
+          <b>Dica:</b> arraste este link pros favoritos do navegador (só funciona
+          bem no computador). Enquanto estiver vendo a página de um modelo no
+          MakerWorld, clique nele — abre este chat já com nome, tags, peso e
+          tempo de impressão preenchidos.
+        </p>
+        <a id="chatBookmarklet" href="#" class="btn ghost mini">🔖 Cadastrar no PlayMind</a>
+      </div>
+      <div class="chatMsgs" id="chatMsgs"></div>
+      <div class="pospie">
+        <button
+          class="btn wide vender"
+          id="chatConfirmar"
+          hidden
+          onclick="confirmarChatCad()"
+          style="margin-bottom: 10px"
+        >
+          Confirmar cadastro
+        </button>
+        <div class="chatBar">
+          <button
+            type="button"
+            class="btn ghost mini"
+            onclick="document.getElementById('fChatFoto').click()"
+            title="Anexar foto"
+          >
+            📷
+          </button>
+          <input type="file" id="fChatFoto" accept="image/*" hidden />
+          <input
+            type="text"
+            id="chatInput"
+            placeholder="Cole o link do MakerWorld ou escreva…"
+            onkeydown="if(event.key==='Enter') enviarChatCad();"
+          />
+          <button class="btn mini" id="chatEnviarBtn" onclick="enviarChatCad()">Enviar</button>
+        </div>
+        <div class="mut" id="chatFotoNome" style="margin-top: 6px"></div>
       </div>
     </div>
 

@@ -1,0 +1,9 @@
+name = "playmind3d-cadastro"
+account_id = "11c2a64013fddc0e5a3eb6ffdfaeac08"
+main = "src/index.js"
+compatibility_date = "2026-08-20"
+
+[vars]
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec"
+
+# GEMINI_API_KEY se agrega como secret: wrangler secret put GEMINI_API_KEY

@@ -36,6 +36,7 @@ const LOGO = "/assets/logo-app.png";
 /* Dirección del servidor (Apps Script). Es la misma para todos los que entren. */
 const SERVIDOR =
   "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec";
+const WORKER_CADASTRO = "https://playmind3d-cadastro.pdroarraes.workers.dev";
 const KEY = "playmind3d:v2";
 const local = {
   async get() {
@@ -2479,6 +2480,162 @@ function cobrar() {
   );
 }
 
+/* ---------- cadastro por chat ---------- */
+var CHAT = {
+  historial: [], // [{role:'user'|'model', texto}]
+  foto: null, // data URL completa ("data:image/jpeg;base64,...") o null
+  contextoMakerWorld: null,
+  propuesta: null, // últimos campos que el modelo propuso via function call
+};
+
+function urlBookmarklet() {
+  const src = WORKER_CADASTRO + "/bookmarklet.js?" + Date.now();
+  return (
+    "javascript:(function(){var s=document.createElement('script');s.src=" +
+    JSON.stringify(src) +
+    ";document.body.appendChild(s);})();"
+  );
+}
+
+function abrirChatCad() {
+  CHAT = { historial: [], foto: null, contextoMakerWorld: null, propuesta: null };
+  $("#chatInput").value = "";
+  $("#chatFotoNome").textContent = "";
+  $("#chatConfirmar").hidden = true;
+  const bm = $("#chatBookmarklet");
+  if (bm) bm.href = urlBookmarklet();
+  pintarChatMsgs();
+  $("#chatCad").hidden = false;
+}
+function cerrarChatCad() {
+  $("#chatCad").hidden = true;
+}
+
+function pintarChatMsgs() {
+  const box = $("#chatMsgs");
+  const dica = $("#chatDica");
+  if (dica) dica.hidden = !!CHAT.historial.length;
+  box.textContent = "";
+  CHAT.historial.forEach((h) => {
+    box.appendChild(el("div", { class: "chatMsg " + (h.role === "user" ? "eu" : "bot") }, h.texto));
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+$("#fChatFoto").addEventListener("change", (e) => {
+  const f = (e.target.files || [])[0];
+  if (!f) return;
+  leerFoto(f, (d) => {
+    CHAT.foto = d;
+    $("#chatFotoNome").textContent = "📷 Foto anexada.";
+  });
+});
+
+/** {mimeType, base64} sin el prefijo "data:...;base64," — así lo espera
+    inlineData de la API del Gemini. agregarPieza sí quiere la data URL
+    completa, por eso se guarda CHAT.foto entero y se corta acá nomás. */
+function fotoParaGemini(dataUrl) {
+  if (!dataUrl) return null;
+  const m = String(dataUrl).match(/^data:([^;]+);base64,(.*)$/s);
+  if (!m) return null;
+  return { mimeType: m[1], base64: m[2] };
+}
+
+async function enviarChatCad(mensajeForzado) {
+  const mensaje = mensajeForzado != null ? mensajeForzado : $("#chatInput").value.trim();
+  if (!mensaje && !CHAT.foto) return;
+
+  const historialPrevio = CHAT.historial.slice(); // snapshot antes de este turno
+  CHAT.historial.push({ role: "user", texto: mensaje || "(foto anexada)" });
+  $("#chatInput").value = "";
+  pintarChatMsgs();
+
+  const btn = $("#chatEnviarBtn");
+  btn.disabled = true;
+  btn.textContent = "…";
+  try {
+    const r = await fetch(WORKER_CADASTRO + "/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        token: D.cfg.token || "",
+        historial: historialPrevio,
+        mensaje,
+        foto: fotoParaGemini(CHAT.foto),
+        contextoMakerWorld: CHAT.contextoMakerWorld,
+      }),
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      CHAT.historial.push({ role: "model", texto: "Deu erro: " + (j.error || "desconhecido") });
+      pintarChatMsgs();
+      return;
+    }
+    CHAT.historial.push({ role: "model", texto: j.texto || "" });
+    CHAT.propuesta = j.propuestaCadastro || null;
+    $("#chatConfirmar").hidden = !CHAT.propuesta;
+    pintarChatMsgs();
+  } catch (e) {
+    CHAT.historial.push({ role: "model", texto: "Não consegui falar com o servidor agora." });
+    pintarChatMsgs();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Enviar";
+  }
+}
+
+async function confirmarChatCad() {
+  if (!CHAT.propuesta) return;
+  const btn = $("#chatConfirmar");
+  btn.disabled = true;
+  btn.textContent = "Salvando…";
+  try {
+    const r = await fetch(WORKER_CADASTRO + "/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        token: D.cfg.token || "",
+        confirmar: CHAT.propuesta,
+        link: (CHAT.contextoMakerWorld && CHAT.contextoMakerWorld.link) || "",
+        foto: fotoParaGemini(CHAT.foto),
+      }),
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      toast("Não consegui cadastrar: " + (j.error || "erro desconhecido"));
+      return;
+    }
+    toast("Peça cadastrada! Vai aparecer no editor ao sincronizar.");
+    cerrarChatCad();
+    traerDeLaNubeManual();
+  } catch (e) {
+    toast("Não consegui falar com o servidor agora.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Confirmar cadastro";
+  }
+}
+
+/** Si venís del bookmarklet (?cadastro=mw&mw=...), abre el chat ya con el
+    contexto del MakerWorld y manda un primer mensaje automático. */
+function revisarLinkCadastroMW() {
+  const p = new URLSearchParams(location.search);
+  if (p.get("cadastro") !== "mw") return;
+  const raw = p.get("mw");
+  if (!raw) return;
+  let ctx;
+  try {
+    ctx = JSON.parse(raw);
+  } catch (e) {
+    return;
+  }
+  history.replaceState(null, "", location.pathname);
+  abrirChatCad();
+  CHAT.contextoMakerWorld = ctx;
+  showTab("cat");
+  enviarChatCad(
+    "Vim do MakerWorld: " + ctx.titulo + ". Link: " + ctx.link + ". Me ajuda a cadastrar essa peça.",
+  );
+}
+
 /* ---------- ventas ---------- */
 /** Devuelve al inventario todo lo que esta venta había sacado. */
 function revertirVenta(v) {
@@ -3917,6 +4074,7 @@ async function sincronizarAlAbrir() {
   }
   setSync("", "Trayendo de la nube…");
   await bajarDeLaNube();
+  revisarLinkCadastroMW();
 }
 var listoParaSubir = false; // recién true cuando ya bajamos lo que hay en la nube
 function save() {
