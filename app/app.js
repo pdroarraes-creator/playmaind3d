@@ -2599,6 +2599,20 @@ function urlBookmarklet() {
   );
 }
 
+/** Chica o grande: se recuerda mientras dure la sesión, así no hay que
+    volver a agrandarla cada vez que se abre el cerebro. */
+var MIND_GRANDE = false;
+function aplicarTamanoMind() {
+  $("#chatCad").classList.toggle("grande", MIND_GRANDE);
+  const b = $("#mindExpandir");
+  b.textContent = MIND_GRANDE ? "⤡" : "⤢";
+  b.title = MIND_GRANDE ? "Achicar" : "Agrandar";
+}
+function alternarTamanoMind() {
+  MIND_GRANDE = !MIND_GRANDE;
+  aplicarTamanoMind();
+}
+
 function abrirChatCad() {
   CHAT = { historial: [], foto: null, contextoMakerWorld: null, propuesta: null, acao: null };
   $("#chatInput").value = "";
@@ -2606,8 +2620,10 @@ function abrirChatCad() {
   $("#chatConfirmar").hidden = true;
   const bm = $("#chatBookmarklet");
   if (bm) bm.href = urlBookmarklet();
+  aplicarTamanoMind();
   pintarChatMsgs();
   $("#chatCad").hidden = false;
+  $("#chatInput").focus();
 }
 function cerrarChatCad() {
   $("#chatCad").hidden = true;
@@ -2759,6 +2775,7 @@ function revisarLinkCadastroMW() {
     return;
   }
   history.replaceState(null, "", location.pathname);
+  MIND_GRANDE = true; // viene con mucho para revisar: se abre grande
   abrirChatCad();
   CHAT.contextoMakerWorld = ctx;
   showTab("cat");

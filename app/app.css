@@ -716,6 +716,86 @@ button.btn.vender {
 .chatBar input[type="text"] {
   flex: 1;
 }
+
+/* El cerebro flotante: la Mind siempre a mano, en cualquier pestaña. */
+.mindFab {
+  position: fixed;
+  right: 16px;
+  /* la barra de abajo es fixed en el celular: el cerebro va arriba de ella */
+  bottom: calc(74px + var(--safe));
+  z-index: 45;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--deep);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 16px rgba(31, 87, 88, 0.38);
+  transition: transform 0.12s;
+}
+.mindFab:active {
+  transform: scale(0.93);
+}
+/* Con el punto de venta, el login o la propia ventana abiertos, estorba. */
+body:has(#pos:not([hidden])) .mindFab,
+body:has(.entrada:not([hidden])) .mindFab,
+body:has(#chatCad:not([hidden])) .mindFab {
+  display: none;
+}
+
+/* Ventana chica: hoja que sube desde abajo. Hereda de .pos el header, el
+   pie y el layout en columna; acá sólo se cambia dónde y cuánto ocupa. */
+.mindWin {
+  inset: auto 0 0 0;
+  height: 76vh;
+  height: 76dvh;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -6px 30px rgba(58, 58, 56, 0.24);
+  overflow: hidden;
+}
+.mindWin.grande {
+  inset: 0;
+  height: auto;
+  border-radius: 0;
+}
+.mindWin header .expandirMind {
+  border: 0;
+  background: none;
+  font-size: var(--t-lg);
+  line-height: 1;
+  color: var(--soft);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.mindWin .chatDica {
+  flex: none;
+  margin: 12px 14px 0;
+}
+@media (min-width: 700px) {
+  /* en pantalla grande la barra de abajo deja de ser fixed */
+  .mindFab {
+    bottom: 24px;
+  }
+  .mindWin {
+    inset: auto 20px 20px auto;
+    width: 390px;
+    height: 580px;
+    max-height: calc(100vh - 40px);
+    border-radius: 20px;
+    border: 1px solid var(--line);
+  }
+  .mindWin.grande {
+    inset: 24px;
+    width: auto;
+    height: auto;
+    max-height: none;
+    border-radius: 20px;
+  }
+}
 .postile {
   position: relative;
   display: grid;
@@ -1183,8 +1263,10 @@ button.btn.vender {
 .toast.on {
   transform: translateX(-50%) translateY(0);
 }
+/* Arriba de todo: si no, los avisos quedaban tapados por el punto de venta
+   y por la ventana de la Mind, que son opacos y van en 85. */
 .toast {
-  z-index: 70;
+  z-index: 95;
 }
 .sheet {
   position: fixed;

@@ -105,7 +105,6 @@
           <div class="acts" style="margin-top: 14px">
             <button class="btn" onclick="nuevaPieza()">+ Pieza nueva</button>
             <button class="btn ghost" onclick="pegarLink()">Desde un link</button>
-            <button class="btn ghost" onclick="abrirChatCad()">💬 Falar com a Mind</button>
           </div>
         </div>
       </section>
@@ -478,7 +477,6 @@
       <section id="tab-ven" hidden>
         <button class="btn wide vender" onclick="abrirPOS()">Vender ahora</button>
         <div class="acts salirventa" style="margin: -4px 0 13px">
-          <button class="btn ghost mini" onclick="abrirChatCad()">💬 Falar com a Mind</button>
           <button class="btn ghost mini" onclick="salirModoVenta()">Ir al sistema completo</button>
           <button class="btn danger mini" onclick="salir()">Cerrar sesión</button>
         </div>
@@ -523,7 +521,6 @@
           </p>
           <p id="quienSoy" class="mut" style="margin: 0 0 12px"></p>
           <div class="acts">
-            <button class="btn ghost mini" onclick="abrirChatCad()">💬 Falar com a Mind</button>
             <button class="btn ghost mini" onclick="traerDeLaNubeManual()">Traer de la nube</button>
             <button class="btn ghost mini" onclick="subirAhora()">Subir ahora</button>
             <button class="btn ghost mini" onclick="exportar()">Copia de seguridad</button>
@@ -809,22 +806,27 @@
       </div>
     </div>
 
-    <div class="pos" id="chatCad" hidden>
+    <div class="pos mindWin" id="chatCad" hidden>
       <header>
-        <h2>Mind</h2>
+        <h2>🧠 Mind</h2>
+        <button
+          class="expandirMind"
+          id="mindExpandir"
+          onclick="alternarTamanoMind()"
+          title="Agrandar"
+        >
+          ⤢
+        </button>
         <button class="cerrarpos" onclick="cerrarChatCad()" title="Cerrar">×</button>
       </header>
       <div class="chatDica" id="chatDica">
         <p>
-          A Mind cadastra peça (foto + link do MakerWorld) e filamento (foto da
-          caixa), corrige textos de peça, ajusta estoque (“imprimi 5 dessa”),
-          registra venda e responde sobre peças, estoque, filamento e vendas.
+          Cadastro peça e filamento por foto, corrijo textos, ajusto estoque
+          (“imprimi 5 dessa”), registro venda e respondo sobre estoque e vendas.
         </p>
         <p>
-          <b>Dica:</b> arraste este link pros favoritos do navegador (só funciona
-          bem no computador). Enquanto estiver vendo a página de um modelo no
-          MakerWorld, clique nele — abre a Mind já com nome, tags, peso e
-          tempo de impressão preenchidos.
+          No computador, arraste este link pros favoritos: clicando nele numa
+          página do MakerWorld, abro já com tudo preenchido.
         </p>
         <a id="chatBookmarklet" href="#" class="btn ghost mini">🔖 Cadastrar no PlayMind</a>
       </div>
@@ -862,6 +864,17 @@
     </div>
 
     <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
+
+    <button
+      class="mindFab"
+      id="mindFab"
+      onclick="abrirChatCad()"
+      title="Hablá con la Mind"
+      aria-label="Hablá con la Mind"
+    >
+      🧠
+    </button>
+
     <div class="toast" id="toast"></div>
 
     <script src="app.js"></script>
