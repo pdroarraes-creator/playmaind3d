@@ -2506,9 +2506,14 @@ function nombreUsuario() {
     hacer esperar dos segundos para decir "hola" no tiene sentido. */
 function saludoMind() {
   const h = new Date().getHours();
-  const momento = h < 12 ? "Buen día" : h < 19 ? "Buenas tardes" : "Buenas noches";
+  const momento = h < 12 ? "buen día" : h < 19 ? "buenas tardes" : "buenas noches";
   const quien = nombreUsuario();
-  return momento + (quien ? ", " + quien : "") + ". ¿En qué te ayudo hoy?";
+  return (
+    "¡Hola, " +
+    momento +
+    (quien ? ", " + quien : "") +
+    "! Soy la Mind, tu asistente. ¿En qué te puedo ayudar hoy?"
+  );
 }
 
 /* Las acciones que tocan piezas/ventas se ejecutan acá, no en el servidor:
