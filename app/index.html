@@ -795,13 +795,22 @@
         <div class="formas" id="posFormas">
           <button data-forma="efectivo" class="on">Efectivo</button>
           <button data-forma="transferencia">Transferencia</button>
+          <button data-forma="fiado">Fiado</button>
         </div>
-        <input
-          id="posCliente"
-          type="text"
-          placeholder="Nombre (opcional)"
-          style="margin-bottom: 11px"
-        />
+        <div class="posdatos">
+          <input id="posCliente" type="text" placeholder="Nombre (opcional)" />
+          <div class="suffix">
+            <input
+              id="posRecibido"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="100"
+              placeholder="¿Cobraste otro monto?"
+            />
+            <em>$</em>
+          </div>
+        </div>
         <button class="btn wide vender" id="posCobrar" style="margin: 0">Cobré</button>
       </div>
     </div>

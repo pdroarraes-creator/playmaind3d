@@ -1031,6 +1031,28 @@ body:has(#chatCad:not([hidden])) .mindFab {
   background: var(--deep-soft);
   color: var(--deep);
 }
+/* Fiado no es una forma de cobro más: es que la plata no entró. Se marca en
+   ámbar para que no se confunda con haber cobrado. */
+.formas button[data-forma="fiado"].on {
+  border-color: var(--sand);
+  background: #fdf4dd;
+  color: #8a6512;
+}
+.posdatos {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 11px;
+}
+.posdatos > * {
+  flex: 1;
+  min-width: 0;
+}
+.postotal .desc {
+  display: block;
+  font-size: var(--t-xs);
+  font-weight: 800;
+  color: var(--clay);
+}
 .result {
   background: linear-gradient(160deg, #20404e, #2c6480);
   color: #fff;
@@ -1092,6 +1114,12 @@ body:has(#chatCad:not([hidden])) .mindFab {
 }
 .item .info {
   min-width: 0;
+}
+/* La primera columna de 52px es para la miniatura. Las filas que no tienen
+   foto (las ventas, los insumos del editor) metían el nombre y la fecha en
+   esos 52px y el texto se amontonaba encima de sí mismo. */
+.item.sinFoto {
+  grid-template-columns: 1fr auto;
 }
 .item .ctrl {
   grid-column: 1/-1;

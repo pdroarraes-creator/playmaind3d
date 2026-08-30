@@ -29,6 +29,11 @@ const hhmm = (h) => {
 };
 const ceilTo = (v, s) => (s > 1 ? Math.ceil(v / s) * s : Math.ceil(v));
 const hoy = () => new Date().toISOString().slice(0, 10);
+/** 2026-08-30 -> 30/08. En una lista de ventas el año casi siempre sobra. */
+const fechaCorta = (d) => {
+  const m = String(d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? m[3] + "/" + m[2] : String(d || "");
+};
 
 /* ---------- almacenamiento ---------- */
 const LOGO_FULL = "/assets/logo-app-full.png";
@@ -706,7 +711,7 @@ function abrirInsumos() {
       lista.appendChild(
         el(
           "div",
-          { class: "item" + (cant > 0 ? " sel" : "") },
+          { class: "item sinFoto" + (cant > 0 ? " sel" : "") },
           el(
             "div",
             { class: "info" },
@@ -2326,13 +2331,18 @@ function abrirPOS() {
   POS = {};
   POS_FORMA = "efectivo";
   $("#posCliente").value = "";
-  $("#posQ").value = "";
+  $("#posRecibido").value = "";
   $("#posQ").value = "";
   document
     .querySelectorAll("#posFormas button")
     .forEach((b) => b.classList.toggle("on", b.dataset.forma === "efectivo"));
+  pintarBotonCobrar();
   pintarPOS();
   $("#pos").hidden = false;
+}
+/** Con fiado no se está cobrando nada: el botón no puede decir "Cobré". */
+function pintarBotonCobrar() {
+  $("#posCobrar").textContent = POS_FORMA === "fiado" ? "Se la llevó fiada" : "Cobré";
 }
 function salirModoVenta() {
   try {
@@ -2437,6 +2447,24 @@ function quitarPOS(id) {
   if (!POS[id]) delete POS[id];
   pintarPOS();
 }
+/** Lo que se cobra de verdad. Si se escribió un monto en "¿Cobraste otro
+    monto?", ese manda y la diferencia se guarda sola:
+      cobró menos  -> descuento
+      cobró de más -> envío, que es el campo que ya existe para lo que se
+                      suma arriba del precio de lista
+    El descuento topea en 90% porque es el mismo tope que ya tenía la
+    pantalla de editar venta: guardar algo afuera de ese rango hacía que el
+    total se moviera solo al reabrirla. Cuando topea se avisa en pantalla,
+    así el número que se va a guardar está a la vista antes de confirmar. */
+function cobradoPOS(bruto) {
+  const escrito = num(($("#posRecibido") && $("#posRecibido").value) || 0);
+  if (!(escrito > 0) || !(bruto > 0)) return { total: bruto, desconto: 0, envio: 0, topo: false };
+  if (escrito >= bruto) return { total: escrito, desconto: 0, envio: escrito - bruto, topo: false };
+  const crudo = 1 - escrito / bruto;
+  const desconto = Math.min(crudo, 0.9);
+  return { total: bruto * (1 - desconto), desconto: desconto, envio: 0, topo: crudo > 0.9 };
+}
+
 function totalPOS() {
   let n = 0,
     t = 0;
@@ -2446,14 +2474,35 @@ function totalPOS() {
     n += POS[id];
     t += calc(p).preco * POS[id];
   }
+  const c = cobradoPOS(t);
   $("#posCant").textContent = n ? n + (n === 1 ? " pieza" : " piezas") : "Elegí las piezas";
-  $("#posTotal").textContent = money(t);
-  return { n, t };
+  $("#posTotal").textContent = "";
+  $("#posTotal").appendChild(document.createTextNode(money(c.total)));
+  if (c.topo) {
+    $("#posTotal").appendChild(
+      el("span", { class: "desc" }, "el descuento llega hasta 90%: se guarda " + money(c.total)),
+    );
+  } else if (c.desconto > 0) {
+    $("#posTotal").appendChild(
+      el("span", { class: "desc" }, "antes " + money(t) + " · " + pct(c.desconto) + " off"),
+    );
+  } else if (c.envio > 0) {
+    $("#posTotal").appendChild(
+      el("span", { class: "desc" }, "lista " + money(t) + " + " + money(c.envio)),
+    );
+  }
+  return { n, t, total: c.total, desconto: c.desconto, envio: c.envio };
 }
 function cobrar() {
-  const { n, t } = totalPOS();
+  const { n, t, total, desconto, envio } = totalPOS();
   if (!n) {
     toast("Elegí al menos una pieza.");
+    return;
+  }
+  const fiado = POS_FORMA === "fiado";
+  if (fiado && !$("#posCliente").value.trim()) {
+    toast("Poné de quién es: fiado sin nombre no se cobra nunca.");
+    $("#posCliente").focus();
     return;
   }
   const itens = [];
@@ -2472,13 +2521,14 @@ function cobrar() {
     canal: canal.id,
     forma: POS_FORMA,
     itens: itens,
-    desconto: 0,
-    envio: 0,
+    desconto: desconto,
+    envio: envio,
     comision: 0,
-    total: t,
+    total: total,
     custo: costo,
-    lucro: t - costo,
-    pago: true,
+    lucro: total - costo,
+    // fiado = se la llevó y todavía no pagó: queda sumando en "Por cobrar"
+    pago: !fiado,
     entregue: true,
     consumo: null,
     desdeStock: true,
@@ -2493,9 +2543,11 @@ function cobrar() {
   renderAll();
   cerrarPOS();
   toast(
-    v.sinStock
-      ? "Venta de " + money(t) + ". Anotada como fuera de stock."
-      : "Venta de " + money(t) + " registrada.",
+    fiado
+      ? "Fiado " + money(total) + " a " + v.cliente + ". Queda en «Por cobrar»."
+      : v.sinStock
+        ? "Venta de " + money(total) + ". Anotada como fuera de stock."
+        : "Venta de " + money(total) + " registrada.",
   );
 }
 
@@ -3056,7 +3108,7 @@ function renderVen() {
     lb.appendChild(
       el(
         "div",
-        { class: "item", style: "cursor:pointer", onclick: () => abrirVenta(v) },
+        { class: "item sinFoto", style: "cursor:pointer", onclick: () => abrirVenta(v) },
         el(
           "div",
           { class: "info" },
@@ -3064,11 +3116,12 @@ function renderVen() {
           el(
             "span",
             {},
-            v.data +
+            fechaCorta(v.data) +
               (v.forma ? " · " + v.forma : "") +
               " · " +
               (v.itens || []).reduce((a, i) => a + num(i.qtd), 0) +
-              " piezas",
+              " piezas" +
+              (num(v.desconto) > 0 ? " · " + pct(num(v.desconto)) + " off" : ""),
           ),
           v.sinStock
             ? el(
@@ -3082,13 +3135,9 @@ function renderVen() {
           "div",
           { class: "val" },
           el("b", {}, money(v.total)),
-          el(
-            "span",
-            {},
-            v.pago
-              ? el("i", { class: "pill g", style: "font-style:normal" }, "cobrada")
-              : el("i", { class: "pill y", style: "font-style:normal" }, "a cobrar"),
-          ),
+          v.pago
+            ? el("i", { class: "pill g", style: "font-style:normal" }, "cobrada")
+            : el("i", { class: "pill y", style: "font-style:normal" }, "a cobrar"),
         ),
       ),
     );
@@ -4473,13 +4522,14 @@ $("#radMes").addEventListener("change", renderRad);
 $("#entBtn").addEventListener("click", entrar);
 $("#posCobrar").addEventListener("click", cobrar);
 $("#posQ").addEventListener("input", pintarPOS);
-$("#posQ").addEventListener("input", pintarPOS);
+$("#posRecibido").addEventListener("input", totalPOS);
 document.querySelectorAll("#posFormas button").forEach((b) =>
   b.addEventListener("click", () => {
     POS_FORMA = b.dataset.forma;
     document
       .querySelectorAll("#posFormas button")
       .forEach((x) => x.classList.toggle("on", x === b));
+    pintarBotonCobrar();
   }),
 );
 $("#entClave").addEventListener("keydown", (e) => {
