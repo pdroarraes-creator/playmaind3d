@@ -2488,6 +2488,10 @@ var CHAT = {
   propuesta: null, // últimos campos que el modelo propuso via function call
   acao: null, // nombre de la función que propuso (cadastrar_peca, etc)
   saludo: "", // el "hola" de entrada: se dibuja, pero no viaja en el historial
+  pensando: false, // esperando respuesta: se dibuja la burbuja de puntitos
+  error: "", // último fallo. Se muestra, pero NO entra al historial: si
+  // entrara, en el turno siguiente el modelo leería "hubo un error" como algo
+  // que dijo él y se pondría a responder sobre eso.
 };
 
 /** El nombre viene del login; si la sesión es vieja y no lo tiene guardado,
@@ -2648,6 +2652,8 @@ function abrirChatCad() {
     propuesta: null,
     acao: null,
     saludo: saludoMind(),
+    pensando: false,
+    error: "",
   };
   $("#chatInput").value = "";
   pintarFotoChat();
@@ -2687,6 +2693,8 @@ function pintarChatMsgs() {
       el("div", { class: "chatMsg " + (esMio ? "eu" : "bot") }, esMio ? h.texto : conNegritas(h.texto)),
     );
   });
+  if (CHAT.pensando) box.appendChild(el("div", { class: "chatMsg bot pensando" }, "···"));
+  if (CHAT.error) box.appendChild(el("div", { class: "chatErr" }, CHAT.error));
   box.scrollTop = box.scrollHeight;
 }
 
@@ -2743,8 +2751,10 @@ async function enviarChatCad(mensajeForzado) {
   if (!mensaje && !CHAT.foto) return;
 
   const historialPrevio = CHAT.historial.slice(); // snapshot antes de este turno
-  CHAT.historial.push({ role: "user", texto: mensaje || "(foto anexada)" });
+  CHAT.historial.push({ role: "user", texto: mensaje || "(foto adjunta)" });
   $("#chatInput").value = "";
+  CHAT.error = "";
+  CHAT.pensando = true;
   pintarChatMsgs();
 
   const btn = $("#chatEnviarBtn");
@@ -2763,8 +2773,7 @@ async function enviarChatCad(mensajeForzado) {
     });
     const j = await r.json();
     if (!j.ok) {
-      CHAT.historial.push({ role: "model", texto: "Deu erro: " + (j.error || "desconhecido") });
-      pintarChatMsgs();
+      CHAT.error = "No pude responder: " + (j.error || "error desconocido");
       return;
     }
     CHAT.historial.push({ role: "model", texto: j.texto || "" });
@@ -2772,11 +2781,11 @@ async function enviarChatCad(mensajeForzado) {
     CHAT.acao = j.acao || null;
     $("#chatConfirmar").hidden = !CHAT.propuesta;
     $("#chatConfirmar").textContent = ROTULO_CONFIRMAR[CHAT.acao] || "Confirmar";
-    pintarChatMsgs();
   } catch (e) {
-    CHAT.historial.push({ role: "model", texto: "Não consegui falar com o servidor agora." });
-    pintarChatMsgs();
+    CHAT.error = "No pude hablar con el servidor. Probá de nuevo en un momento.";
   } finally {
+    CHAT.pensando = false;
+    pintarChatMsgs();
     btn.disabled = false;
     btn.textContent = "Enviar";
   }

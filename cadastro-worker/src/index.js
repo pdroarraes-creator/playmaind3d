@@ -1,4 +1,4 @@
-import { validarSesion, agregarPieza, agregarFilamento, resumenNegocio } from "./appsscript.js";
+import { agregarPieza, agregarFilamento, resumenYSesion } from "./appsscript.js";
 import { conversar } from "./gemini.js";
 import { BOOKMARKLET_JS } from "./bookmarklet.js";
 
@@ -93,9 +93,6 @@ export default {
     const { token, historial, mensaje, foto, contextoMakerWorld } = body;
     if (!token) return jsonResp({ ok: false, error: "falta token" }, 401);
 
-    const sesionValida = await validarSesion(env, token);
-    if (!sesionValida) return jsonResp({ ok: false, error: "sesión inválida" }, 401);
-
     // Confirmação real: o cliente já mostrou os campos (voltaram como
     // propuesta/acao num turno anterior) e o usuário apertou "Confirmar" —
     // aqui SÓ gravamos, sem passar pelo Gemini de novo. Só chegam aqui as
@@ -115,14 +112,18 @@ export default {
       return jsonResp(r);
     }
 
-    // El resumen del negocio es liviano (dezenas de piezas/ventas, no miles)
-    // así que se manda entero en cada turno — así el Agente responde
-    // preguntas sin depender de que el mensaje mencione algo en particular.
-    // Si falla, seguimos sin ese contexto en vez de cortar la conversa.
+    // El resumen del negocio es liviano (decenas de piezas/ventas, no miles)
+    // así que se manda entero en cada turno — así la Mind responde preguntas
+    // sin depender de que el mensaje mencione algo en particular. De paso este
+    // mismo viaje valida la sesión (ver resumenYSesion).
     let contextoNegocio = null;
     try {
-      contextoNegocio = await resumenNegocio(env, token);
+      const r = await resumenYSesion(env, token);
+      if (!r.sesionOk) return jsonResp({ ok: false, error: "sesión inválida" }, 401);
+      contextoNegocio = r.resumen;
     } catch {
+      // sin resumen se sigue igual: mejor una respuesta sin datos del negocio
+      // que cortar la conversa entera
       contextoNegocio = null;
     }
 

@@ -161,13 +161,27 @@ function promptSistema(contextoMakerWorld, contextoNegocio) {
   return base;
 }
 
+/** La API espera turnos alternados que arranquen por el usuario, y el
+    historial del cliente no siempre queda así: cuando se confirma una acción
+    (registrar venta, ajustar stock) el resultado se suma como otro turno del
+    modelo, quedando dos seguidos. Se juntan en un turno con varias partes. */
+function armarContents(historial) {
+  const out = [];
+  (historial || []).forEach((h) => {
+    if (!h || !h.texto) return;
+    const role = h.role === "user" ? "user" : "model";
+    const ultimo = out[out.length - 1];
+    if (ultimo && ultimo.role === role) ultimo.parts.push({ text: h.texto });
+    else out.push({ role, parts: [{ text: h.texto }] });
+  });
+  while (out.length && out[0].role !== "user") out.shift();
+  return out;
+}
+
 /** historial: array de {role: 'user'|'model', texto} (sin function calls,
     el historial que guarda el cliente es sólo texto). */
 export async function conversar(env, { historial, mensaje, foto, contextoMakerWorld, contextoNegocio }) {
-  const contents = historial.map((h) => ({
-    role: h.role,
-    parts: [{ text: h.texto }],
-  }));
+  const contents = armarContents(historial);
 
   const partesUsuario = [{ text: mensaje || "" }];
   if (foto) {

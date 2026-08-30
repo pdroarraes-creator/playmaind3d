@@ -9,9 +9,15 @@ async function pedir(env, cuerpo) {
   return r.json();
 }
 
-export async function validarSesion(env, token) {
-  const j = await pedir(env, { action: "validarSesion", token });
-  return !!(j && j.ok);
+/** Resumen + validación de sesión en un solo viaje: del otro lado el token se
+    verifica antes de atender cualquier action, así que un {ok:false} acá ya
+    dice que la sesión no sirve. Antes se llamaba validarSesion aparte y cada
+    mensaje del chat costaba dos idas al Apps Script, que no es rápido. */
+export async function resumenYSesion(env, token) {
+  const j = await pedir(env, { action: "resumenNegocio", token });
+  if (j && j.ok) return { sesionOk: true, resumen: j.resumen || null };
+  // 'clave' es el error de sesión; cualquier otro (ej. 'sin datos') no lo es
+  return { sesionOk: (j && j.error) !== "clave", resumen: null };
 }
 
 /** pieza: mismo shape que agregarPieza_ espera en server/Codigo.gs. */
@@ -22,11 +28,4 @@ export async function agregarPieza(env, token, pieza) {
 /** filamento: {marca, nome, cor, hex, precoKg, rollo}. */
 export async function agregarFilamento(env, token, filamento) {
   return pedir(env, { action: "agregarFilamento", token, filamento });
-}
-
-/** Resumen liviano de piezas/filamentos/insumos/ventas para que el Agente
-    pueda responder preguntas sobre el negocio. */
-export async function resumenNegocio(env, token) {
-  const j = await pedir(env, { action: "resumenNegocio", token });
-  return j && j.ok ? j.resumen : null;
 }
