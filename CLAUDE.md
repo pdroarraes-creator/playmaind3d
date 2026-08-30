@@ -92,8 +92,21 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
 - Sessões duram 90 dias (`SESION_DIAS`) e vivem em Script Properties (`ses:<token>`).
   Não há rate limiting no login: tentativa de força bruta só esbarra na cota do
   Apps Script. Aceitável para 3 pessoas; revisar se abrir para mais gente.
-- Sem controle de concorrência de verdade: dois saves quase simultâneos e um
-  sobrescreve o outro. O `LockService` protege a escrita, não o conflito lógico.
+- ~~Sem controle de concorrência~~ — resolvido: o carimbo de hora da coluna 3 da
+  aba `datos` virou número de versão. O cliente recebe em `load`, devolve em cada
+  `save`, e se não bater `guardarEstado_` chama `fusionar_` em vez de sobrescrever.
+  **Ainda em aberto:** duas pessoas editando o *mesmo* item ao mesmo tempo — vale o
+  último que salvar. E apagar a partir de uma cópia desatualizada não tem efeito
+  (o item volta), escolha deliberada para não apagar em silêncio o que outro
+  acabou de cadastrar.
+- **Teto de 50.000 caracteres da célula, com as vendas crescendo para sempre.**
+  É o limite que vai quebrar o sistema primeiro: quando estourar, o `setValue` de
+  `guardarEstado_` falha e o app simplesmente para de salvar. Em ago/2026 eram 26
+  peças (~7,4 KB só na parte pública do catálogo), sem medição exata do estado
+  inteiro. Decidido em ago/2026 deixar como está e revisitar quando incomodar. As
+  saídas discutidas: mover as vendas antigas para uma aba própria (alívio barato)
+  ou migrar para Cloudflare D1 (o Worker já existe na mesma conta). Trocar de
+  banco **não** dispensa a sincronização offline, que é a parte difícil.
 - Zero testes automatizados.
 - `app.js` é um arquivo só. Dividir em módulos é possível, mas exigiria `type="module"`
   e mexer nos 35 `onclick=` inline do HTML.
