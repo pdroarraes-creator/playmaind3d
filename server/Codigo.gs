@@ -472,39 +472,76 @@ function resumenNegocio_() {
       stock: n(p.stock),
       custo: Math.round(r.custo),
       preco: Math.round(r.preco),
+      margen_pct: r.preco ? Math.round((r.preco - r.custo) / r.preco * 100) : 0
     };
   });
 
+  // rollo_g y paquete van al lado del stock para que la Mind pueda sacar el
+  // porcentaje que queda. La regla de cuándo eso es poco vive en el prompt,
+  // no duplicada acá: alertasStock() del cliente ya es la fuente de verdad.
   var filamentos = (data.filamentos || []).map(function (f) {
     return {
       nome: ((f.marca || '') + ' ' + (f.nome || '') + (f.cor ? ' - ' + f.cor : '')).trim(),
       stock_g: n(f.stock),
-      precoKg: n(f.precoKg),
+      rollo_g: n(f.rollo) || 1000,
+      precoKg: n(f.precoKg)
     };
   });
 
   var insumos = (data.insumos || []).map(function (i) {
-    return { nome: i.nome || '', stock: n(i.stock) };
+    return { nome: i.nome || '', stock: n(i.stock), paquete: n(i.unid) || 1 };
   });
 
-  var mesActual = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM');
-  var ventasMes = (data.vendas || []).filter(function (v) {
-    return String(v.data || '').slice(0, 7) === mesActual;
-  });
-  var fatMes = 0, lucMes = 0;
-  ventasMes.forEach(function (v) { fatMes += n(v.total); lucMes += n(v.lucro); });
-  var pendiente = 0;
-  (data.vendas || []).forEach(function (v) { if (!v.pago) pendiente += n(v.total); });
+  var canales = {};
+  (data.canais || []).forEach(function (c) { canales[c.id] = c.nome; });
 
-  var recientes = (data.vendas || []).slice(0, 15).map(function (v) {
+  var ahora = new Date();
+  var tz = Session.getScriptTimeZone();
+  var mesActual = Utilities.formatDate(ahora, tz, 'yyyy-MM');
+  var mesPasado = Utilities.formatDate(
+    new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1), tz, 'yyyy-MM');
+
+  var totalesDe = function (mes) {
+    var t = { mes: mes, facturado: 0, ganancia: 0, ventas: 0 };
+    (data.vendas || []).forEach(function (v) {
+      if (String(v.data || '').slice(0, 7) !== mes) return;
+      t.facturado += n(v.total);
+      t.ganancia += n(v.lucro);
+      t.ventas++;
+    });
+    t.facturado = Math.round(t.facturado);
+    t.ganancia = Math.round(t.ganancia);
+    return t;
+  };
+
+  var pendiente = 0, sinEntregar = 0;
+  (data.vendas || []).forEach(function (v) {
+    if (!v.pago) pendiente += n(v.total);
+    if (!v.entregue) sinEntregar++;
+  });
+
+  var recientes = (data.vendas || []).slice(0, 20).map(function (v) {
     return {
       data: v.data || '',
       cliente: v.cliente || '',
+      canal: canales[v.canal] || '',
+      forma: v.forma || '',
       total: Math.round(n(v.total)),
       lucro: Math.round(n(v.lucro)),
       pago: !!v.pago,
+      entregue: !!v.entregue,
+      itens: (v.itens || []).map(function (i) { return n(i.qtd) + 'x ' + (i.nome || ''); }).join(', ')
     };
   });
+
+  // Lo anotado para imprimir que todavía no se imprimió.
+  var porId = {};
+  (data.produtos || []).forEach(function (p) { porId[p.id] = p; });
+  var pedido = [];
+  for (var id in (data.pedido || {})) {
+    var q = n(data.pedido[id]);
+    if (q > 0 && porId[id]) pedido.push({ nome: porId[id].nome || '', qtd: q });
+  }
 
   return {
     ok: true,
@@ -512,10 +549,13 @@ function resumenNegocio_() {
       piezas: piezas,
       filamentos: filamentos,
       insumos: insumos,
-      este_mes: { facturado: Math.round(fatMes), ganancia: Math.round(lucMes), ventas: ventasMes.length },
+      pedido_a_imprimir: pedido,
+      este_mes: totalesDe(mesActual),
+      mes_pasado: totalesDe(mesPasado),
       por_cobrar: Math.round(pendiente),
-      ventas_recientes: recientes,
-    },
+      ventas_sin_entregar: sinEntregar,
+      ventas_recientes: recientes
+    }
   };
 }
 

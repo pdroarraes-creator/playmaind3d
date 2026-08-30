@@ -41,24 +41,109 @@ const TOOL_CADASTRAR_FILAMENTO = {
   },
 };
 
+// Estas tres se ejecutan en el CLIENTE (app.js), no acá: reusan las mismas
+// funciones que la app ya usa a mano (sumarStock, aplicarVenta, calc), en vez
+// de duplicar esa lógica en el Apps Script. El Worker sólo las declara y
+// devuelve la propuesta; app.js la ejecuta cuando el usuario confirma.
+const TOOL_EDITAR_PECA = {
+  name: "editar_peca",
+  description:
+    "Corrige os textos de uma peça que JÁ existe: descrição, detalhe, medida, " +
+    "tags e categoria. Não mexe em preço, peso nem tempo. Mande só os campos " +
+    "que mudam. Só chamar depois de confirmação explícita.",
+  parameters: {
+    type: "object",
+    properties: {
+      nome: { type: "string", description: "nome exato da peça que já existe" },
+      descricao: { type: "string" },
+      detalhe: { type: "string" },
+      medida: { type: "string" },
+      tags: { type: "string", description: "separadas por vírgula" },
+      categoria: { type: "string" },
+    },
+    required: ["nome"],
+  },
+};
+
+const TOOL_AJUSTAR_ESTOQUE = {
+  name: "ajustar_estoque",
+  description:
+    "Muda quantas unidades prontas existem de uma peça. Positivo quando " +
+    "imprimiu ('imprimi 5'), negativo quando quebrou ou perdeu. Ao somar, o " +
+    "filamento e os insumos são descontados sozinhos. Só chamar depois de " +
+    "confirmação explícita.",
+  parameters: {
+    type: "object",
+    properties: {
+      nome: { type: "string", description: "nome exato da peça" },
+      quantidade: { type: "number", description: "positivo soma, negativo tira" },
+    },
+    required: ["nome", "quantidade"],
+  },
+};
+
+const TOOL_REGISTRAR_VENDA = {
+  name: "registrar_venda",
+  description:
+    "Registra uma venda já feita, pelos preços atuais de cada peça. O que " +
+    "estava pronto sai do estoque; do que faltar, desconta o material. Só " +
+    "chamar depois de confirmar as peças e as quantidades com o usuário.",
+  parameters: {
+    type: "object",
+    properties: {
+      cliente: { type: "string" },
+      forma: { type: "string", description: "efectivo ou transferencia" },
+      itens: {
+        type: "array",
+        description: "peças vendidas",
+        items: {
+          type: "object",
+          properties: {
+            nome: { type: "string", description: "nome exato da peça" },
+            qtd: { type: "number" },
+          },
+          required: ["nome", "qtd"],
+        },
+      },
+    },
+    required: ["itens"],
+  },
+};
+
 function promptSistema(contextoMakerWorld, contextoNegocio) {
   let base =
-    "Você é a Mind, a assistente da PlayMind 3d (microempresa de impressão 3D), " +
-    "conversando em português. Você faz três coisas:\n" +
-    "1) Cadastrar peça nova: usuário manda foto da peça impressa e/ou link do " +
-    "MakerWorld. Proponha nome/descrição/tags a partir disso, pergunte o que " +
-    "falta (principalmente COR e PREÇO, que nunca vêm do MakerWorld), e só " +
-    "chame cadastrar_peca depois de confirmação explícita do usuário.\n" +
-    "2) Cadastrar filamento novo: usuário manda foto da caixa/rolo. Leia marca, " +
-    "tipo (PLA/PETG/etc) e cor na foto, pergunte o preço por kg (quase nunca " +
-    "está legível) e o peso do rolo (assuma 1000g se não disser nada mas " +
-    "confirme), e só chame cadastrar_filamento depois de confirmação explícita.\n" +
-    "3) Responder perguntas sobre o negócio (peças, estoque, filamentos, " +
-    "vendas, financeiro) usando os dados fornecidos abaixo — nesse caso NÃO " +
-    "chame nenhuma função, só responda em texto.\n" +
-    "Nunca chame uma função de cadastro numa primeira mensagem, sem ter " +
-    "mostrado os campos e recebido uma confirmação clara (ex: 'sim', " +
-    "'confirmar', 'pode cadastrar').";
+    "Você é a Mind, a assistente da PlayMind 3d — uma microempresa familiar de " +
+    "impressão 3D, três pessoas. Fale português, curto e direto: quem te usa " +
+    "está no celular, muitas vezes de pé no meio de uma feira.\n\n" +
+    "O QUE VOCÊ FAZ\n" +
+    "· Cadastrar peça (cadastrar_peca): a partir de foto da peça impressa e/ou " +
+    "link do MakerWorld. Proponha nome, descrição e tags; pergunte a COR e o " +
+    "PREÇO, que nunca vêm do MakerWorld.\n" +
+    "· Cadastrar filamento (cadastrar_filamento): a partir da foto da caixa ou " +
+    "do rolo. Leia marca, tipo e cor na foto; pergunte o preço por kg (quase " +
+    "nunca está legível) e o peso do rolo (1000g é o normal, mas confirme). A " +
+    "foto da caixa não fica guardada: ela só serve pra você ler os dados agora.\n" +
+    "· Corrigir peça já cadastrada (editar_peca): só textos — descrição, " +
+    "detalhe, medida, tags, categoria. Preço, peso e tempo se mudam no editor, " +
+    "não por aqui; se pedirem isso, diga onde fica.\n" +
+    "· Ajustar estoque (ajustar_estoque): quando imprimiu unidades novas ou " +
+    "perdeu alguma.\n" +
+    "· Registrar venda (registrar_venda): pelos preços atuais das peças.\n" +
+    "· Responder perguntas sobre peças, estoque, filamento e vendas, usando o " +
+    "resumo abaixo. Aí NÃO chame função nenhuma, só responda.\n\n" +
+    "REGRAS DA CASA\n" +
+    "· Nunca chame uma função na primeira mensagem. Primeiro mostre os campos " +
+    "que vai gravar e espere um 'sim', 'confirma', 'pode salvar'.\n" +
+    "· Para editar, ajustar estoque ou registrar venda, use o nome EXATO de uma " +
+    "peça que está na lista do resumo. Se não achar, diga que não achou e " +
+    "mostre os nomes parecidos — nunca invente uma peça.\n" +
+    "· Filamento é o insumo crítico. Se sobrar menos de 15% do rolo (stock_g " +
+    "dividido por rollo_g), avise mesmo sem ser perguntada.\n" +
+    "· Valores em pesos argentinos, escritos como $1.234. Estoque de filamento " +
+    "em gramas, tempo de impressão em minutos.\n" +
+    "· margem_pct é quanto sobra em cada peça, já descontado o custo.\n" +
+    "· Ao falar de dinheiro, dê o número. Nunca mande consultar a planilha.\n" +
+    "· Se o dado não estiver no resumo, diga que não tem. Não invente número.";
   if (contextoMakerWorld) {
     base +=
       "\n\nDados extraídos do MakerWorld para a peça sendo cadastrada agora " +
@@ -66,10 +151,7 @@ function promptSistema(contextoMakerWorld, contextoNegocio) {
       JSON.stringify(contextoMakerWorld);
   }
   if (contextoNegocio) {
-    base +=
-      "\n\nResumo atual do negócio (para responder perguntas — números em R$ " +
-      "e gramas):\n" +
-      JSON.stringify(contextoNegocio);
+    base += "\n\nRESUMO ATUAL DO NEGÓCIO\n" + JSON.stringify(contextoNegocio);
   }
   return base;
 }
@@ -93,7 +175,17 @@ export async function conversar(env, { historial, mensaje, foto, contextoMakerWo
   const body = {
     contents,
     systemInstruction: { parts: [{ text: promptSistema(contextoMakerWorld, contextoNegocio) }] },
-    tools: [{ functionDeclarations: [TOOL_CADASTRAR_PECA, TOOL_CADASTRAR_FILAMENTO] }],
+    tools: [
+      {
+        functionDeclarations: [
+          TOOL_CADASTRAR_PECA,
+          TOOL_CADASTRAR_FILAMENTO,
+          TOOL_EDITAR_PECA,
+          TOOL_AJUSTAR_ESTOQUE,
+          TOOL_REGISTRAR_VENDA,
+        ],
+      },
+    ],
   };
 
   const r = await fetch(

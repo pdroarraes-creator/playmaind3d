@@ -97,11 +97,13 @@ export default {
     if (!sesionValida) return jsonResp({ ok: false, error: "sesión inválida" }, 401);
 
     // Confirmação real: o cliente já mostrou os campos (voltaram como
-    // propuestaCadastro/tipoCadastro num turno anterior) e o usuário
-    // apertou "Confirmar cadastro" — aqui SÓ gravamos, sem passar pelo
-    // Gemini de novo.
+    // propuesta/acao num turno anterior) e o usuário apertou "Confirmar" —
+    // aqui SÓ gravamos, sem passar pelo Gemini de novo. Só chegam aqui as
+    // duas ações que precisam do servidor (a foto tem que ir pro Drive); as
+    // outras três o próprio app.js executa, reusando as funções que ele já
+    // tem (sumarStock, aplicarVenta) em vez de duplicá-las aqui.
     if (body.confirmar) {
-      if (body.tipo === "filamento") {
+      if (body.acao === "cadastrar_filamento") {
         const filamento = traducirParaAgregarFilamento(body.confirmar);
         if (!filamento.nome) return jsonResp({ ok: false, error: "falta o tipo" }, 400);
         const r = await agregarFilamento(env, token, filamento);
@@ -141,10 +143,11 @@ export default {
     return jsonResp({
       ok: true,
       texto: resultado.texto,
-      // El cliente decide si muestra el botón "Confirmar cadastro" cuando
-      // llega esto — la ejecución real sólo pasa con body.confirmar (arriba).
+      // El cliente decide si muestra el botón "Confirmar" cuando llega esto.
+      // Nada se ejecuta todavía: o vuelve acá con body.confirmar, o lo corre
+      // app.js localmente, según la acción.
       propuestaCadastro: chamada ? chamada.args : null,
-      tipoCadastro: chamada ? (chamada.name === "cadastrar_filamento" ? "filamento" : "peca") : null,
+      acao: chamada ? chamada.name : null,
     });
   },
 };

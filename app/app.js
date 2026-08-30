@@ -2486,7 +2486,108 @@ var CHAT = {
   foto: null, // data URL completa ("data:image/jpeg;base64,...") o null
   contextoMakerWorld: null,
   propuesta: null, // últimos campos que el modelo propuso via function call
-  tipoCadastro: null, // 'peca' | 'filamento' — qué función propuso el modelo
+  acao: null, // nombre de la función que propuso (cadastrar_peca, etc)
+};
+
+/* Las acciones que tocan piezas/ventas se ejecutan acá, no en el servidor:
+   así reusan las mismas funciones que la app ya usa a mano (sumarStock,
+   aplicarVenta, calc) en vez de tener una segunda copia de esa lógica en
+   Codigo.gs, y el estado del cliente sigue siendo el que manda — un save
+   posterior no pisa lo que el servidor hubiera escrito por su cuenta.
+   Cada una devuelve el texto que se le muestra al usuario en el chat. */
+function piezaPorNombre(nome) {
+  const norm = (x) =>
+    String(x || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  return D.produtos.find((p) => norm(p.nome) === norm(nome)) || null;
+}
+
+function accionEditarPieza(a) {
+  const p = piezaPorNombre(a.nome);
+  if (!p) return 'Não achei nenhuma peça chamada "' + a.nome + '".';
+  if (a.descricao != null) p.desc = String(a.descricao);
+  if (a.detalhe != null) p.detalle = String(a.detalhe);
+  if (a.medida != null) p.medida = String(a.medida);
+  if (a.tags != null) p.tags = String(a.tags);
+  if (a.categoria != null) p.cat = String(a.categoria);
+  save();
+  renderAll();
+  return "Pronto, " + p.nome + " atualizada.";
+}
+
+function accionAjustarStock(a) {
+  const p = piezaPorNombre(a.nome);
+  if (!p) return 'Não achei nenhuma peça chamada "' + a.nome + '".';
+  const n = num(a.quantidade);
+  if (!n) return "Preciso de uma quantidade diferente de zero.";
+  sumarStock(p, n); // ya descuenta filamento e insumos y avisa por toast
+  return "Agora tem " + p.stock + " de " + p.nome + ".";
+}
+
+function accionRegistrarVenta(a) {
+  const itens = [],
+    faltan = [];
+  (a.itens || []).forEach((it) => {
+    const p = piezaPorNombre(it.nome);
+    if (!p) {
+      faltan.push(it.nome);
+      return;
+    }
+    const r = calc(p);
+    itens.push({ id: p.id, nome: p.nome, qtd: num(it.qtd) || 1, preco: r.preco, custo: r.custo });
+  });
+  if (faltan.length) return "Não achei estas peças: " + faltan.join(", ") + ". Nada foi registrado.";
+  if (!itens.length) return "Nenhuma peça válida na venda.";
+
+  const total = itens.reduce((s, i) => s + i.preco * i.qtd, 0);
+  const costo = itens.reduce((s, i) => s + i.custo * i.qtd, 0);
+  const canal = D.canais[0] || { id: "" };
+  const v = {
+    id: uid(),
+    data: hoy(),
+    cliente: String(a.cliente || "").trim() || "Sin nombre",
+    canal: canal.id,
+    forma: a.forma === "transferencia" ? "transferencia" : "efectivo",
+    itens: itens,
+    desconto: 0,
+    envio: 0,
+    comision: 0,
+    total: total,
+    custo: costo,
+    lucro: total - costo,
+    pago: true,
+    entregue: true,
+    consumo: null,
+    desdeStock: true,
+    stockUsado: {},
+  };
+  aplicarVenta(v); // la misma que usa el punto de venta
+  D.vendas.unshift(v);
+  save();
+  renderAll();
+  return (
+    "Venda de " +
+    money(total) +
+    " registrada" +
+    (v.sinStock ? " (fora de stock: " + v.sinStock + ")" : "") +
+    "."
+  );
+}
+
+const ACCIONES_LOCALES = {
+  editar_peca: accionEditarPieza,
+  ajustar_estoque: accionAjustarStock,
+  registrar_venda: accionRegistrarVenta,
+};
+
+const ROTULO_CONFIRMAR = {
+  cadastrar_peca: "Confirmar cadastro",
+  cadastrar_filamento: "Confirmar filamento",
+  editar_peca: "Confirmar correção",
+  ajustar_estoque: "Confirmar estoque",
+  registrar_venda: "Confirmar venda",
 };
 
 function urlBookmarklet() {
@@ -2499,7 +2600,7 @@ function urlBookmarklet() {
 }
 
 function abrirChatCad() {
-  CHAT = { historial: [], foto: null, contextoMakerWorld: null, propuesta: null, tipoCadastro: null };
+  CHAT = { historial: [], foto: null, contextoMakerWorld: null, propuesta: null, acao: null };
   $("#chatInput").value = "";
   $("#chatFotoNome").textContent = "";
   $("#chatConfirmar").hidden = true;
@@ -2573,10 +2674,9 @@ async function enviarChatCad(mensajeForzado) {
     }
     CHAT.historial.push({ role: "model", texto: j.texto || "" });
     CHAT.propuesta = j.propuestaCadastro || null;
-    CHAT.tipoCadastro = j.tipoCadastro || null;
+    CHAT.acao = j.acao || null;
     $("#chatConfirmar").hidden = !CHAT.propuesta;
-    $("#chatConfirmar").textContent =
-      CHAT.tipoCadastro === "filamento" ? "Confirmar filamento" : "Confirmar cadastro";
+    $("#chatConfirmar").textContent = ROTULO_CONFIRMAR[CHAT.acao] || "Confirmar";
     pintarChatMsgs();
   } catch (e) {
     CHAT.historial.push({ role: "model", texto: "Não consegui falar com o servidor agora." });
@@ -2590,15 +2690,37 @@ async function enviarChatCad(mensajeForzado) {
 async function confirmarChatCad() {
   if (!CHAT.propuesta) return;
   const btn = $("#chatConfirmar");
+  const rotulo = ROTULO_CONFIRMAR[CHAT.acao] || "Confirmar";
   btn.disabled = true;
   btn.textContent = "Salvando…";
+
+  // Editar, ajustar stock y registrar venta se resuelven acá mismo: no
+  // necesitan al servidor y el save() de siempre los sincroniza solo.
+  const local = ACCIONES_LOCALES[CHAT.acao];
+  if (local) {
+    let texto;
+    try {
+      texto = local(CHAT.propuesta);
+    } catch (e) {
+      texto = "Não consegui fazer isso: " + e.message;
+    }
+    CHAT.historial.push({ role: "model", texto: texto });
+    CHAT.propuesta = null;
+    CHAT.acao = null;
+    btn.hidden = true;
+    btn.disabled = false;
+    btn.textContent = rotulo;
+    pintarChatMsgs();
+    return;
+  }
+
   try {
     const r = await fetch(WORKER_CADASTRO + "/chat", {
       method: "POST",
       body: JSON.stringify({
         token: D.cfg.token || "",
         confirmar: CHAT.propuesta,
-        tipo: CHAT.tipoCadastro,
+        acao: CHAT.acao,
         link: (CHAT.contextoMakerWorld && CHAT.contextoMakerWorld.link) || "",
         foto: fotoParaGemini(CHAT.foto),
       }),
@@ -2609,7 +2731,7 @@ async function confirmarChatCad() {
       return;
     }
     toast(
-      CHAT.tipoCadastro === "filamento"
+      CHAT.acao === "cadastrar_filamento"
         ? "Filamento cadastrado! Vai aparecer em Ajustes ao sincronizar."
         : "Peça cadastrada! Vai aparecer no editor ao sincronizar.",
     );
@@ -2619,7 +2741,7 @@ async function confirmarChatCad() {
     toast("Não consegui falar com o servidor agora.");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Confirmar cadastro";
+    btn.textContent = rotulo;
   }
 }
 
