@@ -217,33 +217,37 @@
     padding:4px 11px;font-size:12px;font-weight:800;color:var(--ink-soft);cursor:pointer;
     font-family:'Nunito',sans-serif;}
   .tags button:hover{border-color:var(--teal);color:var(--teal-deep);}
-  /* ---- destacados del encabezado ---- */
-  .destacados{position:absolute;inset:0;border-radius:24px;overflow:hidden;background:var(--bg);
-    box-shadow:0 18px 44px rgba(58,58,56,.16);}
-  .destacados[hidden]{display:none;}
-  .destacados .foto{position:absolute;inset:0;opacity:0;transition:opacity .7s ease;cursor:pointer;}
-  .destacados .foto.on{opacity:1;}
-  .destacados .foto img{width:100%;height:100%;object-fit:cover;display:block;}
-  .destacados .pie{position:absolute;left:0;right:0;bottom:0;padding:60px 22px 20px;color:#fff;
-    background:linear-gradient(transparent,rgba(31,60,58,.85));pointer-events:none;}
-  .destacados .pie b{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:21px;
-    line-height:1.2;}
-  .destacados .pie span{display:block;margin-top:4px;font-size:15px;font-weight:800;opacity:.92;}
-  .destacados .puntos{position:absolute;right:16px;bottom:16px;z-index:3;display:flex;gap:6px;}
-  .destacados .puntos button{width:8px;height:8px;padding:0;border:0;border-radius:999px;
-    background:rgba(255,255,255,.55);cursor:pointer;transition:width .25s,background .25s;}
-  .destacados .puntos button.on{width:22px;background:#fff;}
-  /* con carrusel el recuadro pasa a ser dos cosas apiladas: el logo arriba,
-     que es la marca y no se toca, y las piezas rotando abajo */
-  .stage.conDestacados{display:flex;flex-direction:column;gap:16px;}
-  .stage.conDestacados .hero-fallback{display:flex;flex:none;height:auto;}
-  .stage.conDestacados .hero-fallback img{max-height:118px;max-width:74%;}
-  .stage.conDestacados .destacados{position:relative;inset:auto;flex:1 1 auto;min-height:0;}
-  .stage.conDestacados .stage-caption{display:none;}
-  @media (max-width:900px){
-    .stage.conDestacados{height:auto;min-height:0;gap:12px;}
-    .stage.conDestacados .hero-fallback img{max-height:84px;}
-    .stage.conDestacados .destacados{height:44vh;min-height:280px;flex:none;}
+  /* ---- muestrario que gira solo ----
+     La tira lleva la lista DUPLICADA y se corre hasta -50%: cuando termina la
+     primera copia, la segunda está exactamente donde arrancó la primera, así
+     el salto del reinicio no se ve y parece que gira sin fin. */
+  .vitrina{overflow:hidden;padding:6px 0 4px;}
+  .vitrina[hidden]{display:none;}
+  /* la separación va como margen del item y NO como gap de la tira: con gap,
+     la mitad del ancho total no cae justo en el borde de la segunda copia
+     (sobra medio espacio) y cada vuelta daba un saltito */
+  .vitrina .tira{display:flex;width:max-content;animation:girar 60s linear infinite;}
+  .vitrina:hover .tira{animation-play-state:paused;}
+  @keyframes girar{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+  .vitrina .item{flex:none;margin-right:16px;width:62vw;max-width:260px;cursor:pointer;background:var(--card,#fff);
+    border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    box-shadow:0 6px 18px rgba(58,58,56,.07);}
+  .vitrina .item .f{aspect-ratio:1/1;background:var(--bg);}
+  .vitrina .item img{width:100%;height:100%;object-fit:cover;display:block;}
+  .vitrina .item .t{padding:10px 13px 13px;}
+  .vitrina .item b{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15px;
+    line-height:1.25;color:var(--ink);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .vitrina .item span{display:block;margin-top:3px;font-size:14px;font-weight:800;color:var(--teal-deep,#1F5758);}
+  .vitrina .item i{font-style:normal;font-size:11.5px;font-weight:800;color:var(--leaf,#8FBF7F);}
+  @media (min-width:900px){
+    .vitrina{padding:10px 0 6px;}
+    .vitrina .item{width:30vw;max-width:340px;} /* tres a la vez en pantalla grande */
+  }
+  /* a quien pidió menos movimiento se le muestra quieto, sin animación */
+  @media (prefers-reduced-motion: reduce){
+    .vitrina .tira{animation:none;}
+    .vitrina{overflow-x:auto;}
   }
 
   /* ---- filtros del catálogo ---- */
@@ -321,10 +325,14 @@
   </div>
   <div class="stage static" id="stage">
     <div class="hero-fallback"><img src="assets/logo.png" alt="Play Mind 3d"></div>
-    <div class="destacados" id="destacados" hidden></div>
     <div class="stage-caption">Imprimiendo tu próximo mundo…</div>
   </div>
 </header>
+
+<!-- muestrario que gira solo, de derecha a izquierda -->
+<section class="vitrina" id="vitrina" hidden aria-label="Piezas destacadas">
+  <div class="tira" id="vitrinaTira"></div>
+</section>
 
 <section id="piezas">
   <div class="wrap">
@@ -938,55 +946,33 @@
   }
   function galerias(){ grid.querySelectorAll('.p-card').forEach(galeria); }
 
-  /* ---------- destacados que rotan en el encabezado ---------- */
-  var RELOJ=null;
-  function destacados(piezas){
-    var stage=document.getElementById('stage'), caja=document.getElementById('destacados');
-    if(!stage||!caja) return;
+  /* ---------- muestrario que gira solo, abajo del encabezado ---------- */
+  function vitrina(piezas){
+    var sec=document.getElementById('vitrina'), tira=document.getElementById('vitrinaTira');
+    if(!sec||!tira) return;
     // primero lo que hay listo para llevar: es lo que se puede vender hoy
     var lista=piezas.filter(function(p){ return (p.fotos||[]).length; })
       .slice().sort(function(a,b){
         return (b.stock>0?1:0)-(a.stock>0?1:0) || (b.fotos||[]).length-(a.fotos||[]).length;
-      }).slice(0,5);
-    if(lista.length<2) return; // con una sola no hay carrusel que valga
+      }).slice(0,10);
+    if(lista.length<3) return; // con menos de tres no se ve girar
 
-    caja.innerHTML=lista.map(function(p,n){
-      return '<div class="foto'+(n?'':' on')+'">'+
-        '<img src="'+esc(p.fotos[0])+'" alt="'+esc(p.nome)+'"'+(n?' loading="lazy"':'')+'>'+
-        '<div class="pie"><b>'+esc(p.nome)+'</b><span>'+plata(p.precio)+
-        (p.stock>0?' · lista para llevar':'')+'</span></div></div>';
-    }).join('')+
-    '<div class="puntos">'+lista.map(function(p,n){
-      return '<button type="button" data-n="'+n+'"'+(n?'':' class="on"')+
-        ' aria-label="Ver '+esc(p.nome)+'"></button>';
-    }).join('')+'</div>';
-    caja.hidden=false;
-    stage.classList.add('conDestacados');
+    function item(p,n){
+      return '<div class="item" data-n="'+n+'">'+
+        '<div class="f"><img src="'+esc(p.fotos[0])+'" alt="'+esc(p.nome)+'" loading="lazy"></div>'+
+        '<div class="t"><b>'+esc(p.nome)+'</b><span>'+plata(p.precio)+
+        (p.stock>0?' <i>· hay lista</i>':'')+'</span></div></div>';
+    }
+    // la lista va DOS veces: es lo que hace que el reinicio no se note
+    var una=lista.map(item).join('');
+    tira.innerHTML=una+una;
+    // más piezas, vuelta más larga: así la velocidad se siente igual siempre
+    tira.style.animationDuration=(lista.length*6)+'s';
+    sec.hidden=false;
 
-    var fotos=caja.querySelectorAll('.foto'), puntos=caja.querySelectorAll('.puntos button'), i=0;
-    function ver(n){
-      i=(n+fotos.length)%fotos.length;
-      fotos.forEach(function(f,k){ f.classList.toggle('on',k===i); });
-      puntos.forEach(function(b,k){ b.classList.toggle('on',k===i); });
-    }
-    function seguir(){
-      clearInterval(RELOJ);
-      // quien pidió menos movimiento en el sistema no recibe el cambio solo
-      var quieto=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if(quieto) return;
-      RELOJ=setInterval(function(){ ver(i+1); },4500);
-    }
-    puntos.forEach(function(b){
-      b.addEventListener('click',function(){ ver(+b.dataset.n); seguir(); });
+    tira.querySelectorAll('.item').forEach(function(el){
+      el.addEventListener('click',function(){ abrirDetalle(lista[+el.dataset.n]); });
     });
-    fotos.forEach(function(f,n){
-      f.addEventListener('click',function(){ abrirDetalle(lista[n]); });
-    });
-    // con la pestaña de fondo no tiene sentido gastar batería girando fotos
-    document.addEventListener('visibilitychange',function(){
-      if(document.hidden) clearInterval(RELOJ); else seguir();
-    });
-    seguir();
   }
 
   /* ---------- filtros, búsqueda y link por pieza ---------- */
@@ -1160,7 +1146,7 @@
       // con pocas piezas los filtros estorban más de lo que ayudan
       var cajaF=document.getElementById('filtros');
       if(cajaF) cajaF.hidden = piezas.length<6;
-      destacados(piezas);
+      vitrina(piezas);
       pintarChips();
       pintarGrid();
       abrirDeLaUrl();
