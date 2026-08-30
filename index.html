@@ -207,10 +207,32 @@
     border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink);}
   .detfoto{border-radius:16px;overflow:hidden;margin-bottom:14px;aspect-ratio:16/10;background:var(--bg);}
   .detfoto img{width:100%;height:100%;object-fit:cover;}
+  /* la galería del detalle: mismas piezas que la de las tarjetas (.p-photo,
+     .flecha, .contador, .minis) pero apaisada y con las esquinas redondeadas */
+  .detgal{aspect-ratio:16/10;border-radius:16px;overflow:hidden;}
+  .detmin{margin-bottom:14px;}
   .detlead{font-size:16px;font-weight:700;color:var(--teal-dark);margin:6px 0 0;}
   .tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;}
-  .tags span{background:var(--bg-soft,#EFE8D8);border:1px solid var(--line);border-radius:999px;
-    padding:4px 11px;font-size:12px;font-weight:800;color:var(--ink-soft);}
+  .tags button{background:var(--bg-soft,#EFE8D8);border:1px solid var(--line);border-radius:999px;
+    padding:4px 11px;font-size:12px;font-weight:800;color:var(--ink-soft);cursor:pointer;
+    font-family:'Nunito',sans-serif;}
+  .tags button:hover{border-color:var(--teal);color:var(--teal-deep);}
+  /* ---- filtros del catálogo ---- */
+  .filtros{margin:0 0 22px;}
+  .filtros #buscar{width:100%;max-width:420px;font-family:'Nunito',sans-serif;font-size:15px;
+    padding:12px 15px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .chips button{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:7px 15px;
+    font-family:'Fredoka',sans-serif;font-size:13.5px;font-weight:500;color:var(--ink-soft);
+    cursor:pointer;white-space:nowrap;}
+  .chips button.on{background:var(--teal-deep,#1F5758);border-color:var(--teal-deep,#1F5758);color:#fff;}
+  .chips button.stock.on{background:var(--leaf,#8FBF7F);border-color:var(--leaf,#8FBF7F);}
+  .nada{grid-column:1/-1;text-align:center;padding:34px 20px;color:var(--ink-soft);font-size:15px;}
+  .nada button{margin-top:12px;background:none;border:0;color:var(--teal-deep,#1F5758);
+    font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;text-decoration:underline;}
+  .compartir{width:100%;margin-top:10px;background:none;border:1.5px solid var(--line);border-radius:999px;
+    padding:11px;font-family:'Fredoka',sans-serif;font-size:14.5px;font-weight:500;color:var(--ink-soft);
+    cursor:pointer;}
   .datos{margin:16px 0 0;border-top:1px solid var(--line);}
   .dato{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);}
   .dato u{text-decoration:none;font-size:13px;color:var(--ink-soft);font-weight:700;}
@@ -281,6 +303,10 @@
       <p>Fidgets divertidos y sensoriales, impresos capa por capa. Elegí la tuya y escribime por WhatsApp para pedirla.</p>
     </div>
     <div id="packs"></div>
+    <div class="filtros" id="filtros" hidden>
+      <input type="search" id="buscar" placeholder="Buscar por nombre o etiqueta…" aria-label="Buscar">
+      <div class="chips" id="chips"></div>
+    </div>
     <div class="grid" id="catalogo">
       <div class="cargando">Trayendo las piezas…</div>
     </div>
@@ -593,22 +619,32 @@
     }catch(e){ return false; }
   })();
 
+  /* Las tres partes de una galería, para que la tarjeta y el detalle usen
+     exactamente la misma y no se vayan separando con el tiempo. */
+  function partesGaleria(fotos,alt){
+    return {
+      fotos: fotos.length
+        ? fotos.map(function(f,n){ return '<img src="'+esc(f)+'" alt="'+esc(alt)+'" loading="lazy"'+(n?'':' class="on"')+'>'; }).join('')
+        : '<div class="ph">Sin foto todavía</div>',
+      flechas: fotos.length>1
+        ? '<button type="button" class="flecha prev" aria-label="Anterior">‹</button>'+
+          '<button type="button" class="flecha next" aria-label="Siguiente">›</button>'+
+          '<span class="contador">1/'+fotos.length+'</span>'
+        : '',
+      minis: fotos.length>1
+        ? fotos.map(function(f,n){
+            return '<button type="button" data-n="'+n+'"'+(n?'':' class="on"')+'><img src="'+esc(f)+'" alt=""></button>';
+          }).join('')
+        : ''
+    };
+  }
+
   function tarjeta(p){
     var fotos=(p.fotos||[]).filter(Boolean);
-    var foto = fotos.length
-      ? fotos.map(function(f,n){ return '<img src="'+esc(f)+'" alt="'+esc(p.nome)+'" loading="lazy"'+(n?'':' class="on"')+'>'; }).join('')
-      : '<div class="ph">Sin foto todavía</div>';
+    var g = partesGaleria(fotos,p.nome);
+    var foto = g.fotos, flechas = g.flechas;
+    var minis = g.minis ? '<div class="minis">'+g.minis+'</div>' : '';
     var yt = idYoutube(p.video);
-    var flechas = fotos.length>1
-      ? '<button type="button" class="flecha prev" aria-label="Anterior">‹</button>'+
-        '<button type="button" class="flecha next" aria-label="Siguiente">›</button>'+
-        '<span class="contador">1/'+fotos.length+'</span>'
-      : '';
-    var minis = fotos.length>1
-      ? '<div class="minis">'+fotos.map(function(f,n){
-          return '<button type="button" data-n="'+n+'"'+(n?'':' class="on"')+'><img src="'+esc(f)+'" alt=""></button>';
-        }).join('')+'</div>'
-      : '';
     var top = p.vendidas>=3 ? '<div class="top">El más pedido</div>' : '';
     var ficha='<div class="p-ficha"><span>PLA</span>'+
       (p.medida?'<span>'+esc(p.medida)+'</span>':'')+
@@ -652,11 +688,18 @@
     var cont=document.getElementById('detalleBox');
     var fotos=(p.fotos||[]).filter(Boolean);
     var tags=(p.tags||'').split(',').map(function(t){return t.trim();}).filter(Boolean);
+    // la galería entera, no sólo la primera foto: acá es donde se decide
+    var g = partesGaleria(fotos,p.nome);
     cont.innerHTML=
-      (fotos.length?'<div class="detfoto"><img src="'+esc(fotos[0])+'" alt="'+esc(p.nome)+'"></div>':'')+
+      (fotos.length
+        ? '<div class="p-photo detgal">'+g.fotos+g.flechas+'</div>'+
+          (g.minis?'<div class="minis detmin">'+g.minis+'</div>':'')
+        : '')+
       '<h3>'+esc(p.nome)+'</h3>'+
       (p.desc?'<p class="detlead">'+esc(p.desc)+'</p>':'')+
-      (tags.length?'<div class="tags">'+tags.map(function(t){return '<span>'+esc(t)+'</span>';}).join('')+'</div>':'')+
+      (tags.length?'<div class="tags">'+tags.map(function(t){
+        return '<button type="button" data-tag="'+esc(t)+'">'+esc(t)+'</button>';
+      }).join('')+'</div>':'')+
       (p.detalle ? '<p class="detalle">'+esc(p.detalle).replace(/\n/g,'<br>')+'</p>'
                  : '<p class="detalle">Se imprime a pedido, una por una.</p>')+
       '<div class="datos">'+
@@ -671,13 +714,25 @@
       (ADMIN?'<button class="editar" id="detEditar" style="margin-top:14px">✎ Editar los textos</button>':'')+
       '<div class="total"><span>Precio</span><b>'+plata(p.precio)+'</b></div>'+
       '<button class="btn wsp-big" style="width:100%;margin-top:6px" id="detPedir">Sumar al pedido</button>'+
+      '<button type="button" class="compartir" id="detCompartir">🔗 Compartir esta pieza</button>'+
       '<button class="cerrar" id="detCerrar">Cerrar</button>';
     if(ADMIN){
       document.getElementById('detEditar').onclick=function(){ editarEnSitio(p); };
     }
+    galeria(cont); // flechas, puntitos y swipe, igual que en la tarjeta
+    cont.querySelectorAll('.tags button').forEach(function(b){
+      b.addEventListener('click',function(){
+        document.getElementById('hojaDetalle').classList.remove('on');
+        ponerFiltro({tag:b.dataset.tag});
+      });
+    });
+    document.getElementById('detCompartir').onclick=function(){ compartir(p); };
+    // deja el link de ESTA pieza en la barra de direcciones, listo para copiar
+    try{ history.replaceState(null,'',location.pathname+'?pieza='+slug(p.nome)); }catch(e){}
     document.getElementById('hojaDetalle').classList.add('on');
     document.getElementById('detCerrar').onclick=function(){
       document.getElementById('hojaDetalle').classList.remove('on');
+      try{ history.replaceState(null,'',location.pathname); }catch(e){}
     };
     document.getElementById('detPedir').onclick=function(){
       var k=p.nome, en=CAR[k]||{qtd:0};
@@ -823,32 +878,146 @@
       });
     });
   }
-  function galerias(){
-    grid.querySelectorAll('.p-card').forEach(function(card){
-      var imgs=card.querySelectorAll('.p-photo img');
-      var bts=card.querySelectorAll('.minis button');
-      var cont=card.querySelector('.contador');
-      if(imgs.length<2) return;
-      var act=0;
-      function ver(n){
-        act=(n+imgs.length)%imgs.length;
-        imgs.forEach(function(im,k){ im.classList.toggle('on',k===act); });
-        bts.forEach(function(x,k){ x.classList.toggle('on',k===act); });
-        if(cont) cont.textContent=(act+1)+'/'+imgs.length;
-      }
-      bts.forEach(function(b){ b.addEventListener('click',function(){ ver(+b.dataset.n); }); });
-      var pv=card.querySelector('.flecha.prev'), nx=card.querySelector('.flecha.next');
-      if(pv) pv.addEventListener('click',function(){ ver(act-1); });
-      if(nx) nx.addEventListener('click',function(){ ver(act+1); });
-      var x0=null, marco=card.querySelector('.p-photo');
-      marco.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
-      marco.addEventListener('touchend',function(e){
-        if(x0===null) return;
-        var d=e.changedTouches[0].clientX-x0;
-        if(Math.abs(d)>45) ver(act+(d<0?1:-1));
-        x0=null;
-      },{passive:true});
+  /* Recibe cualquier contenedor que tenga adentro una .p-photo y sus .minis:
+     sirve igual para una tarjeta del grid que para la hoja de detalle. */
+  function galeria(caja){
+    var imgs=caja.querySelectorAll('.p-photo img');
+    var bts=caja.querySelectorAll('.minis button');
+    var marcador=caja.querySelector('.contador');
+    if(imgs.length<2) return;
+    var act=0;
+    function ver(n){
+      act=(n+imgs.length)%imgs.length;
+      imgs.forEach(function(im,k){ im.classList.toggle('on',k===act); });
+      bts.forEach(function(x,k){ x.classList.toggle('on',k===act); });
+      if(marcador) marcador.textContent=(act+1)+'/'+imgs.length;
+    }
+    bts.forEach(function(b){ b.addEventListener('click',function(){ ver(+b.dataset.n); }); });
+    var pv=caja.querySelector('.flecha.prev'), nx=caja.querySelector('.flecha.next');
+    if(pv) pv.addEventListener('click',function(){ ver(act-1); });
+    if(nx) nx.addEventListener('click',function(){ ver(act+1); });
+    var x0=null, marco=caja.querySelector('.p-photo');
+    if(!marco) return;
+    marco.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+    marco.addEventListener('touchend',function(e){
+      if(x0===null) return;
+      var d=e.changedTouches[0].clientX-x0;
+      if(Math.abs(d)>45) ver(act+(d<0?1:-1));
+      x0=null;
+    },{passive:true});
+  }
+  function galerias(){ grid.querySelectorAll('.p-card').forEach(galeria); }
+
+  /* ---------- filtros, búsqueda y link por pieza ---------- */
+  var PIEZAS=[], FILTRO={cat:'',tag:'',texto:'',stock:false};
+
+  /* Sin acentos y sin espacios: sirve para la URL y para que buscar "dragon"
+     encuentre "Dragón". */
+  function slug(s){
+    return String(s||'').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+
+  function compartir(p){
+    var url=location.origin+location.pathname+'?pieza='+slug(p.nome);
+    if(navigator.share){
+      navigator.share({title:p.nome,text:p.nome+' — '+plata(p.precio),url:url}).catch(function(){});
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url)
+        .then(function(){ alert('Link copiado:\n'+url); })
+        .catch(function(){ prompt('Copiá el link:',url); });
+      return;
+    }
+    prompt('Copiá el link:',url);
+  }
+
+  function pasaFiltro(p){
+    if(FILTRO.stock && !(p.stock>0)) return false;
+    if(FILTRO.cat && (p.cat||'')!==FILTRO.cat) return false;
+    if(FILTRO.tag){
+      var t=(p.tags||'').split(',').map(slug);
+      if(t.indexOf(slug(FILTRO.tag))<0) return false;
+    }
+    if(FILTRO.texto){
+      var heno=slug((p.nome||'')+' '+(p.desc||'')+' '+(p.tags||'')+' '+(p.cat||''));
+      if(heno.indexOf(slug(FILTRO.texto))<0) return false;
+    }
+    return true;
+  }
+
+  /* categoría y etiqueta no se acumulan: elegir una limpia la otra */
+  function ponerFiltro(cambio,irArriba){
+    if(cambio.cat!==undefined){ FILTRO.cat=cambio.cat; FILTRO.tag=''; }
+    if(cambio.tag!==undefined){ FILTRO.tag=cambio.tag; FILTRO.cat=''; }
+    if(cambio.texto!==undefined) FILTRO.texto=cambio.texto;
+    if(cambio.stock!==undefined) FILTRO.stock=cambio.stock;
+    pintarChips(); pintarGrid();
+    if(irArriba){
+      var s=document.getElementById('piezas');
+      if(s) s.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  }
+
+  function pintarChips(){
+    var caja=document.getElementById('chips');
+    if(!caja) return;
+    var cats=[];
+    PIEZAS.forEach(function(p){
+      var c=(p.cat||'').trim();
+      if(c && cats.indexOf(c)<0) cats.push(c);
     });
+    cats.sort();
+    var h='<button type="button" data-cat=""'+(!FILTRO.cat&&!FILTRO.tag?' class="on"':'')+'>Todas</button>';
+    cats.forEach(function(c){
+      h+='<button type="button" data-cat="'+esc(c)+'"'+(FILTRO.cat===c?' class="on"':'')+'>'+esc(c)+'</button>';
+    });
+    if(PIEZAS.some(function(p){ return p.stock>0; })){
+      h+='<button type="button" data-stock="1" class="stock'+(FILTRO.stock?' on':'')+'">Listas para llevar</button>';
+    }
+    if(FILTRO.tag) h+='<button type="button" data-cat="" class="on">'+esc(FILTRO.tag)+' ✕</button>';
+    caja.innerHTML=h;
+    caja.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(b.dataset.stock) ponerFiltro({stock:!FILTRO.stock});
+        else ponerFiltro({cat:b.dataset.cat||''});
+      });
+    });
+  }
+
+  function limpiarFiltros(){
+    var b=document.getElementById('buscar'); if(b) b.value='';
+    FILTRO={cat:'',tag:'',texto:'',stock:false};
+    pintarChips(); pintarGrid();
+  }
+
+  function pintarGrid(){
+    var lista=PIEZAS.filter(pasaFiltro);
+    if(!lista.length){
+      grid.innerHTML='<div class="nada">No encontré piezas con eso.<br>'+
+        '<button type="button" id="verTodas">Ver todas</button></div>';
+      var vt=document.getElementById('verTodas');
+      if(vt) vt.addEventListener('click',limpiarFiltros);
+      return;
+    }
+    grid.innerHTML=lista.map(tarjeta).join('');
+    var conts=grid.querySelectorAll('.selector');
+    lista.forEach(function(p,n){ selector(conts[n],p,'pieza'); });
+    galerias(); videos(); detalles(lista); pintarTodo();
+  }
+
+  /* ?pieza=dragon-articulado abre esa pieza directo: es el link que se manda
+     por WhatsApp. */
+  function abrirDeLaUrl(){
+    try{
+      var q=new URLSearchParams(location.search).get('pieza');
+      if(!q) return;
+      var s=slug(q);
+      var p=PIEZAS.filter(function(x){ return slug(x.nome)===s; })[0];
+      if(p) abrirDetalle(p);
+    }catch(e){}
   }
 
   /* ---------- arranque ---------- */
@@ -861,8 +1030,13 @@
       document.getElementById('hoja').classList.remove('on');
     });
     document.getElementById('hojaDetalle').addEventListener('click',function(e){
-      if(e.target.id==='hojaDetalle') document.getElementById('hojaDetalle').classList.remove('on');
+      if(e.target.id!=='hojaDetalle') return;
+      document.getElementById('hojaDetalle').classList.remove('on');
+      // cerrar tocando afuera también saca la pieza de la barra de direcciones
+      try{ history.replaceState(null,'',location.pathname); }catch(err){}
     });
+    var busc=document.getElementById('buscar');
+    if(busc) busc.addEventListener('input',function(){ ponerFiltro({texto:busc.value.trim()}); });
     document.getElementById('hoja').addEventListener('click',function(e){
       if(e.target.id==='hoja') document.getElementById('hoja').classList.remove('on');
     });
@@ -901,12 +1075,13 @@
         grid.innerHTML='<div class="cargando">Todavía no hay piezas cargadas.</div>';
         return;
       }
-      grid.innerHTML=piezas.map(tarjeta).join('');
-      var conts=grid.querySelectorAll('.selector');
-      piezas.forEach(function(p,n){ selector(conts[n],p,'pieza'); });
-      galerias();
-      videos();
-      detalles(piezas);
+      PIEZAS=piezas;
+      // con pocas piezas los filtros estorban más de lo que ayudan
+      var cajaF=document.getElementById('filtros');
+      if(cajaF) cajaF.hidden = piezas.length<6;
+      pintarChips();
+      pintarGrid();
+      abrirDeLaUrl();
       opiniones(c.opiniones||[]);
       barra();
     })
