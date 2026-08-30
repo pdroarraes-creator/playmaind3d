@@ -217,6 +217,22 @@
     padding:4px 11px;font-size:12px;font-weight:800;color:var(--ink-soft);cursor:pointer;
     font-family:'Nunito',sans-serif;}
   .tags button:hover{border-color:var(--teal);color:var(--teal-deep);}
+  /* ---- botón flotante de WhatsApp ----
+     Va por encima de la barra de abajo, que es fija y siempre está: si no,
+     le quedaría encima al "Ver pedido". */
+  .wspFab{position:fixed;right:18px;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:70;
+    width:54px;height:54px;border-radius:50%;background:#25D366;color:#fff;
+    display:grid;place-items:center;box-shadow:0 8px 22px rgba(37,211,102,.42);
+    transition:transform .15s;}
+  .wspFab[hidden]{display:none;}
+  .wspFab:hover{transform:scale(1.07);}
+  .wspFab:active{transform:scale(.95);}
+  .wspFab svg{width:30px;height:30px;display:block;}
+  @media (max-width:760px){
+    .wspFab{width:50px;height:50px;right:14px;}
+    .wspFab svg{width:27px;height:27px;}
+  }
+
   /* ---- muestrario que gira solo ----
      La tira lleva la lista DUPLICADA y se corre hasta -50%: cuando termina la
      primera copia, la segunda está exactamente donde arrancó la primera, así
@@ -422,6 +438,13 @@
     <button class="btn wsp-big chico" id="verPedido" type="button">Ver pedido</button>
   </div>
 </div>
+
+<!-- Arranca escondido: recién aparece cuando llegó el número de verdad
+     desde el catálogo, para no ofrecer un WhatsApp que no existe. -->
+<a class="wspFab" id="wspFab" href="#" target="_blank" rel="noopener" hidden
+   aria-label="Escribinos por WhatsApp" title="Escribinos por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.04 4C9.96 4 5.02 8.94 5.02 15.02c0 1.94.51 3.83 1.47 5.5L4.94 27l6.65-1.5a11 11 0 0 0 4.45.94h.01c6.08 0 11.02-4.94 11.02-11.02C27.07 8.94 22.12 4 16.04 4zm0 20.2h-.01a9.2 9.2 0 0 1-4.68-1.28l-.34-.2-3.47.78.74-3.38-.22-.35a9.14 9.14 0 0 1-1.4-4.87c0-5.05 4.11-9.16 9.17-9.16 2.45 0 4.75.96 6.48 2.69a9.1 9.1 0 0 1 2.68 6.48c0 5.06-4.11 9.17-9.16 9.17zm5.03-6.86c-.28-.14-1.63-.8-1.88-.9-.25-.09-.44-.14-.62.14-.18.28-.71.9-.87 1.08-.16.18-.32.2-.6.07-.28-.14-1.16-.43-2.21-1.37-.82-.73-1.37-1.63-1.53-1.9-.16-.28-.02-.43.12-.57.13-.13.28-.32.42-.49.14-.16.18-.28.28-.46.09-.18.05-.35-.02-.49-.07-.14-.62-1.5-.85-2.05-.22-.53-.45-.46-.62-.47l-.53-.01c-.18 0-.47.07-.72.35s-.94.92-.94 2.24.96 2.6 1.1 2.78c.14.18 1.9 2.9 4.6 4.07.64.28 1.14.44 1.53.57.64.2 1.23.18 1.69.11.52-.08 1.63-.67 1.86-1.31.23-.64.23-1.19.16-1.31-.07-.12-.25-.19-.53-.33z"/></svg>
+</a>
 
 <div class="hoja" id="hojaDetalle">
   <div id="detalleBox"></div>
@@ -1130,6 +1153,12 @@
       document.querySelectorAll('a[href*="wa.me"]:not(#verPedido2)').forEach(function(a){
         a.href=linkWA('¡Hola! Vi el catálogo de Playmind 3d y quería hacer un pedido.');
       });
+      // el botón flotante sólo aparece si hay número cargado en los ajustes
+      var fab=document.getElementById('wspFab');
+      if(fab && WSP){
+        fab.href=linkWA('¡Hola! Estoy mirando el catálogo y quería preguntarte por una pieza.');
+        fab.hidden=false;
+      }
 
       pintarPacks(c.packs||[]);
       pintarLeti(c.leti);
