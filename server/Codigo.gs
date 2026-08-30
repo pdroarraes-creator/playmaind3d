@@ -124,7 +124,10 @@ function doPost(e) {
     var u = porSesion_(body.token);
     if (!u) return json_({ ok: false, error: 'clave' });
 
-    if (body.action === 'load')  return json_({ ok: true, data: leerEstado_() });
+    if (body.action === 'load') {
+      var l = leerEstadoYV_();
+      return json_({ ok: true, data: l.data, v: l.v });
+    }
     if (body.action === 'mundo') return json_({ ok: true, mundo: leerMundo_() });
     if (body.action === 'editarPieza') {
       return json_(editarPieza_(body.pieza, body.campos));
@@ -142,8 +145,11 @@ function doPost(e) {
       return json_(resumenNegocio_());
     }
     if (body.action === 'save') {
-      var limpio = guardarEstado_(body.data);
-      return json_({ ok: true, actualizado: new Date().toISOString(), data: limpio });
+      var r = guardarEstado_(body.data, body.v);
+      return json_({
+        ok: true, actualizado: new Date().toISOString(),
+        data: r.data, v: r.v, fusionado: r.fusionado
+      });
     }
     return json_({ ok: false, error: 'accion desconocida' });
   } catch (err) {
@@ -307,43 +313,113 @@ function json_(obj) {
    DATOS DE LA APP
    ===================================================================== */
 
-function leerEstado_() {
+/** El estado más la marca de cuándo se guardó (columna 3), que hace de
+    número de versión: con eso se sabe si la copia que manda un cliente
+    salió de lo que hay ahora o de algo más viejo. */
+function leerEstadoYV_() {
   var h = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(HOJA_DATOS);
-  if (!h) return null;
+  var out = { data: null, v: '' };
+  if (!h) return out;
   var filas = Math.max(h.getLastRow() - 1, 1);
-  var v = h.getRange(2, 1, filas, 2).getValues();
-  var out = null;
-  v.forEach(function (row) {
-    if (row[0] === CLAVE && row[1] && !out) {
-      try { out = JSON.parse(row[1]); } catch (err) { out = null; }
+  var rows = h.getRange(2, 1, filas, 3).getValues();
+  rows.forEach(function (row) {
+    if (row[0] === CLAVE && row[1] && !out.data) {
+      try { out.data = JSON.parse(row[1]); } catch (err) { out.data = null; }
+      out.v = row[2] ? String(new Date(row[2]).getTime()) : '';
     }
   });
   return out;
 }
 
-function guardarEstado_(data) {
+function leerEstado_() {
+  return leerEstadoYV_().data;
+}
+
+/* Listas donde cada elemento tiene id propio: son las que se pueden fusionar
+   elemento por elemento. cfg, pedido y pedidoFil no están acá a propósito —
+   son ajustes y listas de trabajo, ahí gana lo que manda el cliente. */
+var LISTAS_CON_ID = ['produtos', 'filamentos', 'impressoras', 'insumos',
+                     'vendas', 'canais', 'packs', 'opiniones', 'radar'];
+
+/** Junta lo que manda un cliente desatrasado con lo que ya está guardado.
+    Por cada lista: lo que el cliente tiene se respeta tal cual (acaba de
+    tocarlo), y lo que sólo está en el servidor se conserva, porque lo cargó
+    otra persona mientras esta copia estaba vieja.
+
+    Consecuencia buscada: una baja hecha desde una copia vieja NO se aplica
+    — el ítem reaparece y hay que borrarlo de nuevo. Es preferible a borrarle
+    en silencio a otro algo que acababa de cargar. Con la copia al día las
+    bajas funcionan normal, porque ahí no se fusiona nada. */
+function fusionar_(servidor, cliente) {
+  if (!servidor || !cliente) return cliente || servidor;
+  LISTAS_CON_ID.forEach(function (k) {
+    var s = servidor[k], c = cliente[k];
+    if (!Array.isArray(s) || !Array.isArray(c)) return;
+
+    var tieneElCliente = {};
+    c.forEach(function (it) { if (it && it.id) tieneElCliente[it.id] = true; });
+
+    var salida = c.slice();
+    s.forEach(function (it) {
+      if (it && it.id && !tieneElCliente[it.id]) salida.push(it);
+    });
+
+    // las ventas se leen de la más nueva a la más vieja
+    if (k === 'vendas') {
+      salida.sort(function (a, b) {
+        return String((b && b.data) || '').localeCompare(String((a && a.data) || ''));
+      });
+    }
+    cliente[k] = salida;
+  });
+  return cliente;
+}
+
+/** baseV: la versión que tenía el cliente cuando bajó los datos. Si no
+    coincide con la guardada, alguien grabó en el medio y hay que fusionar
+    en vez de pisar — que es lo que hacía antes, y por eso lo que cargaba
+    una persona desaparecía cuando otra guardaba desde una copia vieja. */
+function guardarEstado_(data, baseV) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var h = ss.getSheetByName(HOJA_DATOS) || hoja_(ss, HOJA_DATOS, ['clave', 'json', 'actualizado']);
 
+    // se relee acá adentro, con el lock tomado: entre que el cliente bajó y
+    // ahora pudo haber pasado cualquier cosa
+    var filas = Math.max(h.getLastRow() - 1, 1);
+    var rows = h.getRange(2, 1, filas, 3).getValues();
+    var fila = 0, actual = null, vActual = '';
+    rows.forEach(function (row, i) {
+      if (row[0] === CLAVE && !fila) {
+        fila = i + 2;
+        try { actual = JSON.parse(row[1]); } catch (e) { actual = null; }
+        vActual = row[2] ? String(new Date(row[2]).getTime()) : '';
+      }
+    });
+    if (!fila) fila = h.getLastRow() + 1;
+
+    var fusionado = false;
+    if (actual && baseV && String(baseV) !== vActual) {
+      data = fusionar_(actual, data);
+      fusionado = true;
+    }
+
     data = moverFotosADrive_(data);
     // el token de sesión es del navegador, no del negocio: no se archiva
     if (data && data.cfg) { data.cfg.token = ''; data.cfg.key = ''; }
+    delete data._v; // la versión vive en la columna, no adentro del json
     var txt = JSON.stringify(data);
 
-    var filas = Math.max(h.getLastRow() - 1, 1);
-    var v = h.getRange(2, 1, filas, 1).getValues();
-    var fila = 0;
-    v.forEach(function (row, i) { if (row[0] === CLAVE && !fila) fila = i + 2; });
-    if (!fila) fila = h.getLastRow() + 1;
-    h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, new Date()]]);
+    var cuando = new Date();
+    h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, cuando]]);
 
     volcarVentas_(ss, data);
     volcarPiezas_(ss, data);
     volcarStock_(ss, data);
-    return data;   // con las fotos ya convertidas en links
+    // fotos ya como links; fusionado avisa al cliente que le falta refrescar
+    return { data: data, v: String(cuando.getTime()), fusionado: fusionado };
   } finally {
     lock.releaseLock();
   }
@@ -390,7 +466,8 @@ function agregarPieza_(pieza) {
   if (!pieza || !String(pieza.nome || '').trim()) {
     return { ok: false, error: 'falta el nombre' };
   }
-  var data = leerEstado_();
+  var leido = leerEstadoYV_();
+  var data = leido.data;
   if (!data) return { ok: false, error: 'sin datos' };
   data.produtos = data.produtos || [];
   var fil = (data.filamentos || [])[0];
@@ -423,7 +500,9 @@ function agregarPieza_(pieza) {
     tags: String(pieza.tags || '').trim()
   };
   data.produtos.push(p);
-  guardarEstado_(data); // sube la foto a Drive, guarda y regenera las hojas
+  // sube la foto a Drive, guarda y regenera las hojas. Va con la versión que
+  // se acaba de leer: si otro grabó entre medio, se fusiona en lugar de pisar.
+  guardarEstado_(data, leido.v);
   return { ok: true, id: p.id };
 }
 
@@ -436,7 +515,8 @@ function agregarFilamento_(fil) {
   if (!fil || !String(fil.nome || '').trim()) {
     return { ok: false, error: 'falta el nombre/tipo' };
   }
-  var data = leerEstado_();
+  var leido = leerEstadoYV_();
+  var data = leido.data;
   if (!data) return { ok: false, error: 'sin datos' };
   data.filamentos = data.filamentos || [];
   var rollo = Number(fil.rollo) || 1000;
@@ -451,7 +531,7 @@ function agregarFilamento_(fil) {
     stock: rollo,
   };
   data.filamentos.push(f);
-  guardarEstado_(data);
+  guardarEstado_(data, leido.v);
   return { ok: true, id: f.id };
 }
 

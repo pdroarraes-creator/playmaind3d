@@ -4127,6 +4127,7 @@ async function subirALaNube() {
         action: "save",
         email: D.cfg.email || "",
         token: D.cfg.token || "",
+        v: D._v || "",
         data: enviado,
       }),
     });
@@ -4185,6 +4186,8 @@ async function subirALaNube() {
         renderCat();
         renderVit();
       }
+      // la versión que quedó guardada pasa a ser la base del próximo save
+      if (j.v) D._v = j.v;
       D._sucio = false;
       avisoSyncPendiente = false;
       local.set(D);
@@ -4193,6 +4196,13 @@ async function subirALaNube() {
         "En la nube · " +
           new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
       );
+      // El servidor junto esta copia con cosas que habia cargado otra
+      // persona. Lo guardado ya esta completo, pero acá todavía falta verlo:
+      // por eso se baja de nuevo, que ahora es seguro (no quedó nada sucio).
+      if (j.fusionado) {
+        toast("Había cambios de otra persona: se juntaron los dos.");
+        await bajarDeLaNube();
+      }
     } else if (j && j.error === "clave") {
       claveVencida();
     } else {
@@ -4251,6 +4261,9 @@ async function bajarDeLaNube() {
       D = Object.assign(defaults(), j.data);
       D.cfg.api = api;
       D.cfg.token = tk;
+      // de qué versión salió esta copia: viaja de vuelta en cada save para
+      // que el servidor sepa si tiene que fusionar o puede pisar tranquilo
+      D._v = j.v || "";
       if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
       migrarInsumos();
       migrarStockVentas();
