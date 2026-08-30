@@ -82,6 +82,16 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    no Wix). `.assetsignore` exclui `.git/`, `.wrangler/` e `wrangler.toml` do
    deploy: sem isso, o Wrangler sobe a pasta `.git/` inteira como arquivo
    estático público.
+9. **O cálculo de preço existe duas vezes: `calc()` em `app/app.js` e
+   `calcular_()` em `server/Codigo.gs`.** Mexeu em uma, mexa na outra na mesma
+   hora. Não é preferência de estilo: o preço do catálogo público sai do
+   servidor e o que vocês veem sai do app, então divergir significa cobrar do
+   cliente um valor diferente do que aparece na tela. Em ago/2026 elas estavam
+   divergentes em quatro pontos — o pior era a peça apontando para um filamento
+   apagado, que dava $5.300 no app e $2.250 no catálogo. Pontos onde precisam
+   concordar: fallback para o primeiro filamento/impressora quando o id não
+   existe mais, arredondamento dos gramas a uma casa, `merma` assumindo 12
+   quando não houver valor, e preço manual só valendo se for maior que zero.
 
 ## Dívidas conhecidas (não corrigir sem combinar)
 
