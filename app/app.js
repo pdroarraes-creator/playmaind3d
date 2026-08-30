@@ -184,7 +184,10 @@ const prod = (id) => D.produtos.find((p) => p.id === id);
 /** Lo que se gasta de verdad: la pieza más el desperdicio estimado. */
 function gramosCon(p) {
   const base = num(p && p.peso);
-  return Math.round(base * (1 + num(D.cfg.merma) / 100) * 10) / 10;
+  // 12 por defecto, igual que calcular_ en Codigo.gs: en datos viejos sin
+  // merma guardada, acá daba 0 y del otro lado 12, y los precios no coincidían
+  const m = D.cfg.merma === null || D.cfg.merma === undefined ? 12 : num(D.cfg.merma);
+  return Math.round(base * (1 + m / 100) * 10) / 10;
 }
 /** Lo que cuesta UNA unidad del insumo, sacado del precio del paquete. */
 function unitario(it) {
@@ -3606,7 +3609,17 @@ function renderCfgLists() {
         ],
         D.filamentos.length > 1
           ? () => {
-              if (!confirm("¿Quitar este filamento?")) return;
+              // Las piezas guardan el id del filamento. Si se borra uno en uso,
+              // esas piezas quedan apuntando al vacío y el precio pasa a
+              // calcularse con el primero de la lista, sin que se note.
+              const usan = D.produtos.filter((p) => p.fil === f.id);
+              const aviso = usan.length
+                ? "Lo están usando " + usan.length + " pieza(s): " +
+                  usan.slice(0, 3).map((p) => p.nome).join(", ") +
+                  (usan.length > 3 ? "…" : "") +
+                  ". Si lo sacás, se les calcula el precio con otro filamento.\n\n¿Quitar igual?"
+                : "¿Quitar este filamento?";
+              if (!confirm(aviso)) return;
               D.filamentos = D.filamentos.filter((x) => x.id !== f.id);
               save();
               renderAll();
@@ -3684,6 +3697,15 @@ function renderCfgLists() {
         ],
         D.impressoras.length > 1
           ? () => {
+              // no tenía confirmación: un toque de más y se borraba sola
+              const usan = D.produtos.filter((p) => p.imp === i.id);
+              const aviso = usan.length
+                ? "La están usando " + usan.length + " pieza(s): " +
+                  usan.slice(0, 3).map((p) => p.nome).join(", ") +
+                  (usan.length > 3 ? "…" : "") +
+                  ". Si la sacás, se les calcula el precio con otra impresora.\n\n¿Quitar igual?"
+                : "¿Quitar esta impresora?";
+              if (!confirm(aviso)) return;
               D.impressoras = D.impressoras.filter((x) => x.id !== i.id);
               save();
               renderAll();

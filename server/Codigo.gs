@@ -793,15 +793,21 @@ function calcular_(p, data) {
     (lista || []).forEach(function (x) { if (x.id === id) out = x; });
     return out;
   };
-  var fil = buscar(data.filamentos, p.fil) || { precoKg: 0 };
-  var imp = buscar(data.impressoras, p.imp) ||
+  // Si la pieza apunta a un filamento/impresora que ya no existe (se borró y
+  // la pieza quedó apuntando al vacío), se cae al primero de la lista, IGUAL
+  // que calc() en app.js. Antes acá se caía a costo cero: la app mostraba un
+  // precio y el catálogo público mostraba menos de la mitad.
+  var fil = buscar(data.filamentos, p.fil) || (data.filamentos || [])[0] || { precoKg: 0 };
+  var imp = buscar(data.impressoras, p.imp) || (data.impressoras || [])[0] ||
     { preco: 0, vida: 1, watts: 0, bico: 0, bicoVida: 1, mesa: 0, mesaVida: 1 };
 
   var hs = n(p.h) + n(p.m) / 60;
 
   // El desperdicio (soportes y purga) es un porcentaje global, no un campo por pieza.
   var merma = (c.merma === undefined || c.merma === null) ? 12 : n(c.merma);
-  var gramos = n(p.peso) * (1 + merma / 100);
+  // redondeado a un decimal como gramosCon() en app.js, si no los costos de
+  // las dos puntas quedan corridos por centavos
+  var gramos = Math.round(n(p.peso) * (1 + merma / 100) * 10) / 10;
 
   var material = n(fil.precoKg) / 1000 * gramos;
   var luz = n(imp.watts) / 1000 * hs * n(c.kwh);
@@ -822,7 +828,11 @@ function calcular_(p, data) {
 
   var mult = (p.mult === null || p.mult === undefined ? n(c.mult) : n(p.mult)) || 1;
   var paso = n(c.round) || 1;
-  var precio = p.manual ? n(p.manual) : Math.ceil(costo * mult * (n(p.cplx) || 1) / paso) * paso;
+  // mismo criterio que app.js: sólo vale como precio a mano si es mayor que
+  // cero. Con el truthy pelado, un manual en "0" o negativo salía publicado
+  // tal cual en el catálogo.
+  var hayManual = p.manual !== null && p.manual !== undefined && p.manual !== '' && n(p.manual) > 0;
+  var precio = hayManual ? n(p.manual) : Math.ceil(costo * mult * (n(p.cplx) || 1) / paso) * paso;
   return { custo: costo, preco: precio, gramos: gramos, horas: hs };
 }
 
