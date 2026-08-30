@@ -217,6 +217,25 @@
     padding:4px 11px;font-size:12px;font-weight:800;color:var(--ink-soft);cursor:pointer;
     font-family:'Nunito',sans-serif;}
   .tags button:hover{border-color:var(--teal);color:var(--teal-deep);}
+  /* ---- destacados del encabezado ---- */
+  .destacados{position:absolute;inset:0;border-radius:24px;overflow:hidden;background:var(--bg);
+    box-shadow:0 18px 44px rgba(58,58,56,.16);}
+  .destacados[hidden]{display:none;}
+  .destacados .foto{position:absolute;inset:0;opacity:0;transition:opacity .7s ease;cursor:pointer;}
+  .destacados .foto.on{opacity:1;}
+  .destacados .foto img{width:100%;height:100%;object-fit:cover;display:block;}
+  .destacados .pie{position:absolute;left:0;right:0;bottom:0;padding:60px 22px 20px;color:#fff;
+    background:linear-gradient(transparent,rgba(31,60,58,.85));pointer-events:none;}
+  .destacados .pie b{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:21px;
+    line-height:1.2;}
+  .destacados .pie span{display:block;margin-top:4px;font-size:15px;font-weight:800;opacity:.92;}
+  .destacados .puntos{position:absolute;right:16px;bottom:16px;z-index:3;display:flex;gap:6px;}
+  .destacados .puntos button{width:8px;height:8px;padding:0;border:0;border-radius:999px;
+    background:rgba(255,255,255,.55);cursor:pointer;transition:width .25s,background .25s;}
+  .destacados .puntos button.on{width:22px;background:#fff;}
+  .stage.conDestacados .hero-fallback{display:none;}
+  .stage.conDestacados .stage-caption{display:none;}
+
   /* ---- filtros del catálogo ---- */
   .filtros{margin:0 0 22px;}
   .filtros #buscar{width:100%;max-width:420px;font-family:'Nunito',sans-serif;font-size:15px;
@@ -292,6 +311,7 @@
   </div>
   <div class="stage static" id="stage">
     <div class="hero-fallback"><img src="assets/logo.png" alt="Play Mind 3d"></div>
+    <div class="destacados" id="destacados" hidden></div>
     <div class="stage-caption">Imprimiendo tu próximo mundo…</div>
   </div>
 </header>
@@ -908,6 +928,57 @@
   }
   function galerias(){ grid.querySelectorAll('.p-card').forEach(galeria); }
 
+  /* ---------- destacados que rotan en el encabezado ---------- */
+  var RELOJ=null;
+  function destacados(piezas){
+    var stage=document.getElementById('stage'), caja=document.getElementById('destacados');
+    if(!stage||!caja) return;
+    // primero lo que hay listo para llevar: es lo que se puede vender hoy
+    var lista=piezas.filter(function(p){ return (p.fotos||[]).length; })
+      .slice().sort(function(a,b){
+        return (b.stock>0?1:0)-(a.stock>0?1:0) || (b.fotos||[]).length-(a.fotos||[]).length;
+      }).slice(0,5);
+    if(lista.length<2) return; // con una sola no hay carrusel que valga
+
+    caja.innerHTML=lista.map(function(p,n){
+      return '<div class="foto'+(n?'':' on')+'">'+
+        '<img src="'+esc(p.fotos[0])+'" alt="'+esc(p.nome)+'"'+(n?' loading="lazy"':'')+'>'+
+        '<div class="pie"><b>'+esc(p.nome)+'</b><span>'+plata(p.precio)+
+        (p.stock>0?' · lista para llevar':'')+'</span></div></div>';
+    }).join('')+
+    '<div class="puntos">'+lista.map(function(p,n){
+      return '<button type="button" data-n="'+n+'"'+(n?'':' class="on"')+
+        ' aria-label="Ver '+esc(p.nome)+'"></button>';
+    }).join('')+'</div>';
+    caja.hidden=false;
+    stage.classList.add('conDestacados');
+
+    var fotos=caja.querySelectorAll('.foto'), puntos=caja.querySelectorAll('.puntos button'), i=0;
+    function ver(n){
+      i=(n+fotos.length)%fotos.length;
+      fotos.forEach(function(f,k){ f.classList.toggle('on',k===i); });
+      puntos.forEach(function(b,k){ b.classList.toggle('on',k===i); });
+    }
+    function seguir(){
+      clearInterval(RELOJ);
+      // quien pidió menos movimiento en el sistema no recibe el cambio solo
+      var quieto=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(quieto) return;
+      RELOJ=setInterval(function(){ ver(i+1); },4500);
+    }
+    puntos.forEach(function(b){
+      b.addEventListener('click',function(){ ver(+b.dataset.n); seguir(); });
+    });
+    fotos.forEach(function(f,n){
+      f.addEventListener('click',function(){ abrirDetalle(lista[n]); });
+    });
+    // con la pestaña de fondo no tiene sentido gastar batería girando fotos
+    document.addEventListener('visibilitychange',function(){
+      if(document.hidden) clearInterval(RELOJ); else seguir();
+    });
+    seguir();
+  }
+
   /* ---------- filtros, búsqueda y link por pieza ---------- */
   var PIEZAS=[], FILTRO={cat:'',tag:'',texto:'',stock:false};
 
@@ -1079,6 +1150,7 @@
       // con pocas piezas los filtros estorban más de lo que ayudan
       var cajaF=document.getElementById('filtros');
       if(cajaF) cajaF.hidden = piezas.length<6;
+      destacados(piezas);
       pintarChips();
       pintarGrid();
       abrirDeLaUrl();
