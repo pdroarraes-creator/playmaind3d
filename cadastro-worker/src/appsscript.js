@@ -18,3 +18,15 @@ export async function validarSesion(env, token) {
 export async function agregarPieza(env, token, pieza) {
   return pedir(env, { action: "agregarPieza", token, pieza });
 }
+
+/** filamento: {marca, nome, cor, hex, precoKg, rollo}. */
+export async function agregarFilamento(env, token, filamento) {
+  return pedir(env, { action: "agregarFilamento", token, filamento });
+}
+
+/** Resumen liviano de piezas/filamentos/insumos/ventas para que el Agente
+    pueda responder preguntas sobre el negocio. */
+export async function resumenNegocio(env, token) {
+  const j = await pedir(env, { action: "resumenNegocio", token });
+  return j && j.ok ? j.resumen : null;
+}

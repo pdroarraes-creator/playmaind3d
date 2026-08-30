@@ -135,6 +135,12 @@ function doPost(e) {
     if (body.action === 'agregarPieza') {
       return json_(agregarPieza_(body.pieza));
     }
+    if (body.action === 'agregarFilamento') {
+      return json_(agregarFilamento_(body.filamento));
+    }
+    if (body.action === 'resumenNegocio') {
+      return json_(resumenNegocio_());
+    }
     if (body.action === 'save') {
       var limpio = guardarEstado_(body.data);
       return json_({ ok: true, actualizado: new Date().toISOString(), data: limpio });
@@ -419,6 +425,98 @@ function agregarPieza_(pieza) {
   data.produtos.push(p);
   guardarEstado_(data); // sube la foto a Drive, guarda y regenera las hojas
   return { ok: true, id: p.id };
+}
+
+/** Agrega un filamento nuevo (usado por el Agente, a partir de una foto de
+    la caja). OJO: la foto de la caja NUNCA se guarda acá — sólo sirve para
+    que el modelo lea marca/tipo/color una vez; guardarla rompería el límite
+    de 50.000 caracteres de la celda de Sheets (moverFotosADrive_ tampoco
+    sabe procesar fotos de filamento, sólo de piezas/logo/leti). */
+function agregarFilamento_(fil) {
+  if (!fil || !String(fil.nome || '').trim()) {
+    return { ok: false, error: 'falta el nombre/tipo' };
+  }
+  var data = leerEstado_();
+  if (!data) return { ok: false, error: 'sin datos' };
+  data.filamentos = data.filamentos || [];
+  var rollo = Number(fil.rollo) || 1000;
+  var f = {
+    id: Utilities.getUuid(),
+    marca: String(fil.marca || '').trim(),
+    nome: String(fil.nome || '').trim(),
+    cor: String(fil.cor || '').trim(),
+    hex: String(fil.hex || '#CFC3AE'),
+    precoKg: Number(fil.precoKg) || 0,
+    rollo: rollo,
+    stock: rollo,
+  };
+  data.filamentos.push(f);
+  guardarEstado_(data);
+  return { ok: true, id: f.id };
+}
+
+/** Resumen liviano del negocio (piezas, filamentos, insumos, ventas) para
+    que el Agente pueda responder preguntas sin mandar el estado completo
+    (que trae cosas irrelevantes para eso, como tokens de sesión y textos de
+    catálogo). */
+function resumenNegocio_() {
+  var data = leerEstado_();
+  if (!data) return { ok: false, error: 'sin datos' };
+  var n = function (x) { x = parseFloat(x); return isFinite(x) ? x : 0; };
+
+  var piezas = (data.produtos || []).map(function (p) {
+    var r = calcular_(p, data);
+    return {
+      nome: p.nome || '',
+      cat: p.cat || '',
+      stock: n(p.stock),
+      custo: Math.round(r.custo),
+      preco: Math.round(r.preco),
+    };
+  });
+
+  var filamentos = (data.filamentos || []).map(function (f) {
+    return {
+      nome: ((f.marca || '') + ' ' + (f.nome || '') + (f.cor ? ' - ' + f.cor : '')).trim(),
+      stock_g: n(f.stock),
+      precoKg: n(f.precoKg),
+    };
+  });
+
+  var insumos = (data.insumos || []).map(function (i) {
+    return { nome: i.nome || '', stock: n(i.stock) };
+  });
+
+  var mesActual = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM');
+  var ventasMes = (data.vendas || []).filter(function (v) {
+    return String(v.data || '').slice(0, 7) === mesActual;
+  });
+  var fatMes = 0, lucMes = 0;
+  ventasMes.forEach(function (v) { fatMes += n(v.total); lucMes += n(v.lucro); });
+  var pendiente = 0;
+  (data.vendas || []).forEach(function (v) { if (!v.pago) pendiente += n(v.total); });
+
+  var recientes = (data.vendas || []).slice(0, 15).map(function (v) {
+    return {
+      data: v.data || '',
+      cliente: v.cliente || '',
+      total: Math.round(n(v.total)),
+      lucro: Math.round(n(v.lucro)),
+      pago: !!v.pago,
+    };
+  });
+
+  return {
+    ok: true,
+    resumen: {
+      piezas: piezas,
+      filamentos: filamentos,
+      insumos: insumos,
+      este_mes: { facturado: Math.round(fatMes), ganancia: Math.round(lucMes), ventas: ventasMes.length },
+      por_cobrar: Math.round(pendiente),
+      ventas_recientes: recientes,
+    },
+  };
 }
 
 /** Las fotos pesadas van a Drive; en la planilla queda sólo el link. */

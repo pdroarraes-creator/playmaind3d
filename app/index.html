@@ -105,7 +105,7 @@
           <div class="acts" style="margin-top: 14px">
             <button class="btn" onclick="nuevaPieza()">+ Pieza nueva</button>
             <button class="btn ghost" onclick="pegarLink()">Desde un link</button>
-            <button class="btn ghost" onclick="abrirChatCad()">Cadastrar por chat</button>
+            <button class="btn ghost" onclick="abrirChatCad()">💬 Falar com o Mind</button>
           </div>
         </div>
       </section>
@@ -478,6 +478,7 @@
       <section id="tab-ven" hidden>
         <button class="btn wide vender" onclick="abrirPOS()">Vender ahora</button>
         <div class="acts salirventa" style="margin: -4px 0 13px">
+          <button class="btn ghost mini" onclick="abrirChatCad()">💬 Falar com o Mind</button>
           <button class="btn ghost mini" onclick="salirModoVenta()">Ir al sistema completo</button>
           <button class="btn danger mini" onclick="salir()">Cerrar sesión</button>
         </div>
@@ -522,6 +523,7 @@
           </p>
           <p id="quienSoy" class="mut" style="margin: 0 0 12px"></p>
           <div class="acts">
+            <button class="btn ghost mini" onclick="abrirChatCad()">💬 Falar com o Mind</button>
             <button class="btn ghost mini" onclick="traerDeLaNubeManual()">Traer de la nube</button>
             <button class="btn ghost mini" onclick="subirAhora()">Subir ahora</button>
             <button class="btn ghost mini" onclick="exportar()">Copia de seguridad</button>
@@ -679,9 +681,10 @@
             placeholder="Buscar marca, tipo o color…"
           />
           <div id="filList"></div>
-          <button class="btn ghost mini" style="margin-top: 11px" onclick="addFil()">
-            + Filamento
-          </button>
+          <div class="acts" style="margin-top: 11px">
+            <button class="btn ghost mini" onclick="addFil()">+ Filamento</button>
+            <button class="btn ghost mini" onclick="abrirChatCad()">💬 Com foto (Mind)</button>
+          </div>
         </div>
 
         <div class="card">
@@ -808,14 +811,18 @@
 
     <div class="pos" id="chatCad" hidden>
       <header>
-        <h2>Cadastrar por chat</h2>
+        <h2>Mind</h2>
         <button class="cerrarpos" onclick="cerrarChatCad()" title="Cerrar">×</button>
       </header>
       <div class="chatDica" id="chatDica">
         <p>
+          O Mind cadastra peça (foto + link do MakerWorld), cadastra filamento
+          (foto da caixa) e responde perguntas sobre peças, estoque e vendas.
+        </p>
+        <p>
           <b>Dica:</b> arraste este link pros favoritos do navegador (só funciona
           bem no computador). Enquanto estiver vendo a página de um modelo no
-          MakerWorld, clique nele — abre este chat já com nome, tags, peso e
+          MakerWorld, clique nele — abre o Mind já com nome, tags, peso e
           tempo de impressão preenchidos.
         </p>
         <a id="chatBookmarklet" href="#" class="btn ghost mini">🔖 Cadastrar no PlayMind</a>

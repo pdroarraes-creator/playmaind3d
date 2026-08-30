@@ -2486,6 +2486,7 @@ var CHAT = {
   foto: null, // data URL completa ("data:image/jpeg;base64,...") o null
   contextoMakerWorld: null,
   propuesta: null, // últimos campos que el modelo propuso via function call
+  tipoCadastro: null, // 'peca' | 'filamento' — qué función propuso el modelo
 };
 
 function urlBookmarklet() {
@@ -2498,7 +2499,7 @@ function urlBookmarklet() {
 }
 
 function abrirChatCad() {
-  CHAT = { historial: [], foto: null, contextoMakerWorld: null, propuesta: null };
+  CHAT = { historial: [], foto: null, contextoMakerWorld: null, propuesta: null, tipoCadastro: null };
   $("#chatInput").value = "";
   $("#chatFotoNome").textContent = "";
   $("#chatConfirmar").hidden = true;
@@ -2572,7 +2573,10 @@ async function enviarChatCad(mensajeForzado) {
     }
     CHAT.historial.push({ role: "model", texto: j.texto || "" });
     CHAT.propuesta = j.propuestaCadastro || null;
+    CHAT.tipoCadastro = j.tipoCadastro || null;
     $("#chatConfirmar").hidden = !CHAT.propuesta;
+    $("#chatConfirmar").textContent =
+      CHAT.tipoCadastro === "filamento" ? "Confirmar filamento" : "Confirmar cadastro";
     pintarChatMsgs();
   } catch (e) {
     CHAT.historial.push({ role: "model", texto: "Não consegui falar com o servidor agora." });
@@ -2594,6 +2598,7 @@ async function confirmarChatCad() {
       body: JSON.stringify({
         token: D.cfg.token || "",
         confirmar: CHAT.propuesta,
+        tipo: CHAT.tipoCadastro,
         link: (CHAT.contextoMakerWorld && CHAT.contextoMakerWorld.link) || "",
         foto: fotoParaGemini(CHAT.foto),
       }),
@@ -2603,7 +2608,11 @@ async function confirmarChatCad() {
       toast("Não consegui cadastrar: " + (j.error || "erro desconhecido"));
       return;
     }
-    toast("Peça cadastrada! Vai aparecer no editor ao sincronizar.");
+    toast(
+      CHAT.tipoCadastro === "filamento"
+        ? "Filamento cadastrado! Vai aparecer em Ajustes ao sincronizar."
+        : "Peça cadastrada! Vai aparecer no editor ao sincronizar.",
+    );
     cerrarChatCad();
     traerDeLaNubeManual();
   } catch (e) {

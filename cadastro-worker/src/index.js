@@ -1,4 +1,4 @@
-import { validarSesion, agregarPieza } from "./appsscript.js";
+import { validarSesion, agregarPieza, agregarFilamento, resumenNegocio } from "./appsscript.js";
 import { conversar } from "./gemini.js";
 import { BOOKMARKLET_JS } from "./bookmarklet.js";
 
@@ -45,6 +45,20 @@ function traducirParaAgregarPieza(propuesta, link, foto) {
   };
 }
 
+/** Traduce los campos de cadastrar_filamento al shape de agregarFilamento_.
+    La foto de la caja NUNCA se manda para acá — sólo sirvió para que el
+    modelo la lea en la conversación (ver nota en agregarFilamento_). */
+function traducirParaAgregarFilamento(propuesta) {
+  return {
+    marca: propuesta.marca || "",
+    nome: propuesta.tipo || "",
+    cor: propuesta.cor || "",
+    hex: propuesta.hex || "",
+    precoKg: propuesta.preco_kg != null ? Number(propuesta.preco_kg) : 0,
+    rollo: propuesta.peso_rollo_g != null ? Number(propuesta.peso_rollo_g) : 1000,
+  };
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -83,13 +97,31 @@ export default {
     if (!sesionValida) return jsonResp({ ok: false, error: "sesión inválida" }, 401);
 
     // Confirmação real: o cliente já mostrou os campos (voltaram como
-    // propuestaCadastro num turno anterior) e o usuário apertou o botão
-    // "Confirmar cadastro" — aqui SÓ gravamos, sem passar pelo Gemini de novo.
+    // propuestaCadastro/tipoCadastro num turno anterior) e o usuário
+    // apertou "Confirmar cadastro" — aqui SÓ gravamos, sem passar pelo
+    // Gemini de novo.
     if (body.confirmar) {
+      if (body.tipo === "filamento") {
+        const filamento = traducirParaAgregarFilamento(body.confirmar);
+        if (!filamento.nome) return jsonResp({ ok: false, error: "falta o tipo" }, 400);
+        const r = await agregarFilamento(env, token, filamento);
+        return jsonResp(r);
+      }
       const pieza = traducirParaAgregarPieza(body.confirmar, body.link, body.foto);
       if (!pieza.nome) return jsonResp({ ok: false, error: "falta el nombre" }, 400);
       const r = await agregarPieza(env, token, pieza);
       return jsonResp(r);
+    }
+
+    // El resumen del negocio es liviano (dezenas de piezas/ventas, no miles)
+    // así que se manda entero en cada turno — así el Agente responde
+    // preguntas sin depender de que el mensaje mencione algo en particular.
+    // Si falla, seguimos sin ese contexto en vez de cortar la conversa.
+    let contextoNegocio = null;
+    try {
+      contextoNegocio = await resumenNegocio(env, token);
+    } catch {
+      contextoNegocio = null;
     }
 
     let resultado;
@@ -99,17 +131,20 @@ export default {
         mensaje,
         foto,
         contextoMakerWorld: contextoMakerWorld || null,
+        contextoNegocio,
       });
     } catch (e) {
       return jsonResp({ ok: false, error: String(e) }, 502);
     }
 
+    const chamada = resultado.chamada;
     return jsonResp({
       ok: true,
       texto: resultado.texto,
       // El cliente decide si muestra el botón "Confirmar cadastro" cuando
       // llega esto — la ejecución real sólo pasa con body.confirmar (arriba).
-      propuestaCadastro: resultado.chamada ? resultado.chamada.args : null,
+      propuestaCadastro: chamada ? chamada.args : null,
+      tipoCadastro: chamada ? (chamada.name === "cadastrar_filamento" ? "filamento" : "peca") : null,
     });
   },
 };
