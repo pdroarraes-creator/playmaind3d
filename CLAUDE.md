@@ -33,6 +33,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `server/Codigo.gs` | O Apps Script. **Não roda daqui** — é copiado e colado no editor. |
 | `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
 | `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
+| `docs/calculo-de-custo.md` | Explicação em português da fórmula de preço, pra humanos — não é lida pelo app. Cópia dela vive também no Drive, pasta `2brain-compartilhado-Pedro&Raquel/Playmind`, pra Raquel usar com o Claude dela. |
 
 ## Seções de `app/app.js`
 
