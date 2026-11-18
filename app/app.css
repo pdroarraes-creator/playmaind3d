@@ -1724,3 +1724,56 @@ body.modoventa .salirventa {
     transition: none !important;
   }
 }
+
+/* ---------- categorías ---------- */
+.catchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.catchip {
+  font: 600 13px/1 Nunito, sans-serif;
+  padding: 8px 12px;
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--deep);
+  background: var(--surface);
+  color: var(--deep);
+  cursor: pointer;
+}
+.catchip.on {
+  background: var(--deep);
+  color: #fff;
+}
+.catchip.nueva {
+  border-style: dashed;
+}
+.catfila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+.catfila input {
+  flex: 1;
+  min-width: 0;
+}
+.catfila .mut {
+  min-width: 22px;
+  text-align: center;
+  font-size: 12px;
+}
+.temaswitch {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 14px;
+  cursor: pointer;
+}
+.temaswitch input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  margin: 2px 0 0;
+}

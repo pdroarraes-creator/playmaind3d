@@ -101,6 +101,19 @@
             placeholder="Buscar por nombre o marca…"
             style="margin-bottom: 10px"
           />
+          <div id="catChips" class="catchips"></div>
+          <div id="catAcciones" class="acts" hidden>
+            <button class="btn ghost" onclick="copiarLinkCat()">Copiar link</button>
+            <button class="btn" onclick="enviarCatalogo()">Catálogo PDF</button>
+          </div>
+          <div class="card" id="catListo" hidden>
+            <h2 id="catListoTit">PDF listo</h2>
+            <p class="hint">Tocá Compartir y elegí el contacto en WhatsApp.</p>
+            <div class="acts">
+              <button class="btn" onclick="compartirPdfListo()">Compartir PDF</button>
+              <button class="btn ghost" onclick="descargarPdfListo()">Descargar</button>
+            </div>
+          </div>
           <div id="catList"></div>
           <div class="acts" style="margin-top: 14px">
             <button class="btn" onclick="nuevaPieza()">+ Pieza nueva</button>
@@ -143,13 +156,8 @@
               ><input id="c_ref" type="text" placeholder="MakerWorld o propio" />
             </div>
             <div>
-              <label class="f" for="c_cat">Categoría</label>
-              <input id="c_cat" type="text" list="cats" placeholder="Sensoriales" />
-              <datalist id="cats">
-                <option value="Sensoriales"></option>
-                <option value="Personalizados"></option>
-                <option value="Creaciones"></option>
-              </datalist>
+              <span class="f">Categorías</span>
+              <div id="c_cats" class="catchips"></div>
             </div>
             <div>
               <label class="f" for="c_fil">Filamento</label
@@ -390,8 +398,8 @@
           <h2 id="presuListoTit">PDF listo</h2>
           <p class="hint">Tocá Compartir y elegí el contacto en WhatsApp.</p>
           <div class="acts">
-            <button class="btn" onclick="compartirPresupuesto()">Compartir PDF</button>
-            <button class="btn ghost" onclick="descargarPresupuesto()">Descargar</button>
+            <button class="btn" onclick="compartirPdfListo()">Compartir PDF</button>
+            <button class="btn ghost" onclick="descargarPdfListo()">Descargar</button>
           </div>
         </div>
       </section>
@@ -589,6 +597,19 @@
           </div>
         </div>
 
+        <div class="card">
+          <h2><i class="dot" style="background: var(--deep)"></i> Categorías</h2>
+          <p class="hint">Ordenan el catálogo y los filtros del sitio. Tocá un nombre para cambiarlo.</p>
+          <div id="cfgCats"></div>
+          <div class="acts" style="margin-top: 10px">
+            <input id="s_catNueva" type="text" placeholder="Nueva categoría" style="flex: 1" />
+            <button class="btn" onclick="agregarCatCfg()">Agregar</button>
+          </div>
+          <label class="temaswitch" for="s_temaNavidad">
+            <input id="s_temaNavidad" type="checkbox" />
+            <span><b>Tema del sitio: Navidad</b><br /><small>Todo el sitio con el diseño navideño.</small></span>
+          </label>
+        </div>
         <div class="card">
           <h2><i class="dot" style="background: var(--coral-deep, #e8895a)"></i> La historia de Leti</h2>
           <p class="hint">El texto y la foto de la sección "La historia" del catálogo público.</p>

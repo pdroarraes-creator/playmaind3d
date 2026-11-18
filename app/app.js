@@ -414,13 +414,75 @@ function renderAvisos() {
     ),
   );
 }
+let catActiva = ""; // "" = todas
+function chip(texto, on, onclick, extra) {
+  return el("button", { type: "button", class: "catchip" + (on ? " on" : "") + (extra ? " " + extra : ""), onclick }, texto);
+}
+function renderChipsCat() {
+  const box = $("#catChips");
+  box.textContent = "";
+  const usadas = D.categorias.filter((c) => usoCategoria(D.produtos, c) > 0);
+  if (catActiva && !usadas.some((c) => slugCat(c) === slugCat(catActiva))) catActiva = "";
+  if (!usadas.length) return;
+  box.appendChild(chip("Todas", !catActiva, () => elegirCat("")));
+  usadas.forEach((c) => box.appendChild(chip(c, slugCat(c) === slugCat(catActiva), () => elegirCat(c))));
+  $("#catAcciones").hidden = !catActiva;
+}
+function elegirCat(c) {
+  catActiva = c;
+  $("#catListo").hidden = true;
+  renderCat();
+}
+function copiarLinkCat() {
+  const link = linkCategoria(catActiva);
+  (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
+    .then(() => toast("Link copiado"))
+    .catch(() => prompt("Copiá el link:", link));
+}
+let armandoCat = false;
+async function enviarCatalogo() {
+  if (!catActiva || armandoCat) return;
+  const cat = armarCatalogo(D.produtos, catActiva, {
+    precioDe: (p) => calc(Object.assign({}, p, { fil: p.fil })).preco,
+    fecha: new Date(),
+    marca: D.cfg.marca || "PlayMind 3d",
+    wa: D.cfg.wa,
+    ig: "@playmind3d",
+    lista: D.categorias,
+  });
+  if (!cat.items.length) {
+    toast("No hay piezas visibles en esta categoría.");
+    return;
+  }
+  armandoCat = true;
+  mostrarPresuListo(false);
+  toast("Armando el catálogo…");
+  const t0 = Date.now();
+  try {
+    const pedirFoto = (id) => pedir({ action: "foto", email: D.cfg.email || "", token: D.cfg.token || "", id });
+    const logo = await cargarImagen("/assets/logo-app.png");
+    const blob = await generarCatalogoPdf(cat, { logo, pedirFoto });
+    const texto = "Te paso el catálogo de " + cat.nombre + " de " + cat.marca + ": " + cat.link;
+    await entregarPdf({ blob, nombre: nombreArchivoCatalogo(cat.nombre), texto, caja: "#catListo" }, t0);
+  } catch (e) {
+    console.error(e);
+    toast("No pude armar el PDF. Probá de nuevo.");
+  } finally {
+    armandoCat = false;
+  }
+}
 function renderCat() {
   renderAvisos();
   const q = ($("#q").value || "").toLowerCase(),
     box = $("#catList");
   box.textContent = "";
-  const list = D.produtos.filter(
-    (p) => !q || (p.nome + " " + (p.ref || "") + " " + filName(p.fil)).toLowerCase().includes(q),
+  renderChipsCat();
+  const list = piezasDeCategoria(D.produtos, catActiva).filter(
+    (p) =>
+      !q ||
+      (p.nome + " " + (p.ref || "") + " " + filName(p.fil) + " " + (p.cats || []).join(" "))
+        .toLowerCase()
+        .includes(q),
   );
   if (!list.length) {
     if (D.produtos.length) {
@@ -602,6 +664,31 @@ function nuevaPieza() {
   cargarPieza(null);
   showTab("calc");
 }
+let catsTmp = []; // categorías marcadas en el editor
+function renderCatsEditor() {
+  const box = $("#c_cats");
+  box.textContent = "";
+  D.categorias.forEach((c) => {
+    const on = catsTmp.some((x) => slugCat(x) === slugCat(c));
+    box.appendChild(
+      chip(c, on, () => {
+        catsTmp = on ? catsTmp.filter((x) => slugCat(x) !== slugCat(c)) : catsTmp.concat([c]);
+        renderCatsEditor();
+        renderCalc();
+      }),
+    );
+  });
+  box.appendChild(
+    chip("+ nueva", false, () => {
+      const n = agregarCategoria(D, prompt("Nombre de la categoría") || "");
+      if (!n) return;
+      if (!catsTmp.some((x) => slugCat(x) === slugCat(n))) catsTmp.push(n);
+      save();
+      renderCatsEditor();
+      renderCalc();
+    }, "nueva"),
+  );
+}
 function cargarPieza(p) {
   editId = p ? p.id : null;
   fotosTmp = p
@@ -629,7 +716,8 @@ function cargarPieza(p) {
   $("#c_cplx").value = p ? p.cplx || 1 : 1;
   $("#c_manual").value = p && p.manual ? p.manual : "";
   $("#c_mkt").value = p && p.mercado ? p.mercado : "";
-  $("#c_cat").value = p ? p.cat || "" : "";
+  catsTmp = p && Array.isArray(p.cats) ? p.cats.slice() : [];
+  renderCatsEditor();
   $("#c_medida").value = p ? p.medida || "" : "";
   $("#c_video").value = p ? p.video || "" : "";
   $("#c_detalle").value = p ? p.detalle || "" : "";
@@ -779,7 +867,8 @@ function piezaActual() {
     cplx: num($("#c_cplx").value) || 1,
     manual: $("#c_manual").value === "" ? null : num($("#c_manual").value),
     mercado: $("#c_mkt").value === "" ? null : num($("#c_mkt").value),
-    cat: $("#c_cat").value.trim(),
+    cats: catsTmp.slice(),
+    cat: catsTmp[0] || "",
     desc: $("#c_desc").value.trim(),
     libre: $("#c_libre").checked,
     medida: $("#c_medida").value.trim(),
@@ -979,7 +1068,6 @@ function addAlPedido() {
   "c_cplx",
   "c_manual",
   "c_mkt",
-  "c_cat",
   "c_desc",
   "c_medida",
   "c_video",
@@ -1156,12 +1244,15 @@ function colorDe(fil) {
   return f ? f.cor || f.nome || "el que elijas" : "el que elijas";
 }
 let armandoPresu = false;
-let presuListo = null; // { blob, nombre, texto } del último PDF armado
+let presuListo = null; // { blob, nombre, texto, caja } del último PDF armado
 function mostrarPresuListo(ver) {
-  $("#presuListo").hidden = !ver;
-  if (ver) $("#presuListoTit").textContent = "PDF listo — " + presuListo.nombre;
+  ["#presuListo", "#catListo"].forEach((id) => ($(id).hidden = true));
+  if (!ver || !presuListo) return;
+  const caja = presuListo.caja || "#presuListo";
+  $(caja).hidden = false;
+  $(caja + "Tit").textContent = "PDF listo — " + presuListo.nombre;
 }
-function descargarPresupuesto() {
+function descargarPdfListo() {
   if (!presuListo) return;
   const url = URL.createObjectURL(presuListo.blob);
   const a = el("a", { href: url, download: presuListo.nombre });
@@ -1173,7 +1264,7 @@ function descargarPresupuesto() {
   if (!w) toast("PDF descargado. Abrí WhatsApp y adjuntalo.");
 }
 /* Se llama desde un toque, así el navegador deja abrir "compartir". */
-async function compartirPresupuesto() {
+async function compartirPdfListo() {
   if (!presuListo) return;
   const file = new File([presuListo.blob], presuListo.nombre, { type: "application/pdf" });
   let err = null;
@@ -1187,10 +1278,25 @@ async function compartirPresupuesto() {
   else if (paso === "boton") mostrarPresuListo(true);
   else {
     console.error(err);
-    descargarPresupuesto();
+    descargarPdfListo();
     mostrarPresuListo(true);
   }
 }
+/* Comparte en el momento si todavía hay permiso del toque; si no, deja la caja con el botón. */
+async function entregarPdf(listo, t0) {
+  presuListo = listo;
+  const file = new File([listo.blob], listo.nombre, { type: "application/pdf" });
+  const puedeCompartir = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  const modo = comoEntregar({ puedeCompartir, ms: Date.now() - t0 });
+  if (modo === "compartir") await compartirPdfListo();
+  else if (modo === "boton") mostrarPresuListo(true);
+  else {
+    descargarPdfListo();
+    mostrarPresuListo(true);
+  }
+}
+const compartirPresupuesto = compartirPdfListo;
+const descargarPresupuesto = descargarPdfListo;
 /* Arma el PDF del presupuesto y lo comparte (o lo descarga si el teléfono no deja). */
 async function enviarPresupuesto() {
   const t = pedidoTotales();
@@ -1222,16 +1328,7 @@ async function enviarPresupuesto() {
     confirmarNumero(D.cfg, n);
     D.presupuestos = registrar(D.presupuestos, presu);
     save();
-    presuListo = { blob, nombre: nombreArchivo(presu), texto: textoCompartir(presu) };
-    const file = new File([blob], presuListo.nombre, { type: "application/pdf" });
-    const puedeCompartir = !!(navigator.canShare && navigator.canShare({ files: [file] }));
-    const modo = comoEntregar({ puedeCompartir, ms: Date.now() - t0 });
-    if (modo === "compartir") await compartirPresupuesto();
-    else if (modo === "boton") mostrarPresuListo(true);
-    else {
-      descargarPresupuesto();
-      mostrarPresuListo(true);
-    }
+    await entregarPdf({ blob, nombre: nombreArchivo(presu), texto: textoCompartir(presu), caja: "#presuListo" }, t0);
   } catch (e) {
     console.error(e);
     toast("No pude armar el PDF. Probá de nuevo.");
@@ -1290,11 +1387,16 @@ function registrarVenta() {
 /* ---------- vitrina ---------- */
 function agrupado() {
   const g = {};
+  D.categorias.forEach((c) => (g[c] = []));
+  const otras = [];
   D.produtos.forEach((p) => {
     if (p.oculta) return;
-    const c = (p.cat || "Otras creaciones").trim() || "Otras creaciones";
-    (g[c] = g[c] || []).push(p);
+    const cs = (p.cats || []).filter((c) => g[c]);
+    if (!cs.length) otras.push(p);
+    cs.forEach((c) => g[c].push(p));
   });
+  Object.keys(g).forEach((c) => !g[c].length && delete g[c]);
+  if (otras.length) g["Otras creaciones"] = otras;
   return g;
 }
 function renderVit() {
@@ -3555,6 +3657,51 @@ $("#sheet").addEventListener("click", (e) => {
 });
 
 /* ---------- ajustes ---------- */
+function renderCategoriasCfg() {
+  const box = $("#cfgCats");
+  if (!box) return;
+  box.textContent = "";
+  D.categorias.forEach((c, i) => {
+    const nombre = el("input", {
+      type: "text",
+      value: c,
+      "aria-label": "Nombre de la categoría",
+      onchange: (e) => {
+        renombrarCategoria(D, c, e.target.value);
+        save();
+        renderAll();
+      },
+    });
+    box.appendChild(
+      el(
+        "div",
+        { class: "catfila" },
+        nombre,
+        el("span", { class: "mut" }, String(usoCategoria(D.produtos, c))),
+        el("button", { class: "btn ghost mini", "aria-label": "Subir", disabled: i === 0 ? "" : null, onclick: () => { moverCategoria(D, c, -1); save(); renderAll(); } }, "↑"),
+        el("button", { class: "btn ghost mini", "aria-label": "Bajar", disabled: i === D.categorias.length - 1 ? "" : null, onclick: () => { moverCategoria(D, c, 1); save(); renderAll(); } }, "↓"),
+        el("button", {
+          class: "btn danger mini",
+          onclick: () => {
+            const n = usoCategoria(D.produtos, c);
+            if (!confirm("¿Borrar «" + c + "»? La usan " + n + " piezas.")) return;
+            borrarCategoria(D, c);
+            save();
+            renderAll();
+          },
+        }, "Borrar"),
+      ),
+    );
+  });
+}
+function agregarCatCfg() {
+  const n = agregarCategoria(D, $("#s_catNueva").value);
+  if (!n) return;
+  $("#s_catNueva").value = "";
+  save();
+  renderAll();
+}
+
 var CFG_ATADO = false;
 function bindCfg() {
   const map = {
@@ -3571,6 +3718,8 @@ function bindCfg() {
   $("#s_marca").value = D.cfg.marca || "";
   $("#s_wa").value = D.cfg.wa || "";
   $("#s_presupDias").value = D.cfg.presupDias || 7;
+  $("#s_temaNavidad").checked = D.cfg.temaSitio === "navidad";
+  renderCategoriasCfg();
   $("#s_cat").value = D.cfg.catalogo || "";
   $("#s_letiCita").value = D.cfg.leti.cita || "";
   $("#s_letiHistoria").value = D.cfg.leti.historia || "";
@@ -3602,6 +3751,11 @@ function bindCfg() {
   $("#s_wa").addEventListener("input", () => {
     D.cfg.wa = $("#s_wa").value;
     save();
+  });
+  $("#s_temaNavidad").addEventListener("change", () => {
+    D.cfg.temaSitio = $("#s_temaNavidad").checked ? "navidad" : "";
+    save();
+    toast(D.cfg.temaSitio ? "El sitio queda en modo Navidad." : "El sitio vuelve al diseño de siempre.");
   });
   $("#s_presupDias").addEventListener("input", () => {
     D.cfg.presupDias = Math.max(1, num($("#s_presupDias").value));
@@ -4587,6 +4741,8 @@ function renderAll() {
   insumosInputs(insumosSel);
   renderAccesos();
   renderCfgLists();
+  renderCategoriasCfg();
+  renderCatsEditor();
   renderCat();
   renderPed();
   renderVen();
