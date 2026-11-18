@@ -1151,6 +1151,61 @@ function mandarWA() {
   const url = "https://wa.me/?text=" + encodeURIComponent(t);
   window.open(url, "_blank", "noopener");
 }
+function colorDe(fil) {
+  const f = D.filamentos.find((x) => x.id === fil);
+  return f ? f.cor || f.nome || "el que elijas" : "el que elijas";
+}
+let armandoPresu = false;
+/* Arma el PDF del presupuesto y lo comparte (o lo descarga si el teléfono no deja). */
+async function enviarPresupuesto() {
+  const t = pedidoTotales();
+  if (!t.it.length) {
+    toast("El pedido está vacío.");
+    return;
+  }
+  if (armandoPresu) return;
+  armandoPresu = true;
+  toast("Armando el presupuesto…");
+  try {
+    const presu = armarPresupuesto(t, {
+      n: siguienteNumero(D.cfg),
+      cliente: $("#p_cli").value.trim(),
+      fecha: new Date(),
+      dias: D.cfg.presupDias,
+      marca: D.cfg.marca || "PlayMind 3d",
+      wa: D.cfg.wa,
+      ig: "@playmind3d",
+      colorDe,
+    });
+    const pedirFoto = (id) => pedir({ action: "foto", email: D.cfg.email || "", token: D.cfg.token || "", id });
+    const logo = await cargarImagen("/assets/logo-app.png");
+    const blob = await generarPdf(presu, { logo, pedirFoto });
+    D.presupuestos = registrar(D.presupuestos, presu);
+    save();
+    const nombre = nombreArchivo(presu);
+    const texto = textoCompartir(presu);
+    const file = new File([blob], nombre, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text: texto });
+      } catch (e) {
+        if (e && e.name !== "AbortError") throw e;
+      }
+    } else {
+      const a = el("a", { href: URL.createObjectURL(blob), download: nombre });
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      window.open("https://wa.me/?text=" + encodeURIComponent(texto), "_blank", "noopener");
+    }
+  } catch (e) {
+    console.error(e);
+    toast("No pude armar el PDF. Probá de nuevo.");
+  } finally {
+    armandoPresu = false;
+  }
+}
 function vaciarPedido() {
   D.pedido = {};
   $("#p_desc").value = 0;
@@ -3482,6 +3537,7 @@ function bindCfg() {
   for (const id in map) $("#" + id).value = D.cfg[map[id]];
   $("#s_marca").value = D.cfg.marca || "";
   $("#s_wa").value = D.cfg.wa || "";
+  $("#s_presupDias").value = D.cfg.presupDias || 7;
   $("#s_cat").value = D.cfg.catalogo || "";
   $("#s_letiCita").value = D.cfg.leti.cita || "";
   $("#s_letiHistoria").value = D.cfg.leti.historia || "";
@@ -3512,6 +3568,10 @@ function bindCfg() {
   });
   $("#s_wa").addEventListener("input", () => {
     D.cfg.wa = $("#s_wa").value;
+    save();
+  });
+  $("#s_presupDias").addEventListener("input", () => {
+    D.cfg.presupDias = Math.max(1, num($("#s_presupDias").value));
     save();
   });
   $("#s_cat").addEventListener("input", () => {

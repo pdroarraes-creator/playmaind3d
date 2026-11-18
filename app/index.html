@@ -380,7 +380,8 @@
         </div>
         <div class="card">
           <div class="acts">
-            <button class="btn" onclick="mandarWA()">Mandar por WhatsApp</button>
+            <button class="btn" onclick="enviarPresupuesto()">Enviar presupuesto (PDF)</button>
+            <button class="btn ghost" onclick="mandarWA()">Mandar por WhatsApp</button>
             <button class="btn ghost" onclick="registrarVenta()">Registrar como venta</button>
             <button class="btn danger mini" onclick="vaciarPedido()">Vaciar</button>
           </div>
@@ -551,6 +552,10 @@
             <div>
               <label class="f" for="s_wa">WhatsApp para pedidos</label
               ><input id="s_wa" type="text" placeholder="+54 9 11 …" />
+            </div>
+            <div>
+              <label class="f" for="s_presupDias">Validez del presupuesto (días)</label
+              ><input id="s_presupDias" type="number" inputmode="numeric" min="1" />
             </div>
             <div hidden style="display: none">
               <label class="f" for="s_cat">Link del catálogo</label
@@ -895,7 +900,10 @@
 
     <div class="toast" id="toast"></div>
 
+    <script src="vendor/jspdf.umd.min.js"></script>
+    <script src="vendor/fredoka.js"></script>
     <script src="presupuesto.js"></script>
+    <script src="presupuesto-pdf.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
