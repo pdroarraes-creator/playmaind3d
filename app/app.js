@@ -4368,6 +4368,7 @@ async function bajarDeLaNube() {
       if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
       migrarInsumos();
       migrarStockVentas();
+      migrarPresupuestos(D);
       await local.set(D);
       cargarPieza(null);
       bindCfg();
@@ -4454,6 +4455,7 @@ $("#fImp").addEventListener("change", (e) => {
       if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
       migrarInsumos();
       migrarStockVentas();
+      migrarPresupuestos(D);
       cargarPieza(null);
       bindCfg();
       save();
@@ -4555,6 +4557,7 @@ if ("serviceWorker" in navigator) {
   if (!D.opiniones) D.opiniones = [];
   if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
   migrarStockVentas();
+  migrarPresupuestos(D);
   if (D.cfg.merma === undefined || D.cfg.merma === null) D.cfg.merma = 12;
   if (!D.canais || !D.canais.length) D.canais = defaults().canais;
   bindCfg();

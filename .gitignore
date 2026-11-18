@@ -3,3 +3,5 @@ node_modules/
 Thumbs.db
 *.zip
 .wrangler/
+.superpowers/
+tests/salida-ejemplo.pdf
