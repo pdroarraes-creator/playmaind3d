@@ -94,7 +94,7 @@ function doGet(e) {
 
   // El catálogo es público a propósito: lo lee la página de ventas.
   // Sale sólo nombre, foto, descripción y precio. Nunca costos ni ventas.
-  if (p.action === 'catalogo') return json_({ ok: true, catalogo: catalogoPublico_() });
+  if (p.action === 'catalogo') return json_({ ok: true, catalogo: catalogoCacheado_() });
 
   // Todo lo demás es privado y viaja por POST, para que ni la clave ni el
   // token queden escritos en la URL (las URLs se guardan en los registros).
@@ -427,6 +427,7 @@ function guardarEstado_(data, baseV) {
 
     var cuando = new Date();
     h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, cuando]]);
+    invalidarCatalogo_(); // antes de los volcar*_: si alguno falla, el cache ya quedó limpio
 
     volcarVentas_(ss, data);
     volcarPiezas_(ss, data);
@@ -471,6 +472,7 @@ function editarPieza_(nombre, campos) {
     v.forEach(function (row, i) { if (row[0] === CLAVE && !fila) fila = i + 2; });
     if (!fila) fila = h.getLastRow() + 1;
     h.getRange(fila, 1, 1, 3).setValues([[CLAVE, JSON.stringify(data), new Date()]]);
+    invalidarCatalogo_(); // antes de volcarPiezas_: si falla, el cache ya quedó limpio
     volcarPiezas_(ss, data);
     return { ok: true };
   } finally {
@@ -724,6 +726,36 @@ function fotoChica_(url) {
   if (typeof url !== 'string') return url;
   if (!/^https:\/\/lh3\.googleusercontent\.com\/d\/[A-Za-z0-9_-]+$/.test(url)) return url;
   return url + '=' + FOTO_PARAM;
+}
+
+/* Cache del catálogo público: leerEstado_ + calcular_ de todas las piezas es
+   lo que hace lento el catálogo. Se guarda 15 minutos y se borra en cada
+   grabación del estado (guardarEstado_ y editarPieza_), para que nunca se
+   vean precios o stock viejos. */
+var CATALOGO_CLAVE_CACHE = 'catalogo';
+var CATALOGO_TTL_S = 900;
+var CATALOGO_MAX_CHARS = 90000; // CacheService admite 100 KB por valor
+
+function catalogoCacheado_() {
+  var cache = null;
+  try {
+    cache = CacheService.getScriptCache();
+    var hit = cache.get(CATALOGO_CLAVE_CACHE);
+    if (hit) return JSON.parse(hit);
+  } catch (e) { cache = null; }
+
+  var cat = catalogoPublico_();
+  try {
+    if (cache && cat && cat.piezas && cat.piezas.length > 0) {
+      var txt = JSON.stringify(cat);
+      if (txt.length < CATALOGO_MAX_CHARS) cache.put(CATALOGO_CLAVE_CACHE, txt, CATALOGO_TTL_S);
+    }
+  } catch (e) {}
+  return cat;
+}
+
+function invalidarCatalogo_() {
+  try { CacheService.getScriptCache().remove(CATALOGO_CLAVE_CACHE); } catch (e) {}
 }
 
 function catalogoPublico_() {
