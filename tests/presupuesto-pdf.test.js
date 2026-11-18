@@ -73,3 +73,26 @@ test("cargarImagen no se cuelga si Google y el servidor no contestan", async () 
     globalThis.fetch = fetchViejo;
   }
 });
+
+const C = require("../app/categorias.js");
+function catalogo(n) {
+  const ps = [];
+  for (let i = 0; i < n; i++) ps.push({ nome: "Pieza " + i, cats: ["Navidad"], manual: 5000 });
+  return C.armarCatalogo(ps, "Navidad", { precioDe: (p) => p.manual, fecha: new Date(2026, 10, 18), marca: "PlayMind 3d", wa: "+54 9 11", ig: "@playmind3d", lista: ["Navidad"] });
+}
+
+test("catálogo PDF lleva precios, categoría y link", async () => {
+  const buf = await PDF.generarCatalogoPdf(catalogo(3), { cargar: async () => null, salida: "arraybuffer", comprimir: false });
+  const s = texto(buf);
+  for (const t of ["$5.000", "Navidad", "playmind3d.com/?cat=navidad", "18/11/2026"]) assert.ok(s.includes(t), t);
+});
+
+test("catálogo PDF largo pasa a otra hoja", async () => {
+  const doc = await PDF.generarCatalogoPdf(catalogo(20), { cargar: async () => null, salida: "doc" });
+  assert.ok(doc.getNumberOfPages() >= 2);
+});
+
+test("el presupuesto no cambia con el catálogo", async () => {
+  const buf = await PDF.generarPdf(presu(), { cargar: async () => null, salida: "arraybuffer", comprimir: false });
+  assert.ok(texto(buf).includes("$11.400"));
+});

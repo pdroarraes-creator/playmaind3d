@@ -121,7 +121,44 @@
 
   const linkCategoria = (nombre, base = "https://playmind3d.com/") => base + "?cat=" + slugCat(nombre);
 
+  const dos = (n) => String(n).padStart(2, "0");
+
+  /** Datos del catálogo PDF de una categoría. Nunca lleva costo, ganancia ni horas. */
+  function armarCatalogo(produtos, nombre, o) {
+    const nom = (o.lista && buscar(o.lista, nombre)) || limpio(nombre);
+    const d = o.fecha || new Date();
+    const items = piezasDeCategoria(produtos, nom)
+      .filter((p) => !p.oculta)
+      .map((p) => ({
+        nome: p.nome || "Pieza",
+        precio: Math.round(Number(o.precioDe(p)) || 0),
+        foto: (Array.isArray(p.fotos) && p.fotos[0]) || p.foto || "",
+        color: p.libre ? "" : "Elegís el color",
+      }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "es"));
+    return {
+      titulo: "Catálogo · " + nom,
+      nombre: nom,
+      fecha: dos(d.getDate()) + "/" + dos(d.getMonth() + 1) + "/" + d.getFullYear(),
+      link: linkCategoria(nom),
+      marca: o.marca || "PlayMind 3d",
+      wa: o.wa || "",
+      ig: o.ig || "",
+      items,
+    };
+  }
+
+  const nombreArchivoCatalogo = (nombre) =>
+    "Catalogo-" +
+    String(nombre || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Za-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") +
+    ".pdf";
+
   const api = {
+    armarCatalogo, nombreArchivoCatalogo,
     CATS_INICIALES, slugCat, migrarCategorias, catsDesdeTexto, ponerCats, agregarCategoria,
     renombrarCategoria, moverCategoria, borrarCategoria, usoCategoria, piezasDeCategoria, linkCategoria,
   };

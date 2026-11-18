@@ -109,54 +109,98 @@
     }
   }
 
-  async function generarPdf(pr, deps) {
-    deps = deps || {};
-    const cargar = deps.cargar || cargarImagen;
+  /** Documento A4 con las fuentes y atajos de color que usan los dos PDF. */
+  function nuevoDoc(deps) {
     const { jsPDF } = raiz.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "a4", compress: deps.comprimir !== false });
-
     let titulo = "helvetica";
     if (raiz.FREDOKA_B64) {
       doc.addFileToVFS("Fredoka.ttf", raiz.FREDOKA_B64);
       doc.addFont("Fredoka.ttf", "Fredoka", "normal");
       titulo = "Fredoka";
     }
-    const color = (c) => doc.setTextColor(c[0], c[1], c[2]);
-    const relleno = (c) => doc.setFillColor(c[0], c[1], c[2]);
-    const fuente = (f, est, t) => {
-      doc.setFont(f, est || "normal");
-      doc.setFontSize(t);
+    return {
+      doc,
+      titulo,
+      color: (c) => doc.setTextColor(c[0], c[1], c[2]),
+      relleno: (c) => doc.setFillColor(c[0], c[1], c[2]),
+      fuente: (f, est, t) => {
+        doc.setFont(f, est || "normal");
+        doc.setFontSize(t);
+      },
     };
+  }
+
+  /** Fondo + faja teal con logo y marca; a la derecha, etiqueta y dos líneas. Devuelve la y libre. */
+  function dibujarEncabezado(k, o) {
+    const { doc, fuente, color, relleno } = k;
+    relleno(C.fondo);
+    doc.rect(0, 0, A4.w, A4.h, "F");
+    relleno(C.teal);
+    doc.rect(0, 0, A4.w, 38, "F");
+    let x = M;
+    if (ponerImagen(doc, o.logo, M, 7, 24)) x = M + 28;
+    fuente(k.titulo, "normal", 20);
+    color(C.blanco);
+    doc.text(latin(o.marca) || "PlayMind 3d", x, 18);
+    fuente("helvetica", "normal", 9);
+    doc.text("Juguetes y arte impresos en 3D", x, 25);
+    fuente(k.titulo, "normal", 15);
+    doc.text(o.etiqueta, A4.w - M, 15, { align: "right" });
+    fuente("helvetica", "bold", 11);
+    doc.text(latin(o.linea1), A4.w - M, 22, { align: "right" });
+    fuente("helvetica", "normal", 9);
+    doc.text(latin(o.linea2), A4.w - M, 29, { align: "right" });
+    relleno(C.dorado);
+    doc.rect(0, 38, A4.w, 1.2, "F");
+    return 48;
+  }
+
+  /** Pie en todas las hojas: frase, contacto y, si hay, una línea extra (el link). */
+  function dibujarPie(k, o) {
+    const { doc, fuente, color, relleno } = k;
+    const n = doc.getNumberOfPages();
+    for (let p = 1; p <= n; p++) {
+      doc.setPage(p);
+      const yp = A4.h - 20;
+      relleno(C.dorado);
+      doc.rect(M, yp - 6, A4.w - 2 * M, 0.6, "F");
+      fuente(k.titulo, "normal", 11);
+      color(C.teal);
+      doc.text("Se imprime a pedido \u00B7 eleg\u00EDs el color", M, yp);
+      fuente("helvetica", "normal", 9);
+      color(C.gris);
+      const contacto = [o.wa ? "WhatsApp " + latin(o.wa) : "", latin(o.ig), latin(o.extra)]
+        .filter(Boolean)
+        .join("   \u00B7   ");
+      doc.text(contacto, M, yp + 6);
+      if (n > 1) doc.text(p + "/" + n, A4.w - M, yp + 6, { align: "right" });
+    }
+  }
+
+  function salida(doc, deps) {
+    if (deps.salida === "doc") return doc;
+    if (deps.salida === "arraybuffer") return doc.output("arraybuffer");
+    return doc.output("blob");
+  }
+
+  async function generarPdf(pr, deps) {
+    deps = deps || {};
+    const cargar = deps.cargar || cargarImagen;
+    const k = nuevoDoc(deps);
+    const { doc, titulo, color, relleno, fuente } = k;
 
     const fotos = await Promise.all(pr.items.map((it) => cargar(it.foto, deps.pedirFoto)));
     const logo = deps.logo || null;
 
-    function fondo() {
-      relleno(C.fondo);
-      doc.rect(0, 0, A4.w, A4.h, "F");
-    }
-
-    function encabezado() {
-      fondo();
-      relleno(C.teal);
-      doc.rect(0, 0, A4.w, 38, "F");
-      let x = M;
-      if (ponerImagen(doc, logo, M, 7, 24)) x = M + 28;
-      fuente(titulo, "normal", 20);
-      color(C.blanco);
-      doc.text(latin(pr.marca) || "PlayMind 3d", x, 18);
-      fuente("helvetica", "normal", 9);
-      doc.text("Juguetes y arte impresos en 3D", x, 25);
-      fuente(titulo, "normal", 15);
-      doc.text("PRESUPUESTO", A4.w - M, 15, { align: "right" });
-      fuente("helvetica", "bold", 11);
-      doc.text("N° " + pr.numero, A4.w - M, 22, { align: "right" });
-      fuente("helvetica", "normal", 9);
-      doc.text(pr.fecha + "  ·  Válido hasta " + pr.valido, A4.w - M, 29, { align: "right" });
-      relleno(C.dorado);
-      doc.rect(0, 38, A4.w, 1.2, "F");
-      return 48;
-    }
+    const encabezado = () =>
+      dibujarEncabezado(k, {
+        logo,
+        marca: pr.marca,
+        etiqueta: "PRESUPUESTO",
+        linea1: "N\u00B0 " + pr.numero,
+        linea2: pr.fecha + "  \u00B7  V\u00E1lido hasta " + pr.valido,
+      });
 
     function cabezaTabla(y) {
       fuente("helvetica", "bold", 8.5);
@@ -242,29 +286,79 @@
     doc.text("Total", 123, y + 6.8);
     doc.text(dinero(pr.total), A4.w - M - 4, y + 6.8, { align: "right" });
 
-    // pie en todas las hojas
-    const n = doc.getNumberOfPages();
-    for (let p = 1; p <= n; p++) {
-      doc.setPage(p);
-      const yp = A4.h - 20;
-      relleno(C.dorado);
-      doc.rect(M, yp - 6, A4.w - 2 * M, 0.6, "F");
-      fuente(titulo, "normal", 11);
-      color(C.teal);
-      doc.text("Se imprime a pedido · elegís el color", M, yp);
-      fuente("helvetica", "normal", 9);
-      color(C.gris);
-      const contacto = [pr.wa ? "WhatsApp " + latin(pr.wa) : "", latin(pr.ig)].filter(Boolean).join("   ·   ");
-      doc.text(contacto, M, yp + 6);
-      if (n > 1) doc.text(p + "/" + n, A4.w - M, yp + 6, { align: "right" });
-    }
-
-    if (deps.salida === "doc") return doc;
-    if (deps.salida === "arraybuffer") return doc.output("arraybuffer");
-    return doc.output("blob");
+    dibujarPie(k, { wa: pr.wa, ig: pr.ig });
+    return salida(doc, deps);
   }
 
-  const api = { idDeDrive, cargarImagen, generarPdf };
+  async function generarCatalogoPdf(cat, deps) {
+    deps = deps || {};
+    const cargar = deps.cargar || cargarImagen;
+    const k = nuevoDoc(deps);
+    const { doc, titulo, color, relleno, fuente } = k;
+    const fotos = await Promise.all(cat.items.map((it) => cargar(it.foto, deps.pedirFoto)));
+    const encabezado = () =>
+      dibujarEncabezado(k, {
+        logo: deps.logo || null,
+        marca: cat.marca,
+        etiqueta: "CAT\u00C1LOGO",
+        linea1: cat.nombre,
+        linea2: cat.fecha,
+      });
+
+    let y = encabezado();
+    fuente(titulo, "normal", 18);
+    color(C.tealOscuro);
+    doc.text(latin(cat.titulo), M, y + 2);
+    y += 10;
+
+    const COLS = 3,
+      GAP = 6;
+    const ancho = (A4.w - 2 * M - GAP * (COLS - 1)) / COLS;
+    cat.items.forEach((it, i) => {
+      const col = i % COLS;
+      fuente("helvetica", "bold", 10);
+      const lineas = doc.splitTextToSize(latin(it.nome) || "Pieza", ancho).slice(0, 3);
+      // la fila entera se mide al empezar: así ninguna tarjeta queda cortada
+      if (col === 0) {
+        let alto = 0;
+        for (let j = i; j < Math.min(i + COLS, cat.items.length); j++) {
+          const l = doc.splitTextToSize(latin(cat.items[j].nome) || "Pieza", ancho).slice(0, 3);
+          alto = Math.max(alto, ancho + 4 + l.length * 4.4 + 12);
+        }
+        if (y + alto > A4.h - PIE) {
+          doc.addPage();
+          y = encabezado();
+        }
+        cat._alto = alto;
+      }
+      const x = M + col * (ancho + GAP);
+      relleno(C.blanco);
+      doc.roundedRect(x, y, ancho, cat._alto - 4, 3, 3, "F");
+      if (!ponerImagen(doc, fotos[i], x + 3, y + 3, ancho - 6)) {
+        relleno(C.cielo);
+        doc.roundedRect(x + 3, y + 3, ancho - 6, ancho - 6, 3, 3, "F");
+      }
+      let yt = y + ancho + 3;
+      color(C.tinta);
+      doc.text(lineas, x + 3, yt);
+      yt += lineas.length * 4.4;
+      fuente("helvetica", "bold", 12);
+      color(C.tealOscuro);
+      doc.text(dinero(it.precio), x + 3, yt + 2);
+      if (it.color) {
+        fuente("helvetica", "normal", 8);
+        color(C.gris);
+        doc.text(latin(it.color), x + 3, yt + 7);
+      }
+      if (col === COLS - 1 || i === cat.items.length - 1) y += cat._alto;
+    });
+    delete cat._alto;
+
+    dibujarPie(k, { wa: cat.wa, ig: cat.ig, extra: String(cat.link || "").replace(/^https?:\/\//, "") });
+    return salida(doc, deps);
+  }
+
+  const api = { idDeDrive, cargarImagen, generarPdf, generarCatalogoPdf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else Object.assign(raiz, api);
 })(typeof window !== "undefined" ? window : globalThis);

@@ -103,3 +103,26 @@ test("ponerCats deduplica", () => {
 test("link", () => {
   assert.equal(C.linkCategoria("Biología"), "https://playmind3d.com/?cat=biologia");
 });
+
+test("arma catálogo de una categoría", () => {
+  const ps = [
+    { nome: "Reno", cats: ["Navidad"], manual: 5000 },
+    { nome: "Arbolito", cats: ["Navidad"], oculta: true, manual: 4000 },
+    { nome: "Calabaza", cats: ["Halloween"], manual: 3000 },
+    { nome: "Estrella", cats: ["Navidad", "Sensoriales"], manual: 2000, libre: true, fotos: ["f1"] },
+  ];
+  const cat = C.armarCatalogo(ps, "navidad", { precioDe: (p) => p.manual, fecha: new Date(2026, 10, 18), marca: "PlayMind 3d", wa: "+54", ig: "@playmind3d", lista: ["Navidad", "Halloween"] });
+  assert.equal(cat.nombre, "Navidad");
+  assert.equal(cat.titulo, "Catálogo · Navidad");
+  assert.equal(cat.fecha, "18/11/2026");
+  assert.equal(cat.link, "https://playmind3d.com/?cat=navidad");
+  assert.deepEqual(cat.items.map((i) => i.nome), ["Estrella", "Reno"]);
+  assert.deepEqual(cat.items[0], { nome: "Estrella", precio: 2000, foto: "f1", color: "" });
+  assert.equal(cat.items[1].color, "Elegís el color");
+  for (const k of ["custo", "lucro", "horas"]) assert.ok(!JSON.stringify(cat).includes(k), k);
+});
+
+test("nombre del archivo del catálogo", () => {
+  assert.equal(C.nombreArchivoCatalogo("Biología"), "Catalogo-Biologia.pdf");
+  assert.equal(C.nombreArchivoCatalogo("Navidad 2026"), "Catalogo-Navidad-2026.pdf");
+});
