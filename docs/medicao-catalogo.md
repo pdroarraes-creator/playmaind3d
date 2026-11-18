@@ -7,6 +7,10 @@ Versão anterior do Apps Script: (anotar antes de publicar)
 
 ## Antes
 
+Medir ANTES de publicar a nova versão do Apps Script. Rodar o CLI de novo pelo menos
+15 minutos depois do último salvamento, para que a primeira chamada seja um cold start real
+(sem cache).
+
 PENDENTE: rodar `node scripts/medir-catalogo.js` no computador do dono e colar a saída aqui.
 
 Critério para seguir para a Task 2: `=w800` precisa reduzir os bytes de forma clara

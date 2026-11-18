@@ -36,6 +36,15 @@ function fotosDe(data) {
   return [...new Set(todas.filter((u) => typeof u === "string" && u))];
 }
 
+// Quita el sufijo de tamaño (=w800) solo de fotos de Drive; el catálogo ya
+// publicado devuelve las fotos con sufijo y "original" tiene que ser sin él.
+function urlOriginal(url) {
+  if (typeof url !== "string") return url;
+  return /^https:\/\/lh3\.googleusercontent\.com\/d\/[A-Za-z0-9_-]+=[A-Za-z0-9-]+$/.test(url)
+    ? url.replace(/=[A-Za-z0-9-]+$/, "")
+    : url;
+}
+
 function contarPiezas(data) {
   const c = data && data.catalogo;
   return c && Array.isArray(c.piezas) ? c.piezas.length : 0;
@@ -59,7 +68,7 @@ async function main() {
   console.log("Piezas:", contarPiezas(data));
   const fotos = fotosDe(data).slice(0, 5);
   for (const f of fotos) {
-    for (const [etq, u] of [["original", f], ["=w800", f.replace(/=[a-z0-9-]+$/i, "") + "=w800"]]) {
+    for (const [etq, u] of [["original", urlOriginal(f)], ["=w800", urlOriginal(f) + "=w800"]]) {
       try {
         const r = await medir(u);
         console.log(`Foto ${etq}: status ${r.status}, ${r.bytes} bytes, ${r.ms} ms  ${u}`);
@@ -70,7 +79,7 @@ async function main() {
   }
 }
 
-module.exports = { resumir, fotosDe, contarPiezas };
+module.exports = { resumir, fotosDe, contarPiezas, urlOriginal };
 
 if (require.main === module) {
   main().catch((e) => { console.error("Falló:", e.message, e.cause ? e.cause.message || e.cause : ""); process.exit(1); });

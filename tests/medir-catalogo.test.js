@@ -1,4 +1,4 @@
-// Pruebas del script de medición del catálogo. Correr con: node --test tests/
+// Pruebas del script de medición del catálogo. Correr con: node --test tests/*.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { resumir } = require("../scripts/medir-catalogo.js");
@@ -46,4 +46,19 @@ test("contarPiezas cuenta data.catalogo.piezas, 0 si falta", () => {
   assert.equal(contarPiezas(real()), 2);
   assert.equal(contarPiezas({ catalogo: {} }), 0);
   assert.equal(contarPiezas(null), 0);
+});
+
+const { urlOriginal } = require("../scripts/medir-catalogo.js");
+
+test("urlOriginal quita el sufijo de tamaño de fotos de Drive", () => {
+  const base = "https://lh3.googleusercontent.com/d/abc_123-X";
+  assert.equal(urlOriginal(base + "=w800"), base);
+  assert.equal(urlOriginal(base), base);
+});
+
+test("urlOriginal no toca otras URLs", () => {
+  const o = "https://ejemplo.com/foto.jpg?a=b";
+  assert.equal(urlOriginal(o), o);
+  const q = "https://ejemplo.com/d/abc=w800";
+  assert.equal(urlOriginal(q), q);
 });
