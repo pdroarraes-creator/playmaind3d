@@ -25,13 +25,20 @@ async function medir(url) {
   return { status: r.status, bytes: buf.byteLength, ms: Math.round(performance.now() - t0), buf };
 }
 
-// Busca las URLs de fotos (cadenas http) en cualquier parte del JSON.
-function fotosDe(obj, acc = new Set()) {
-  if (typeof obj === "string") {
-    if (/^https?:\/\//.test(obj)) acc.add(obj);
-  } else if (Array.isArray(obj)) obj.forEach((x) => fotosDe(x, acc));
-  else if (obj && typeof obj === "object") Object.values(obj).forEach((x) => fotosDe(x, acc));
-  return acc;
+// Fotos del catálogo: piezas[].fotos y leti.foto, sin vacíos ni duplicados.
+function fotosDe(data) {
+  const c = (data && data.catalogo) || {};
+  const todas = [];
+  for (const p of Array.isArray(c.piezas) ? c.piezas : []) {
+    if (p && Array.isArray(p.fotos)) todas.push(...p.fotos);
+  }
+  if (c.leti) todas.push(c.leti.foto);
+  return [...new Set(todas.filter((u) => typeof u === "string" && u))];
+}
+
+function contarPiezas(data) {
+  const c = data && data.catalogo;
+  return c && Array.isArray(c.piezas) ? c.piezas.length : 0;
 }
 
 async function main() {
@@ -49,9 +56,8 @@ async function main() {
   console.log("Cuerpo:", ultimo.bytes, "bytes");
   let data = null;
   try { data = JSON.parse(Buffer.from(ultimo.buf).toString("utf8")); } catch (e) { console.log("El cuerpo no es JSON"); }
-  const piezas = data && (Array.isArray(data) ? data : data.piezas || data.productos || data.items);
-  console.log("Piezas:", Array.isArray(piezas) ? piezas.length : "(no se pudo contar)");
-  const fotos = [...fotosDe(data)].slice(0, 5);
+  console.log("Piezas:", contarPiezas(data));
+  const fotos = fotosDe(data).slice(0, 5);
   for (const f of fotos) {
     for (const [etq, u] of [["original", f], ["=w800", f.replace(/=[a-z0-9-]+$/i, "") + "=w800"]]) {
       try {
@@ -64,7 +70,7 @@ async function main() {
   }
 }
 
-module.exports = { resumir };
+module.exports = { resumir, fotosDe, contarPiezas };
 
 if (require.main === module) {
   main().catch((e) => { console.error("Falló:", e.message, e.cause ? e.cause.message || e.cause : ""); process.exit(1); });
