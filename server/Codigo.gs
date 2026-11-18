@@ -730,32 +730,45 @@ function fotoChica_(url) {
 
 /* Cache del catálogo público: leerEstado_ + calcular_ de todas las piezas es
    lo que hace lento el catálogo. Se guarda 15 minutos y se borra en cada
-   grabación del estado (guardarEstado_ y editarPieza_), para que nunca se
-   vean precios o stock viejos. */
+   grabación del estado (guardarEstado_ y editarPieza_). Además hay una marca
+   de generación ('catalogo:gen'): invalidarCatalogo_ la renueva, y un
+   catálogo calculado mientras llegaba una grabación no se guarda (la marca
+   cambió entre el inicio del cálculo y el put). La ventana que queda es de
+   unos milisegundos entre la segunda lectura y el put; en el peor caso un
+   catálogo viejo dura como mucho CATALOGO_TTL_S. */
 var CATALOGO_CLAVE_CACHE = 'catalogo';
+var CATALOGO_CLAVE_GEN = 'catalogo:gen';
 var CATALOGO_TTL_S = 900;
 var CATALOGO_MAX_CHARS = 90000; // CacheService admite 100 KB por valor
 
 function catalogoCacheado_() {
   var cache = null;
+  var gen = null;
   try {
     cache = CacheService.getScriptCache();
     var hit = cache.get(CATALOGO_CLAVE_CACHE);
     if (hit) return JSON.parse(hit);
+    gen = cache.get(CATALOGO_CLAVE_GEN);
   } catch (e) { cache = null; }
 
   var cat = catalogoPublico_();
   try {
     if (cache && cat && cat.piezas && cat.piezas.length > 0) {
       var txt = JSON.stringify(cat);
-      if (txt.length < CATALOGO_MAX_CHARS) cache.put(CATALOGO_CLAVE_CACHE, txt, CATALOGO_TTL_S);
+      if (txt.length < CATALOGO_MAX_CHARS && cache.get(CATALOGO_CLAVE_GEN) === gen) {
+        cache.put(CATALOGO_CLAVE_CACHE, txt, CATALOGO_TTL_S);
+      }
     }
   } catch (e) {}
   return cat;
 }
 
 function invalidarCatalogo_() {
-  try { CacheService.getScriptCache().remove(CATALOGO_CLAVE_CACHE); } catch (e) {}
+  try {
+    var cache = CacheService.getScriptCache();
+    cache.remove(CATALOGO_CLAVE_CACHE);
+    cache.put(CATALOGO_CLAVE_GEN, String(new Date().getTime()) + '-' + Math.random().toString(36).slice(2), 21600);
+  } catch (e) {}
 }
 
 function catalogoPublico_() {

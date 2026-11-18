@@ -120,3 +120,27 @@ test("doGet sirve el catálogo cacheado", () => {
   assert.equal(r1.catalogo.piezas.length, 1);
   assert.equal(cuenta.leer, 1);
 });
+
+test("no guarda en el cache un catálogo calculado antes de una invalidación", () => {
+  const { ctx, cuenta, mapa } = cargar();
+  const base = ctx.leerEstado_;
+  let primera = true;
+  ctx.leerEstado_ = () => {
+    const d = base();
+    if (primera) { primera = false; ctx.invalidarCatalogo_(); } // una grabación llega a mitad del cálculo
+    return d;
+  };
+  const r = plano(ctx.catalogoCacheado_());
+  assert.equal(r.piezas.length, 1);
+  assert.equal(mapa.has("catalogo"), false);
+  ctx.catalogoCacheado_();
+  assert.equal(cuenta.leer, 2); // la siguiente llamada recalcula
+});
+
+test("después de una invalidación previa, el cache vuelve a funcionar", () => {
+  const { ctx, cuenta } = cargar();
+  ctx.invalidarCatalogo_();
+  ctx.catalogoCacheado_();
+  ctx.catalogoCacheado_();
+  assert.equal(cuenta.leer, 1);
+});

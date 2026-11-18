@@ -102,7 +102,8 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
 10. **Toda função que grava a célula `estado` (hoje `guardarEstado_` e
    `editarPieza_`) deve chamar `invalidarCatalogo_()` logo após o `setValues`
    bem-sucedido.** O catálogo público é servido de um cache de 15 minutos
-   (`CATALOGO_TTL_S`); sem isso, os visitantes veriam preço e estoque velhos.
+   (`CATALOGO_TTL_S`); sem isso, os visitantes veriam preço e estoque velhos. O cache também usa uma
+   marca de geração (`catalogo:gen`) para não guardar um catálogo calculado antes de uma gravação.
 
 ## Dívidas conhecidas (não corrigir sem combinar)
 
