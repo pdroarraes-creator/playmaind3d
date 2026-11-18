@@ -47,20 +47,39 @@
     });
   }
 
-  /** Nunca tira error: si no hay forma de leer la foto, devuelve null. */
-  async function cargarImagen(url, pedirFoto) {
-    if (!url) return null;
+  /** Corta una promesa que tarda demasiado: devuelve null en vez de colgarse. */
+  function conTiempo(promesa, ms) {
+    let t;
+    return Promise.race([promesa, new Promise((ok) => (t = setTimeout(() => ok(null), ms)))]).finally(() =>
+      clearTimeout(t),
+    );
+  }
+
+  async function leerDirecto(url, ms) {
+    const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const t = setTimeout(() => ctl && ctl.abort(), ms);
     try {
-      const r = await fetch(url);
+      const r = await fetch(url, ctl ? { signal: ctl.signal } : undefined);
       if (!r.ok) throw new Error("http " + r.status);
       const b = await r.blob();
       if (!/^image\//.test(b.type)) throw new Error("no es imagen");
       return await medir(await blobADataUrl(b));
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  /** Nunca tira error ni se cuelga: si no hay forma de leer la foto a tiempo, devuelve null. */
+  async function cargarImagen(url, pedirFoto, op) {
+    const ms = (op && op.ms) || 4000;
+    if (!url) return null;
+    try {
+      return await leerDirecto(url, ms);
     } catch (e) {
       const id = idDeDrive(url);
       if (!id || !pedirFoto) return null;
       try {
-        const j = await pedirFoto(id);
+        const j = await conTiempo(pedirFoto(id), ms);
         if (!j || !j.ok || !j.b64) return null;
         return await medir("data:" + j.mime + ";base64," + j.b64);
       } catch (e2) {

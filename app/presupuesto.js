@@ -20,6 +20,25 @@
     return cfg.presupNum;
   }
 
+  /** Número que va a tener el próximo presupuesto, sin gastarlo todavía. */
+  const reservarNumero = (cfg) => (Number(cfg.presupNum) || 0) + 1;
+  /** Gasta el número recién cuando el PDF ya existe. */
+  function confirmarNumero(cfg, n) {
+    cfg.presupNum = Math.max(Number(cfg.presupNum) || 0, n);
+  }
+
+  // El navegador sólo deja abrir "compartir" poco después del toque (~5 s).
+  const VENTANA_TOQUE_MS = 4000;
+  function comoEntregar({ puedeCompartir, ms }) {
+    if (!puedeCompartir) return "descargar";
+    return ms < VENTANA_TOQUE_MS ? "compartir" : "boton";
+  }
+  /** err = null si se compartió. Cancelar o quedar sin permiso deja el botón para reintentar. */
+  function despuesDeCompartir(err) {
+    if (!err) return "listo";
+    return err.name === "AbortError" || err.name === "NotAllowedError" ? "boton" : "descargar";
+  }
+
   const numeroTxt = (n) => String(n).padStart(3, "0");
   const fechaTxt = (d) => dos(d.getDate()) + "/" + dos(d.getMonth() + 1) + "/" + d.getFullYear();
   const fechaIso = (d) => d.getFullYear() + "-" + dos(d.getMonth() + 1) + "-" + dos(d.getDate());
@@ -79,7 +98,7 @@
   }
 
   const api = {
-    migrarPresupuestos, siguienteNumero, numeroTxt, fechaTxt, armarPresupuesto,
+    migrarPresupuestos, siguienteNumero, reservarNumero, confirmarNumero, comoEntregar, despuesDeCompartir, numeroTxt, fechaTxt, armarPresupuesto,
     nombreArchivo, registrar, textoCompartir, dinero,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

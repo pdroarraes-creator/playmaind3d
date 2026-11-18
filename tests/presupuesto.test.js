@@ -82,3 +82,26 @@ test("texto", () => {
   assert.ok(t.startsWith("¡Hola Ana!"), t);
   assert.ok(P.textoCompartir(P.armarPresupuesto(totales(), opts({ cliente: "" }))).startsWith("¡Hola!"));
 });
+
+test("reservar número no lo gasta hasta confirmar", () => {
+  const cfg = { presupNum: 41 };
+  assert.equal(P.reservarNumero(cfg), 42);
+  assert.equal(cfg.presupNum, 41);
+  P.confirmarNumero(cfg, 42);
+  assert.equal(cfg.presupNum, 42);
+  P.confirmarNumero(cfg, 40);
+  assert.equal(cfg.presupNum, 42);
+});
+
+test("cómo entregar el PDF", () => {
+  assert.equal(P.comoEntregar({ puedeCompartir: true, ms: 1200 }), "compartir");
+  assert.equal(P.comoEntregar({ puedeCompartir: true, ms: 4500 }), "boton");
+  assert.equal(P.comoEntregar({ puedeCompartir: false, ms: 500 }), "descargar");
+});
+
+test("si compartir falla o se cancela, queda el botón", () => {
+  assert.equal(P.despuesDeCompartir(null), "listo");
+  assert.equal(P.despuesDeCompartir({ name: "AbortError" }), "boton");
+  assert.equal(P.despuesDeCompartir({ name: "NotAllowedError" }), "boton");
+  assert.equal(P.despuesDeCompartir({ name: "TypeError" }), "descargar");
+});

@@ -60,3 +60,16 @@ test("cargarImagen usa el servidor cuando Google bloquea", async () => {
     globalThis.fetch = fetchViejo;
   }
 });
+
+test("cargarImagen no se cuelga si Google y el servidor no contestan", async () => {
+  const fetchViejo = globalThis.fetch;
+  globalThis.fetch = (u, o) => new Promise((_, mal) => o && o.signal && o.signal.addEventListener("abort", () => mal(new Error("abort"))));
+  try {
+    const t0 = Date.now();
+    const r = await PDF.cargarImagen("https://lh3.googleusercontent.com/d/ABC", () => new Promise(() => {}), { ms: 150 });
+    assert.equal(r, null);
+    assert.ok(Date.now() - t0 < 1000, "tardó " + (Date.now() - t0));
+  } finally {
+    globalThis.fetch = fetchViejo;
+  }
+});

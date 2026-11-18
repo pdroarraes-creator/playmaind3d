@@ -1156,6 +1156,41 @@ function colorDe(fil) {
   return f ? f.cor || f.nome || "el que elijas" : "el que elijas";
 }
 let armandoPresu = false;
+let presuListo = null; // { blob, nombre, texto } del último PDF armado
+function mostrarPresuListo(ver) {
+  $("#presuListo").hidden = !ver;
+  if (ver) $("#presuListoTit").textContent = "PDF listo — " + presuListo.nombre;
+}
+function descargarPresupuesto() {
+  if (!presuListo) return;
+  const url = URL.createObjectURL(presuListo.blob);
+  const a = el("a", { href: url, download: presuListo.nombre });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  const w = window.open("https://wa.me/?text=" + encodeURIComponent(presuListo.texto), "_blank", "noopener");
+  if (!w) toast("PDF descargado. Abrí WhatsApp y adjuntalo.");
+}
+/* Se llama desde un toque, así el navegador deja abrir "compartir". */
+async function compartirPresupuesto() {
+  if (!presuListo) return;
+  const file = new File([presuListo.blob], presuListo.nombre, { type: "application/pdf" });
+  let err = null;
+  try {
+    await navigator.share({ files: [file], text: presuListo.texto });
+  } catch (e) {
+    err = e || { name: "Error" };
+  }
+  const paso = despuesDeCompartir(err);
+  if (paso === "listo") mostrarPresuListo(false);
+  else if (paso === "boton") mostrarPresuListo(true);
+  else {
+    console.error(err);
+    descargarPresupuesto();
+    mostrarPresuListo(true);
+  }
+}
 /* Arma el PDF del presupuesto y lo comparte (o lo descarga si el teléfono no deja). */
 async function enviarPresupuesto() {
   const t = pedidoTotales();
@@ -1165,10 +1200,13 @@ async function enviarPresupuesto() {
   }
   if (armandoPresu) return;
   armandoPresu = true;
+  mostrarPresuListo(false);
   toast("Armando el presupuesto…");
+  const t0 = Date.now();
   try {
+    const n = reservarNumero(D.cfg);
     const presu = armarPresupuesto(t, {
-      n: siguienteNumero(D.cfg),
+      n,
       cliente: $("#p_cli").value.trim(),
       fecha: new Date(),
       dias: D.cfg.presupDias,
@@ -1180,24 +1218,19 @@ async function enviarPresupuesto() {
     const pedirFoto = (id) => pedir({ action: "foto", email: D.cfg.email || "", token: D.cfg.token || "", id });
     const logo = await cargarImagen("/assets/logo-app.png");
     const blob = await generarPdf(presu, { logo, pedirFoto });
+    // recién ahora, con el PDF hecho, se gasta el número
+    confirmarNumero(D.cfg, n);
     D.presupuestos = registrar(D.presupuestos, presu);
     save();
-    const nombre = nombreArchivo(presu);
-    const texto = textoCompartir(presu);
-    const file = new File([blob], nombre, { type: "application/pdf" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], text: texto });
-      } catch (e) {
-        if (e && e.name !== "AbortError") throw e;
-      }
-    } else {
-      const a = el("a", { href: URL.createObjectURL(blob), download: nombre });
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-      window.open("https://wa.me/?text=" + encodeURIComponent(texto), "_blank", "noopener");
+    presuListo = { blob, nombre: nombreArchivo(presu), texto: textoCompartir(presu) };
+    const file = new File([blob], presuListo.nombre, { type: "application/pdf" });
+    const puedeCompartir = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+    const modo = comoEntregar({ puedeCompartir, ms: Date.now() - t0 });
+    if (modo === "compartir") await compartirPresupuesto();
+    else if (modo === "boton") mostrarPresuListo(true);
+    else {
+      descargarPresupuesto();
+      mostrarPresuListo(true);
     }
   } catch (e) {
     console.error(e);
