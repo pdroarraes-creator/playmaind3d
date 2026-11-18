@@ -714,6 +714,18 @@ function carpetaFotos_() {
    CATÁLOGO PÚBLICO
    ===================================================================== */
 
+// Ancho máximo de las fotos que sale en el catálogo público. Las originales
+// quedan intactas en Drive; sólo cambia la URL que se entrega.
+var FOTO_PARAM = 'w800';
+
+// Agrega el tamaño a las URLs de Drive que todavía no lo tienen. Cualquier otro
+// valor (otra URL, ya medida, data:, vacío, no-string) vuelve igual.
+function fotoChica_(url) {
+  if (typeof url !== 'string') return url;
+  if (!/^https:\/\/lh3\.googleusercontent\.com\/d\/[A-Za-z0-9_-]+$/.test(url)) return url;
+  return url + '=' + FOTO_PARAM;
+}
+
 function catalogoPublico_() {
   var data = leerEstado_();
   if (!data || !data.produtos) return { marca: '', wa: '', piezas: [] };
@@ -726,6 +738,7 @@ function catalogoPublico_() {
     var fotos = [];
     if (p.fotos && p.fotos.length) fotos = p.fotos;
     else if (p.foto) fotos = [p.foto];
+    fotos = fotos.map(fotoChica_); // copia nueva: no se toca el estado guardado
     piezas.push({
       nome: p.nome || '',
       cat: p.cat || '',
@@ -795,7 +808,7 @@ function catalogoPublico_() {
     leti: {
       cita: (data.cfg && data.cfg.leti && data.cfg.leti.cita) || '',
       historia: (data.cfg && data.cfg.leti && data.cfg.leti.historia) || '',
-      foto: (data.cfg && data.cfg.leti && data.cfg.leti.foto) || ''
+      foto: fotoChica_((data.cfg && data.cfg.leti && data.cfg.leti.foto) || '')
     }
   };
 }
