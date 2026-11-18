@@ -328,6 +328,7 @@ function leerEstadoYV_() {
   rows.forEach(function (row) {
     if (row[0] === CLAVE && row[1] && !out.data) {
       try { out.data = JSON.parse(row[1]); } catch (err) { out.data = null; }
+      if (out.data) migrarCategorias_(out.data);
       out.v = row[2] ? String(new Date(row[2]).getTime()) : '';
     }
   });
@@ -444,8 +445,16 @@ function editarPieza_(nombre, campos) {
     if (!p) return { ok: false, error: 'pieza no encontrada' };
 
     permitidos.forEach(function (k) {
+      if (k === 'cat') return;
       if (campos && campos[k] !== undefined) p[k] = String(campos[k]);
     });
+    if (campos && (campos.cats !== undefined || campos.cat !== undefined)) {
+      if (!Array.isArray(data.categorias)) data.categorias = [];
+      var txt = Array.isArray(campos.cats) ? campos.cats.join(',') : String(campos.cat || '');
+      var rc = catsDesdeTexto_(txt, data.categorias, true);
+      rc.nuevas.forEach(function (c) { data.categorias.push(c); });
+      ponerCats_(p, rc.cats);
+    }
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var h = ss.getSheetByName(HOJA_DATOS);
@@ -494,7 +503,7 @@ function agregarPieza_(pieza) {
     cplx: Number(pieza.cplx) || 1,
     manual: pieza.manual != null && pieza.manual !== '' ? Number(pieza.manual) : null,
     mercado: null,
-    cat: String(pieza.cat || '').trim(),
+    cat: '',
     desc: String(pieza.desc || '').trim(),
     libre: !!pieza.libre,
     medida: String(pieza.medida || '').trim(),
@@ -502,6 +511,13 @@ function agregarPieza_(pieza) {
     detalle: String(pieza.detalle || '').trim(),
     tags: String(pieza.tags || '').trim()
   };
+  // categorías: el chat sólo elige entre las existentes (catSoloExistentes)
+  if (!Array.isArray(data.categorias)) data.categorias = [];
+  var textoCats = Array.isArray(pieza.cats) ? pieza.cats.join(',') : String(pieza.cat || '');
+  var crearCats = !pieza.catSoloExistentes;
+  var rc = catsDesdeTexto_(textoCats, data.categorias, crearCats);
+  if (crearCats) rc.nuevas.forEach(function (c) { data.categorias.push(c); });
+  ponerCats_(p, rc.cats);
   data.produtos.push(p);
   // sube la foto a Drive, guarda y regenera las hojas. Va con la versión que
   // se acaba de leer: si otro grabó entre medio, se fusiona en lugar de pisar.
@@ -560,7 +576,7 @@ function resumenNegocio_() {
     var r = calcular_(p, data);
     return {
       nome: p.nome || '',
-      cat: p.cat || '',
+      cat: (p.cats || []).join(', '),
       stock: n(p.stock),
       custo: Math.round(r.custo),
       preco: Math.round(r.preco),
@@ -713,6 +729,7 @@ function catalogoPublico_() {
     piezas.push({
       nome: p.nome || '',
       cat: p.cat || '',
+      cats: (p.cats || []).slice(),
       desc: p.desc || '',
       libre: !!p.libre,
       precio: Math.round(r.preco),
@@ -776,6 +793,12 @@ function catalogoPublico_() {
     colores: colores,
     packs: packs,
     piezas: piezas,
+    categorias: (data.categorias || []).filter(function (c) {
+      return piezas.some(function (x) {
+        return x.cats.some(function (y) { return slugCat_(y) === slugCat_(c); });
+      });
+    }),
+    tema: (data.cfg && data.cfg.temaSitio) || '',
     leti: {
       cita: (data.cfg && data.cfg.leti && data.cfg.leti.cita) || '',
       historia: (data.cfg && data.cfg.leti && data.cfg.leti.historia) || '',
@@ -879,7 +902,7 @@ function volcarPiezas_(ss, data) {
   var filas = (data.produtos || []).map(function (p) {
     var r = calcular_(p, data);
     var margen = r.preco ? (r.preco - r.custo) / r.preco : 0;
-    return [p.nome, p.cat || '', p.desc || '', p.ref || '', fil[p.fil] || '',
+    return [p.nome, (p.cats || []).join(', '), p.desc || '', p.ref || '', fil[p.fil] || '',
       Math.round(r.gramos * 10) / 10, Math.round(r.horas * 100) / 100,
       Math.round(r.custo), Math.round(r.preco), margen, p.mercado || ''];
   });
@@ -1096,4 +1119,67 @@ function fotoBase64_(id) {
   var mime = f.getMimeType() || '';
   if (mime.indexOf('image/') !== 0) return { ok: false, error: 'no-imagen' };
   return { ok: true, mime: mime, b64: Utilities.base64Encode(f.getBlob().getBytes()) };
+}
+
+/* ---------- categorías ----------
+   Copia de las reglas de app/categorias.js (las pruebas de tests/ comparan
+   las dos). p.cats es la fuente de verdad; p.cat queda como espejo de cats[0]. */
+var CATS_INICIALES = ['Decoración', 'Halloween', 'Navidad', 'Sensoriales', 'Biología'];
+
+function slugCat_(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function limpioCat_(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+function buscarCat_(lista, nombre) {
+  var s = slugCat_(nombre);
+  if (!s) return null;
+  for (var i = 0; i < lista.length; i++) if (slugCat_(lista[i]) === s) return lista[i];
+  return null;
+}
+function ponerCats_(p, cats) {
+  var out = [];
+  (cats || []).forEach(function (c) {
+    c = limpioCat_(c);
+    if (c && !buscarCat_(out, c)) out.push(c);
+  });
+  p.cats = out;
+  p.cat = out[0] || '';
+}
+function asegurarCat_(data, nombre) {
+  var n = limpioCat_(nombre);
+  if (!n) return null;
+  var ya = buscarCat_(data.categorias, n);
+  if (ya) return ya;
+  data.categorias.push(n);
+  return n;
+}
+function migrarCategorias_(data) {
+  if (!data.cfg) data.cfg = {};
+  if (typeof data.cfg.temaSitio !== 'string') data.cfg.temaSitio = '';
+  var produtos = Array.isArray(data.produtos) ? data.produtos : [];
+  if (!Array.isArray(data.categorias)) {
+    data.categorias = [];
+    produtos.forEach(function (p) { if (p && p.cat) asegurarCat_(data, p.cat); });
+    CATS_INICIALES.forEach(function (c) { asegurarCat_(data, c); });
+  }
+  produtos.forEach(function (p) {
+    if (!p) return;
+    var cats = Array.isArray(p.cats) ? p.cats.slice() : (p.cat ? [p.cat] : []);
+    if (p.cat && !buscarCat_(cats, p.cat)) {
+      if (cats.length) cats[0] = p.cat; else cats = [p.cat];
+    }
+    ponerCats_(p, cats.map(function (c) { return asegurarCat_(data, c); }).filter(Boolean));
+  });
+}
+function catsDesdeTexto_(texto, lista, crear) {
+  var cats = [], nuevas = [];
+  String(texto || '').split(',').map(limpioCat_).filter(Boolean).forEach(function (t) {
+    var enLista = buscarCat_(lista, t);
+    if (enLista) { cats.push(enLista); return; }
+    var ya = buscarCat_(nuevas, t);
+    if (!ya) nuevas.push(t);
+    if (crear) cats.push(ya || t);
+  });
+  return { cats: cats, nuevas: nuevas };
 }
