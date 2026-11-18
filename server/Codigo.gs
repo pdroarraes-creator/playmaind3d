@@ -135,6 +135,9 @@ function doPost(e) {
     // Sólo confirma que el token todavía sirve — la usa el Worker del chat de
     // cadastro para no tener que reimplementar la verificación de sesión.
     if (body.action === 'validarSesion') return json_({ ok: true });
+    // Foto de una pieza en base64, para armar el PDF del presupuesto cuando
+    // el navegador no puede leerla directo de Google.
+    if (body.action === 'foto') return json_(fotoBase64_(body.id));
     if (body.action === 'agregarPieza') {
       return json_(agregarPieza_(body.pieza));
     }
@@ -1079,4 +1082,18 @@ function semanaDeHoy_() {
   var primero = new Date(jueves.getFullYear(), 0, 4);
   var n = 1 + Math.round(((jueves - primero) / 86400000 - 3 + ((primero.getDay() + 6) % 7)) / 7);
   return jueves.getFullYear() + '-S' + (n < 10 ? '0' + n : n);
+}
+
+/** Devuelve una foto del Drive en base64 (sólo imágenes). La usa el PDF del
+    presupuesto cuando Google no deja que el navegador lea la foto directo. */
+function fotoBase64_(id) {
+  var f;
+  try {
+    f = DriveApp.getFileById(String(id || ''));
+  } catch (e) {
+    return { ok: false, error: 'no-existe' };
+  }
+  var mime = f.getMimeType() || '';
+  if (mime.indexOf('image/') !== 0) return { ok: false, error: 'no-imagen' };
+  return { ok: true, mime: mime, b64: Utilities.base64Encode(f.getBlob().getBytes()) };
 }
