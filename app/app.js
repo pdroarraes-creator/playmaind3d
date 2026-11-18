@@ -2701,7 +2701,7 @@ function accionEditarPieza(a) {
   if (a.detalhe != null) p.detalle = String(a.detalhe);
   if (a.medida != null) p.medida = String(a.medida);
   if (a.tags != null) p.tags = String(a.tags);
-  if (a.categoria != null) p.cat = String(a.categoria);
+  if (a.categoria != null) ponerCats(p, catsDesdeTexto(a.categoria, D.categorias, { crear: false }).cats);
   save();
   renderAll();
   return "Pronto, " + p.nome + " atualizada.";
@@ -4462,6 +4462,7 @@ async function bajarDeLaNube() {
       migrarInsumos();
       migrarStockVentas();
       migrarPresupuestos(D);
+      migrarCategorias(D);
       await local.set(D);
       cargarPieza(null);
       bindCfg();
@@ -4549,6 +4550,7 @@ $("#fImp").addEventListener("change", (e) => {
       migrarInsumos();
       migrarStockVentas();
       migrarPresupuestos(D);
+      migrarCategorias(D);
       cargarPieza(null);
       bindCfg();
       save();
@@ -4651,6 +4653,7 @@ if ("serviceWorker" in navigator) {
   if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
   migrarStockVentas();
   migrarPresupuestos(D);
+  migrarCategorias(D);
   if (D.cfg.merma === undefined || D.cfg.merma === null) D.cfg.merma = 12;
   if (!D.canais || !D.canais.length) D.canais = defaults().canais;
   bindCfg();
