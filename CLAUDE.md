@@ -24,7 +24,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 |---|---|
 | `app/index.html` | Shell da app: markup das abas. Sem CSS e sem JS inline. |
 | `app/app.css` | Todo o estilo. Design tokens em `:root`. |
-| `app/app.js` | Toda a lógica (~3.600 linhas, dividida em seções comentadas). |
+| `app/app.js` | Toda a lógica (4.670 linhas, dividida em seções comentadas). |
 | `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy.** |
 | `app/manifest.json` | PWA. `scope` e `start_url` = `/app/`. |
 | `index.html` (raiz) | Catálogo público. Consome `?action=catalogo`, não faz login. |
@@ -33,6 +33,10 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `server/Codigo.gs` | O Apps Script. **Não roda daqui** — é copiado e colado no editor. |
 | `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
 | `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
+| `cadastro-worker/` | Worker da Cloudflare com Gemini para cadastro por chat; chama o Apps Script. |
+| `scripts/medir-catalogo.js` | Mede o tempo do catálogo e o peso das fotos. `node scripts/medir-catalogo.js` |
+| `tests/` | Testes `node:test` (7 arquivos). Rodar com `node --test tests/*.test.js`. |
+| `docs/superpowers/` | Specs e planos de trabalho. |
 | `docs/calculo-de-custo.md` | Explicação em português da fórmula de preço, pra humanos — não é lida pelo app. Cópia dela vive também no Drive, pasta `2brain-compartilhado-Pedro&Raquel/Playmind`, pra Raquel usar com o Claude dela. |
 
 ## Seções de `app/app.js`
@@ -57,7 +61,9 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
 
 1. **Célula de Sheets = 50.000 caracteres.** O estado inteiro serializado tem que
    caber. Nunca guarde imagem em base64 dentro de `D`. Fotos vão para o Drive
-   (`moverFotosADrive_` no servidor); logos são arquivos em `/assets/`.
+   (`moverFotosADrive_` no servidor); logos são arquivos em `/assets/`. No
+   catálogo público (`catalogoPublico_`), as fotos do Drive saem redimensionadas
+   (`=w800`) por `fotoChica_`.
 2. **Sem build step.** Nada de npm, bundler ou framework. O que está no repo é
    exatamente o que vai pro ar. Prettier é a única ferramenta, e é opcional.
 3. **Não quebrar o formato do JSON salvo.** Mudou o shape de `D`? Escreva migração
@@ -93,6 +99,10 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    concordar: fallback para o primeiro filamento/impressora quando o id não
    existe mais, arredondamento dos gramas a uma casa, `merma` assumindo 12
    quando não houver valor, e preço manual só valendo se for maior que zero.
+10. **Toda função que grava a célula `estado` (hoje `guardarEstado_` e
+   `editarPieza_`) deve chamar `invalidarCatalogo_()` logo após o `setValues`
+   bem-sucedido.** O catálogo público é servido de um cache de 15 minutos
+   (`CATALOGO_TTL_S`); sem isso, os visitantes veriam preço e estoque velhos.
 
 ## Dívidas conhecidas (não corrigir sem combinar)
 
@@ -118,9 +128,14 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
   saídas discutidas: mover as vendas antigas para uma aba própria (alívio barato)
   ou migrar para Cloudflare D1 (o Worker já existe na mesma conta). Trocar de
   banco **não** dispensa a sincronização offline, que é a parte difícil.
-- Zero testes automatizados.
+  Agora dá para ver o espaço em uso no menu da planilha: "PlayMind 3d > Ver cuánto
+  espacio queda". Gatilho proposto para revisitar a decisão do banco: 70% =
+  35.000 caracteres.
+- Cobertura de testes pequena: há `tests/` com 7 arquivos `node:test`, rodados com
+  `node --test tests/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
+  o diretório como módulo e falha. Não há testes do `app.js` nem de interface.
 - `app.js` é um arquivo só. Dividir em módulos é possível, mas exigiria `type="module"`
-  e mexer nos 35 `onclick=` inline do HTML.
+  e mexer nos 50 `onclick=` inline do HTML.
 
 ## Como trabalhar aqui
 
