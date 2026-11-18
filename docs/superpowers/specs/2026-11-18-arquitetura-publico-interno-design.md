@@ -82,7 +82,12 @@ dentro do Google em poucas linhas. Se a fase 0 resolver, a fase 1 encolhe.
 
 ## O desenho, por fases
 
-### Fase 0 — medir e ganhos baratos (sem risco, antes do Natal se o dono quiser)
+### Fase 0 — medir e ganhos baratos (antes do Natal, decisão do dono em 18/11)
+
+Como vai para produção na época de pico: anotar o número da versão atual do Apps Script
+antes de publicar a nova (rollback = voltar a ela em "Administrar implementaciones"),
+publicar fora de horário de pico, e testar em janela anônima e no celular antes de avisar
+a família. A mudança só toca a saída do catálogo público, não o estado guardado.
 
 - Medir: tempo de `?action=catalogo` a frio e a quente; peso das fotos no catálogo; tamanho
   do estado serializado (logar em `guardarEstado_`, registrar % do teto de 50.000).
@@ -131,6 +136,20 @@ candidato natural na Argentina; não decidido).
   última publicação.
 - Cada fase é um conjunto de commits revertível; Apps Script exige "Versão: NUEVA" e o dono
   precisa ser lembrado em cada mudança de `Codigo.gs`.
+
+## Decisões do dono
+
+- A fase 0 entra **antes do Natal** (18/11/2026). A fase 1 só depois do Natal, e só se a
+  medição da fase 0 mostrar que ainda é preciso.
+- A conta Cloudflare já tem cartão cadastrado, então o R2 está disponível se as fotos
+  precisarem sair do Drive.
+
+## Decisões tomadas pelo redator (conferir)
+
+Alvos de desempenho (~1 s catálogo, ~1,5 s primeira foto); tamanho `=w800` como ponto de
+partida; invalidar o cache ao salvar; fallback para o Apps Script se o Worker falhar;
+gatilho de 35.000 caracteres para a fase 3; ordem de extração dos módulos; Mercado Pago como
+candidato (não decidido); documento em português.
 
 ## O que fica para o construtor
 
