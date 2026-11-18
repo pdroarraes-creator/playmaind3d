@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Lista de categorias gerenciada, várias categorias por peça, filtro no app e no site, e catálogo especializado por categoria (link filtrado + PDF).
+**Goal:** Lista de categorias gerenciada, várias categorias por peça, filtro no app e no site, catálogo especializado por categoria (link filtrado + PDF) e tema Navidad no site com chave em Ajustes.
 
 **Architecture:** Regras puras de categoria em `app/categorias.js` (testáveis em Node), espelhadas em `server/Codigo.gs` com teste de paridade. O PDF do catálogo reaproveita o motor de `app/presupuesto-pdf.js`. App, site e worker só consomem essas regras.
 
@@ -55,7 +55,6 @@
 - `usoCategoria(produtos, nombre) -> number`
 - `piezasDeCategoria(produtos, nombre) -> produto[]` — `nombre` vazio = todas; casa por slug.
 - `linkCategoria(nombre, base = "https://playmind3d.com/") -> string` — `base + "?cat=" + slugCat(nombre)`.
-- `unirCategorias(a, b) -> string[]` — ordem de `a`, depois os de `b` que faltam (por slug).
 
 - [ ] **Step 1: Testes** em `tests/categorias.test.js`:
   - `slug`: `slugCat(" Biología ") === "biologia"`, `slugCat("Decoración") === "decoracion"`.
@@ -68,7 +67,6 @@
   - `mueve`: `["A","B","C"]`, mover `"C"` −1 → `["A","C","B"]`; mover `"A"` −1 → igual.
   - `filtra`: `piezasDeCategoria(ps, "")` devolve todas; `piezasDeCategoria(ps, "navidad")` devolve só as com `"Navidad"`.
   - `link`: `linkCategoria("Biología") === "https://playmind3d.com/?cat=biologia"`.
-  - `une`: `unirCategorias(["B","A"], ["a","C"])` → `["B","A","C"]`.
 - [ ] **Step 2:** `node --test 'tests/*.test.js'` → os novos FAIL (módulo não existe).
 - [ ] **Step 3:** Implementar `app/categorias.js`.
 - [ ] **Step 4:** Testes → PASS.
@@ -83,17 +81,16 @@
 
 **Interfaces:**
 - Consumes: as regras da Task 1 (mesmo comportamento, reescrito em ES5 no `.gs`).
-- Produces: `slugCat_`, `migrarCategorias_(data)`, `catsDesdeTexto_(texto, lista, crear)` (retorna `{cats, nuevas}`), `ponerCats_(p, cats)`; `leerEstadoYV_` devolve `data` já migrado; `fusionar_` une `categorias` com `unirCategorias` (lista do cliente primeiro); `catalogoPublico_()` → cada peça com `cats: [...]` e o objeto de retorno com `categorias: [...]` (ordem de `data.categorias`, só as com peça visível); `agregarPieza_(pieza)` aceita `pieza.cats` (array) ou `pieza.cat` (texto), com `crear: !pieza.catSoloExistentes` (nome novo vai pro fim da lista; vindo do chat não cria); `editarPieza_(nombre, campos)` aceita `campos.cats` (array, `crear: true`) e `campos.cat` (texto, `crear: true`); `resumenNegocio_` → cada peça `cat: cats.join(", ")` e o retorno com `categorias`; exportação (~linha 882) usa `cats.join(", ")`.
+- Produces: `slugCat_`, `migrarCategorias_(data)`, `catsDesdeTexto_(texto, lista, crear)` (retorna `{cats, nuevas}`), `ponerCats_(p, cats)`; `leerEstadoYV_` devolve `data` já migrado; `catalogoPublico_()` → cada peça com `cats: [...]` e o objeto de retorno com `categorias: [...]` (ordem de `data.categorias`, só as com peça visível) e `tema: (data.cfg && data.cfg.temaSitio) || ""`; `agregarPieza_(pieza)` aceita `pieza.cats` (array) ou `pieza.cat` (texto), com `crear: !pieza.catSoloExistentes` (nome novo vai pro fim da lista; vindo do chat não cria); `editarPieza_(nombre, campos)` aceita `campos.cats` (array, `crear: true`) e `campos.cat` (texto, `crear: true`); `resumenNegocio_` → cada peça `cat: cats.join(", ")` e o retorno com `categorias`; exportação (~linha 882) usa `cats.join(", ")`.
 
 - [ ] **Step 1: Testes** (carregar `Codigo.gs` com `vm`, como `tests/servidor-foto.test.js`):
   - `paridad`: para os mesmos 4 casos de entrada de `migra desde cat`, `app viejo`, `repara huérfanos` e `texto` da Task 1, `migrarCategorias_`/`catsDesdeTexto_` dão exatamente o mesmo resultado que `migrarCategorias`/`catsDesdeTexto` de `app/categorias.js` (`assert.deepEqual` contra a versão do app).
-  - `fusionar une categorías`: servidor `{categorias:["Navidad","Biología"], produtos:[]}`, cliente `{categorias:["Halloween","navidad"], produtos:[]}` → resultado `categorias` `["Halloween","navidad","Biología"]`.
   - `agregar desde chat no crea`: com `leerEstadoYV_`/`guardarEstado_` stubados sobre um estado em memória com `categorias:["Navidad"]`, `agregarPieza_({nome:"X", preco:100, cat:"Natal, navidad", catSoloExistentes:true})` → peça com `cats` `["Navidad"]` e lista inalterada; sem `catSoloExistentes` → `cats` `["Natal","Navidad"]` e `"Natal"` no fim da lista.
-  - `fusionar repara`: depois de `fusionar_` + `migrarCategorias_`, peça vinda só do servidor com `cats:["Biología"]` mantém a categoria e `"Biología"` está na lista.
+  - `catálogo manda tema`: com `leerEstadoYV_` stubado (estado com `cfg.temaSitio:"navidad"`, 1 peça `cats:["Navidad"]`) e `calcular_` real, `catalogoPublico_()` tem `tema` `"navidad"`, `categorias` `["Navidad"]` e a peça com `cats` `["Navidad"]`.
 - [ ] **Step 2:** Testes → FAIL.
 - [ ] **Step 3:** Implementar no `Codigo.gs` (migração chamada em `leerEstadoYV_` logo após o `JSON.parse`; demais pontos conforme Produces).
 - [ ] **Step 4:** Testes → PASS.
-- [ ] **Step 5: Commit** `feat(server): categorias múltiplas no estado, catálogo público e fusão`
+- [ ] **Step 5: Commit** `feat(server): categorias múltiplas no estado e no catálogo público, tema do site`
 
 ### Task 3: Chat de cadastro (worker)
 
@@ -136,6 +133,7 @@ O servidor (Task 2) já respeita `catSoloExistentes`.
 - Produces: `renderCategoriasCfg()`, `renderChipsCat()`, `catActiva` (string, `""` = todas), `async enviarCatalogo()`, `copiarLinkCat()`.
 
 - [ ] **Step 1: Ajustes** — card "Categorías" depois do card de marca: uma linha por categoria com nome editável (renomeia no `change`), "↑", "↓", "Borrar" (`confirm("¿Borrar «X»? La usan N piezas.")`), e embaixo input + botão "Agregar". Cada ação chama a função da Task 1, `save()`, `renderAll()`.
+- [ ] **Step 1b: Ajustes, tema** — no mesmo card, checkbox `#s_temaNavidad` "Tema del sitio: Navidad (todo el sitio)" ↔ `D.cfg.temaSitio = checked ? "navidad" : ""`; `save()`. Migração: `temaSitio` ausente → `""` (dentro de `migrarCategorias`, com teste em `tests/categorias.test.js`: `migra desde cat` também verifica `D.cfg.temaSitio === ""` e que `"navidad"` existente é mantido).
 - [ ] **Step 2: Editor da peça** — trocar o input `#c_cat` + datalist por `<div id="c_cats">` com chips marcáveis (um por categoria, classe `on` quando marcada) e um chip "+ nueva" (`prompt("Nombre de la categoría")` → `agregarCategoria` e já marca). `piezaActual()` grava `cats` (array) e `cat` (`cats[0]||""`); `cargarPieza(p)` marca as de `p.cats`. Tirar `"c_cat"` da lista de `input` → `renderCalc`.
 - [ ] **Step 3: Catálogo** — `<div id="catChips">` acima de `#catList`: "Todas" + uma por categoria **com uso > 0**, na ordem da lista. `renderCat()` filtra por `piezasDeCategoria(D.produtos, catActiva)` antes da busca, e a busca também casa com `cats`. Com `catActiva` ≠ `""`, mostrar barra com "Copiar link" (`navigator.clipboard.writeText(linkCategoria(catActiva))` + toast "Link copiado") e "Catálogo PDF" (`enviarCatalogo()`).
 - [ ] **Step 4: `enviarCatalogo()`** — `armarCatalogo` com `precioDe: (p) => calc(Object.assign({}, p, { fil: p.fil })).preco`; 0 itens → toast `"No hay piezas visibles en esta categoría."`; senão `generarCatalogoPdf`, e entrega igual ao presupuesto (mesma caixa `#presuListo`, título "PDF listo — Catalogo-X.pdf"; generalizar `presuListo` para guardar `{blob, nombre, texto}` com `texto = "Te paso el catálogo de " + nombre + " de " + marca + ": " + link`).
@@ -149,11 +147,12 @@ O servidor (Task 2) já respeita `catSoloExistentes`.
 - Modify: `index.html` (raiz)
 
 **Interfaces:**
-- Consumes: `catalogoPublico_` com `piezas[].cats` e `categorias` (Task 2). Fallback quando o servidor ainda não foi atualizado: `cats = p.cats || (p.cat ? [p.cat] : [])` e `categorias` = nomes distintos das peças.
+- Consumes: `catalogoPublico_` com `piezas[].cats`, `categorias` e `tema` (Task 2). Fallback quando o servidor ainda não foi atualizado: `cats = p.cats || (p.cat ? [p.cat] : [])` e `categorias` = nomes distintos das peças.
 - Produces: `CATEGORIAS` (array global do site), filtro por `slug` dentro de `p.cats`.
 
 - [ ] **Step 1:** Guardar `CATEGORIAS` ao carregar o catálogo. `pintarChips()` usa a ordem de `CATEGORIAS` (sem `sort()`); `pasaFiltro` usa `cats.some(c => slug(c) === slug(FILTRO.cat))`; a busca de texto inclui todas as `cats`; a etiqueta do card (`.cat`) mostra `cats.join(" · ")` ou `"Pieza"`.
 - [ ] **Step 2:** `?cat=<slug>`: se casa com alguma de `CATEGORIAS`, `ponerFiltro({cat: nome})` ao carregar e o título "Las piezas" vira `"Las piezas · " + nome`; se não casa, nada muda. Trocar de filtro atualiza o título (volta a "Las piezas" em "Todas").
 - [ ] **Step 3:** Modo de edição: o campo Categoría vira caixinhas com `CATEGORIAS` (marcadas as de `p.cats`) + input "Otra" opcional; salvar manda `campos.cats` (array) em vez de `cat`.
-- [ ] **Step 4:** Playwright + Chrome com o fetch do catálogo interceptado (`page.route`) devolvendo 4 peças (uma em `["Navidad","Sensoriales"]`, uma sem categoria) e `categorias:["Navidad","Sensoriales","Halloween"]`: chips na ordem `Todas, Navidad, Sensoriales` (Halloween sem peça visível não aparece porque o servidor não manda — conferir que o site não quebra se mandar); a peça dupla aparece nos dois filtros; `?cat=navidad` abre filtrado com "Las piezas · Navidad"; `?cat=xyz` abre sem filtro; resposta antiga só com `cat` também funciona.
-- [ ] **Step 5: Commit** `feat(site): filtros pela lista de categorias e link ?cat=`
+- [ ] **Step 3b: Tema Navidad** — função `aplicarTema()` chamada ao carregar e em cada `ponerFiltro`: liga `document.body.classList` `tema-navidad` se `TEMA === "navidad"` ou `slug(FILTRO.cat) === "navidad"`. CSS do tema no `<style>` do site (variáveis de cor, fundo `#7A1F1F` com neve via `radial-gradient` repetido, chips claros, destaque dourado `#C9A227`, texto do topo branco); gorrinho = `<svg class="gorro">` posicionado sobre o logo do topo, visível só com o tema; frase do `h1` vira "Navidad en el mundo Playmind" e volta ao texto original sem o tema; a faixa "Piezas destacadas" usa só peças com `Navidad` quando houver. `@media (prefers-reduced-motion: reduce)`: neve sem animação.
+- [ ] **Step 4:** Playwright + Chrome com o fetch do catálogo interceptado (`page.route`) devolvendo 4 peças (uma em `["Navidad","Sensoriales"]`, uma sem categoria) e `categorias:["Navidad","Sensoriales","Halloween"]`: chips na ordem `Todas, Navidad, Sensoriales` (Halloween sem peça visível não aparece porque o servidor não manda — conferir que o site não quebra se mandar); a peça dupla aparece nos dois filtros; `?cat=navidad` abre filtrado com "Las piezas · Navidad"; `?cat=xyz` abre sem filtro; resposta antiga só com `cat` também funciona; `?cat=navidad` liga o tema (body com `tema-navidad`, gorrinho visível, frase trocada, destaques só de Natal) e "Todas" desliga; com `tema:"navidad"` na resposta o tema fica ligado em qualquer filtro; screenshot de celular (390×844) do topo com tema para conferência visual.
+- [ ] **Step 5: Commit** `feat(site): filtros pela lista de categorias, link ?cat= e tema Navidad`

@@ -24,9 +24,16 @@ só do que interessa (ex.: só Natal). Mais tarde o site deve poder mudar de car
 4. Site: filtros seguem a lista e a ordem dela; peça aparece em cada categoria marcada.
 5. Catálogo especializado de uma categoria: (a) link filtrado `playmind3d.com/?cat=<slug>`,
    (b) PDF com fotos e preços, compartilhado como o presupuesto.
+6. Tema visual **Navidad** no site (pedido do Pedro, 18/nov): gorrinho de Papai Noel sobre o logo do
+   mundo Playmind, frase "Navidad en el mundo Playmind", fundo vermelho com neve, carrossel do topo com
+   as peças da categoria Navidad. Liga quando o cliente escolhe Navidad / abre `?cat=navidad`, **ou** o
+   site inteiro fica em Navidad quando a chave "Tema del sitio: Navidad" está ligada em Ajustes.
 
 ## Não-objetivos
-- Tema visual do site por época/seleção (redesign).
+- Temas das outras categorias (Decoración/"D3cor" etc.) — cada uma terá o seu depois, no mesmo molde.
+- Fotos geradas/ajustadas por IA (projeto separado, depois: recorte de fundo + composição, sem
+  redesenhar a peça).
+- Juntar listas de categorias de duas pessoas editando ao mesmo tempo (só a Raquel edita).
 - Categoria privada / escondida do site (não foi pedido; todas as categorias aparecem no site).
 - Subcategorias.
 
@@ -60,9 +67,6 @@ Catálogo especializado: Pedro pediu **os dois** (link e PDF).
   `D.categorias` é adicionado no fim da lista — a peça nunca perde categoria.
 - Versão antiga do app em cache ainda edita só `p.cat`: se `p.cat` não vazio e não está (por slug) em
   `p.cats`, ele vira o primeiro de `p.cats` (substitui o antigo primeiro).
-- `fusionar_` (servidor) junta `D.categorias` como união por slug (ordem de quem salvou + as que faltam
-  no fim), em vez de deixar a última cópia vencer. Consequência aceita: apagar/renomear feito numa cópia
-  desatualizada pode "voltar", igual ao comportamento atual dos itens (ver CLAUDE.md).
 - Renomear em Ajustes troca o nome em todas as `p.cats`. Apagar pede confirmação, mostra quantas
   peças usam, e tira a categoria delas (a peça fica sem categoria se era a única).
 
@@ -101,6 +105,16 @@ Catálogo especializado: Pedro pediu **os dois** (link e PDF).
   não casa com a lista é ignorado — o chat nunca cria categoria** (evita "Natal" virar categoria nova
   ao lado de "Navidad"). Só Ajustes, o editor da peça e o modo de edição do site criam categorias.
 
+### Tema Navidad
+- `D.cfg.temaSitio`: `""` (normal) ou `"navidad"`; chave em Ajustes. `catalogoPublico_` manda `tema`.
+- Site: tema ativo = `tema === "navidad"` **ou** filtro atual é a categoria de slug `navidad`.
+  Com a chave ligada o tema vale para o site inteiro (qualquer filtro); sem a chave, sai ao trocar de filtro.
+- Visual: classe `tema-navidad` no `<body>` trocando variáveis de cor (fundo vermelho escuro com neve em
+  CSS, chips claros, dourado de destaque); gorrinho em SVG próprio posicionado sobre o logo do topo;
+  frase do topo trocada; faixa "Piezas destacadas" mostra só peças com `Navidad` (se não houver, mantém as
+  de sempre). Cards, pedido e WhatsApp continuam iguais, só com as cores do tema.
+- Respeita `prefers-reduced-motion` (neve parada).
+
 ### Site
 - Chips de filtro na ordem de `categorias`; filtro por `p.cats` contém.
 - `?cat=<slug>` abre já filtrado, com o título da seção "Las piezas · <Categoría>"; slug desconhecido
@@ -112,9 +126,11 @@ Catálogo especializado: Pedro pediu **os dois** (link e PDF).
 - Nome como identidade (sem id) — dados legíveis e servidor simples; custo: renomear percorre peças.
 - `p.cat` mantido como espelho de `cats[0]`.
 - Link usa slug sem acento: `?cat=biologia`.
-- União por slug em `fusionar_` + reparo de órfãos (revisor apontou perda de categorias entre cópias).
+- Reparo de órfãos (peça nunca perde categoria).
 - O chat de cadastro escolhe só categorias existentes e nunca cria novas.
 - Regra de compatibilidade com o app antigo em cache (`p.cat` fora de `cats` vira o primeiro).
+- Chave ligada = tema no site inteiro, mesmo filtrando outra categoria.
+- Gorrinho desenhado em SVG próprio (não é imagem gerada).
 
 ## Fica para quem constrói
 Diagramação da grade do PDF; aparência dos chips; onde exatamente ficam os botões no Catálogo.
