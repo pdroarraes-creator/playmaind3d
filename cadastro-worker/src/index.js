@@ -25,7 +25,7 @@ function jsonResp(obj, status = 200) {
     (el color depende del filamento elegido, gestionado aparte) — por eso la
     cor que el usuario confirmó en el chat se guarda como texto en detalle,
     en vez de perderse. */
-function traducirParaAgregarPieza(propuesta, link, foto) {
+export function traducirParaAgregarPieza(propuesta, link, foto) {
   // agregarPieza_/moverFotosADrive_ esperan una data URL completa
   // ("data:image/jpeg;base64,...."), no el {mimeType,base64} suelto.
   const fotoUrl = foto ? `data:${foto.mimeType || "image/jpeg"};base64,${foto.base64}` : null;
@@ -40,6 +40,9 @@ function traducirParaAgregarPieza(propuesta, link, foto) {
     manual: propuesta.preco != null ? Number(propuesta.preco) : null,
     detalle,
     ref: link || "",
+    // el chat sólo elige entre las categorías que ya existen: nunca crea
+    cat: propuesta.categorias || "",
+    catSoloExistentes: true,
     foto: fotoUrl,
     fotos: fotoUrl ? [fotoUrl] : [],
   };

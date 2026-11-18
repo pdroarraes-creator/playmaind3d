@@ -656,6 +656,7 @@ function resumenNegocio_() {
     ok: true,
     resumen: {
       piezas: piezas,
+      categorias: (data.categorias || []).slice(),
       filamentos: filamentos,
       insumos: insumos,
       pedido_a_imprimir: pedido,

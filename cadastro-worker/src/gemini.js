@@ -16,6 +16,11 @@ const TOOL_CADASTRAR_PECA = {
       tempo_min: { type: "number" },
       preco: { type: "number" },
       cor: { type: "string" },
+      categorias: {
+        type: "string",
+        description:
+          "Uma ou mais das categorias existentes (veja resumen.categorias), exatamente como na lista, separadas por vírgula. Nunca invente categoria.",
+      },
     },
     required: ["nome", "preco"],
   },
@@ -59,7 +64,11 @@ const TOOL_EDITAR_PECA = {
       detalhe: { type: "string" },
       medida: { type: "string" },
       tags: { type: "string", description: "separadas por vírgula" },
-      categoria: { type: "string" },
+      categoria: {
+        type: "string",
+        description:
+          "Uma ou mais das categorias existentes (veja resumen.categorias), exatamente como na lista, separadas por vírgula. Nunca invente categoria.",
+      },
     },
     required: ["nome"],
   },
