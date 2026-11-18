@@ -60,6 +60,8 @@ var H_TEND  = 'tendencias';
 var H_HIST  = 'tendencias_historico';
 var H_MUNDO = 'tendencias_mundo';
 var CLAVE = 'estado';
+// una celda de Sheets aguanta 50.000 caracteres; el estado entero tiene que caber
+var CELDA_MAX = 50000;
 
 function instalar() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -251,6 +253,7 @@ function onOpen() {
     .addItem('Sacar el acceso a alguien', 'menuBaja')
     .addSeparator()
     .addItem('Cerrar todas las sesiones', 'menuCerrarSesiones')
+    .addItem('Ver cuánto espacio queda', 'menuVerEspacio')
     .addToUi();
 }
 
@@ -415,6 +418,13 @@ function guardarEstado_(data, baseV) {
     delete data._v; // la versión vive en la columna, no adentro del json
     var txt = JSON.stringify(data);
 
+    // anotar cuánto de la celda se usa; si falla, guardar el estado importa más
+    try {
+      var med = medirEstado_(txt);
+      props_().setProperty('medida:estado',
+        JSON.stringify({ chars: med.chars, pct: med.pct, cuando: new Date().toISOString() }));
+    } catch (e) {}
+
     var cuando = new Date();
     h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, cuando]]);
 
@@ -426,6 +436,12 @@ function guardarEstado_(data, baseV) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/** Cuánto ocupa el estado serializado y qué porcentaje de la celda es. */
+function medirEstado_(txt) {
+  var chars = String(txt).length;
+  return { chars: chars, pct: Math.round(chars / CELDA_MAX * 1000) / 10 };
 }
 
 /** Cambia sólo los textos de vitrina de una pieza. No toca costos ni precios. */
@@ -1096,4 +1112,17 @@ function fotoBase64_(id) {
   var mime = f.getMimeType() || '';
   if (mime.indexOf('image/') !== 0) return { ok: false, error: 'no-imagen' };
   return { ok: true, mime: mime, b64: Utilities.base64Encode(f.getBlob().getBytes()) };
+}
+
+function menuVerEspacio() {
+  var crudo = props_().getProperty('medida:estado');
+  if (!crudo) {
+    SpreadsheetApp.getUi().alert('Todavía no hay medida. Se anota la próxima vez que alguien guarde en la app.');
+    return;
+  }
+  var m = JSON.parse(crudo);
+  var msg = 'El estado ocupa ' + m.chars + ' de ' + CELDA_MAX + ' caracteres (' + m.pct + '%).\n' +
+            'Última medida: ' + m.cuando;
+  if (m.pct >= 70) msg += '\n\nPasó el 70%: es el momento de pasar a la fase 3 (sacar las ventas viejas de la celda).';
+  SpreadsheetApp.getUi().alert(msg);
 }
