@@ -239,6 +239,8 @@
      el salto del reinicio no se ve y parece que gira sin fin. */
   .vitrina{overflow:hidden;padding:6px 0 4px;}
   .vitrina[hidden]{display:none;}
+  .ed-cats{display:flex;flex-wrap:wrap;gap:6px 14px;margin:4px 0 8px;}
+  .ed-cat{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px;}
   /* la separación va como margen del item y NO como gap de la tira: con gap,
      la mitad del ancho total no cae justo en el borde de la segunda copia
      (sobra medio espacio) y cada vuelta daba un saltito */
@@ -264,7 +266,33 @@
   @media (prefers-reduced-motion: reduce){
     .vitrina .tira{animation:none;}
     .vitrina{overflow-x:auto;}
+    body.tema-navidad .hero::before{animation:none;}
   }
+
+  /* ---- tema Navidad: el topo se viste de fiesta, el resto queda legible ---- */
+  .gorro{display:none;}
+  body.tema-navidad nav{background:rgba(122,31,31,.94);border-bottom-color:#5c1717;}
+  body.tema-navidad .brand b{color:#fff;}
+  body.tema-navidad .brand b em{color:var(--gold);}
+  body.tema-navidad .nav-links a:not(.btn-wsp){color:#F7D9D9;}
+  body.tema-navidad .hero{position:relative;max-width:none;background:#7A1F1F;overflow:hidden;
+    padding-left:max(24px,calc((100vw - 1180px)/2 + 24px));padding-right:max(24px,calc((100vw - 1180px)/2 + 24px));}
+  body.tema-navidad .hero::before{content:"";position:absolute;inset:-40px 0 0;pointer-events:none;
+    background-image:radial-gradient(rgba(255,255,255,.55) 1.4px,transparent 1.6px),radial-gradient(rgba(255,255,255,.3) 1px,transparent 1.2px);
+    background-size:34px 34px,21px 21px;background-position:0 0,11px 7px;animation:nieve 18s linear infinite;}
+  @keyframes nieve{to{background-position:0 340px,11px 217px;}}
+  body.tema-navidad .hero > *{position:relative;}
+  body.tema-navidad .hero h1{color:#fff;}
+  body.tema-navidad .hero h1 em{color:var(--gold);}
+  body.tema-navidad .hero .sub,body.tema-navidad .hero .made{color:#F7D9D9;}
+  body.tema-navidad .hero .eyebrow{color:var(--gold);}
+  body.tema-navidad .hero .btn-ghost{color:#fff;border-color:#fff;}
+  body.tema-navidad .stage-caption{color:#F7D9D9;opacity:1;}
+  body.tema-navidad .gorro{display:block;position:absolute;z-index:3;top:3%;left:50%;width:30%;max-width:190px;
+    transform:translateX(-18%) rotate(-14deg);filter:drop-shadow(0 6px 10px rgba(0,0,0,.25));}
+  body.tema-navidad .vitrina{background:#1E5631;padding:14px 0 10px;}
+  body.tema-navidad #chips button.on{background:#7A1F1F;border-color:#7A1F1F;color:#fff;}
+  body.tema-navidad .sec-head h2{color:#7A1F1F;}
 
   /* ---- filtros del catálogo ---- */
   .filtros{margin:0 0 22px;}
@@ -340,6 +368,7 @@
     <div class="made">Impreso en PLA · Elegís el color · <span>Playmind 3d</span></div>
   </div>
   <div class="stage static" id="stage">
+    <svg class="gorro" viewBox="0 0 120 92" aria-hidden="true"><path d="M10 74 Q34 6 104 18 Q90 44 84 74 Z" fill="#C62828"/><path d="M10 74 Q34 6 104 18 Q96 26 92 34 Q50 28 24 74 Z" fill="#E53935"/><rect x="2" y="66" width="92" height="20" rx="10" fill="#fff"/><circle cx="106" cy="18" r="12" fill="#fff"/></svg>
     <div class="hero-fallback"><img src="assets/logo.png" alt="Play Mind 3d"></div>
     <div class="stage-caption">Imprimiendo tu próximo mundo…</div>
   </div>
@@ -718,7 +747,7 @@
         '<div class="p-price"><span class="amount">'+plata(p.precio)+'</span><span class="per">cada una</span></div>'+
       '</div>'+minis+
       '<div class="p-body">'+
-        '<div class="cat">'+esc(p.cat||'Pieza')+'</div>'+
+        '<div class="cat">'+esc(catsDe(p).join(' · ')||'Pieza')+'</div>'+
         '<h3>'+esc(p.nome)+'</h3>'+
         '<div class="p-benefits">'+beneficios(p)+'</div>'+
         ficha+
@@ -826,7 +855,11 @@
       '<textarea id="edDet" rows="6" maxlength="800">'+esc(p.detalle||'')+'</textarea>'+
       '<label>Tamaño</label><input id="edMed" type="text" value="'+esc(p.medida||'')+'">'+
       '<label>Etiquetas (separadas por coma)</label><input id="edTags" type="text" value="'+esc(p.tags||'')+'">'+
-      '<label>Categoría</label><input id="edCat" type="text" value="'+esc(p.cat||'')+'">'+
+      '<label>Categorías</label><div id="edCats" class="ed-cats">'+CATEGORIAS.map(function(c){
+        var on=catsDe(p).some(function(x){ return slug(x)===slug(c); });
+        return '<label class="ed-cat"><input type="checkbox" value="'+esc(c)+'"'+(on?' checked':'')+'> '+esc(c)+'</label>';
+      }).join('')+'</div>'+
+      '<input id="edCatNueva" type="text" placeholder="Otra categoría (opcional)">'+
       '<button class="btn wsp-big" style="width:100%;margin-top:16px" id="edGuardar">Guardar</button>'+
       '<p class="err" id="edErr" hidden></p>'+
       '<button class="cerrar" id="edCancel">Cancelar</button>';
@@ -838,7 +871,8 @@
         detalle:document.getElementById('edDet').value,
         medida:document.getElementById('edMed').value,
         tags:document.getElementById('edTags').value,
-        cat:document.getElementById('edCat').value
+        cats:Array.prototype.map.call(document.querySelectorAll('#edCats input:checked'),function(i){ return i.value; })
+          .concat((document.getElementById('edCatNueva').value||'').split(',').map(function(x){ return x.trim(); }).filter(Boolean))
       };
       var b=document.getElementById('edGuardar'), err=document.getElementById('edErr');
       b.disabled=true; b.textContent='Guardando…'; err.hidden=true;
@@ -978,7 +1012,7 @@
       .slice().sort(function(a,b){
         return (b.stock>0?1:0)-(a.stock>0?1:0) || (b.fotos||[]).length-(a.fotos||[]).length;
       }).slice(0,10);
-    if(lista.length<3) return; // con menos de tres no se ve girar
+    if(lista.length<3){ sec.hidden=true; return; } // con menos de tres no se ve girar
 
     function item(p,n){
       return '<div class="item" data-n="'+n+'">'+
@@ -1000,6 +1034,8 @@
 
   /* ---------- filtros, búsqueda y link por pieza ---------- */
   var PIEZAS=[], FILTRO={cat:'',tag:'',texto:'',stock:false};
+  var CATEGORIAS=[], TEMA='', VITRINA_BASE=[], H1_ORIGINAL='', TITULO_PIEZAS='Las piezas';
+  var catsDe=function(p){ return p.cats || (p.cat?[p.cat]:[]); };
 
   /* Sin acentos y sin espacios: sirve para la URL y para que buscar "dragon"
      encuentre "Dragón". */
@@ -1026,13 +1062,13 @@
 
   function pasaFiltro(p){
     if(FILTRO.stock && !(p.stock>0)) return false;
-    if(FILTRO.cat && (p.cat||'')!==FILTRO.cat) return false;
+    if(FILTRO.cat && !catsDe(p).some(function(c){ return slug(c)===slug(FILTRO.cat); })) return false;
     if(FILTRO.tag){
       var t=(p.tags||'').split(',').map(slug);
       if(t.indexOf(slug(FILTRO.tag))<0) return false;
     }
     if(FILTRO.texto){
-      var heno=slug((p.nome||'')+' '+(p.desc||'')+' '+(p.tags||'')+' '+(p.cat||''));
+      var heno=slug((p.nome||'')+' '+(p.desc||'')+' '+(p.tags||'')+' '+catsDe(p).join(' '));
       if(heno.indexOf(slug(FILTRO.texto))<0) return false;
     }
     return true;
@@ -1044,22 +1080,47 @@
     if(cambio.tag!==undefined){ FILTRO.tag=cambio.tag; FILTRO.cat=''; }
     if(cambio.texto!==undefined) FILTRO.texto=cambio.texto;
     if(cambio.stock!==undefined) FILTRO.stock=cambio.stock;
-    pintarChips(); pintarGrid();
+    pintarChips(); pintarGrid(); tituloPiezas(); aplicarTema();
     if(irArriba){
       var s=document.getElementById('piezas');
       if(s) s.scrollIntoView({behavior:'smooth',block:'start'});
     }
   }
 
+  function tituloPiezas(){
+    var h=document.querySelector('#piezas .sec-head h2');
+    if(h) h.textContent=TITULO_PIEZAS+(FILTRO.cat?' · '+FILTRO.cat:'');
+  }
+
+  /* Navidad: por la llave de Ajustes (todo el sitio) o porque eligieron esa categoría */
+  function aplicarTema(){
+    var on = TEMA==='navidad' || slug(FILTRO.cat)==='navidad';
+    document.body.classList.toggle('tema-navidad', on);
+    var h1=document.querySelector('.hero h1');
+    if(h1){
+      if(!H1_ORIGINAL) H1_ORIGINAL=h1.innerHTML;
+      h1.innerHTML = on ? 'Navidad en el<br><em>mundo Playmind</em>.' : H1_ORIGINAL;
+    }
+    var nav=PIEZAS.filter(function(p){ return catsDe(p).some(function(c){ return slug(c)==='navidad'; }); });
+    vitrina(on && nav.filter(function(p){ return (p.fotos||[]).length; }).length>=3 ? nav : VITRINA_BASE);
+  }
+
+  /* ?cat=navidad abre el sitio ya filtrado (es el link que se manda por WhatsApp) */
+  function catDeLaUrl(){
+    try{
+      var q=new URLSearchParams(location.search).get('cat');
+      if(!q) return;
+      var c=CATEGORIAS.filter(function(x){ return slug(x)===slug(q); })[0];
+      if(c) ponerFiltro({cat:c});
+    }catch(e){}
+  }
+
   function pintarChips(){
     var caja=document.getElementById('chips');
     if(!caja) return;
-    var cats=[];
-    PIEZAS.forEach(function(p){
-      var c=(p.cat||'').trim();
-      if(c && cats.indexOf(c)<0) cats.push(c);
+    var cats=CATEGORIAS.filter(function(c){
+      return PIEZAS.some(function(p){ return catsDe(p).some(function(x){ return slug(x)===slug(c); }); });
     });
-    cats.sort();
     var h='<button type="button" data-cat=""'+(!FILTRO.cat&&!FILTRO.tag?' class="on"':'')+'>Todas</button>';
     cats.forEach(function(c){
       h+='<button type="button" data-cat="'+esc(c)+'"'+(FILTRO.cat===c?' class="on"':'')+'>'+esc(c)+'</button>';
@@ -1172,12 +1233,20 @@
         return;
       }
       PIEZAS=piezas;
+      CATEGORIAS=c.categorias || [];
+      if(!CATEGORIAS.length) piezas.forEach(function(p){
+        catsDe(p).forEach(function(x){ if(CATEGORIAS.indexOf(x)<0) CATEGORIAS.push(x); });
+      });
+      TEMA=c.tema||'';
+      VITRINA_BASE=piezas;
       // con pocas piezas los filtros estorban más de lo que ayudan
       var cajaF=document.getElementById('filtros');
       if(cajaF) cajaF.hidden = piezas.length<6;
       vitrina(piezas);
       pintarChips();
       pintarGrid();
+      aplicarTema();
+      catDeLaUrl();
       abrirDeLaUrl();
       opiniones(c.opiniones||[]);
       barra();
