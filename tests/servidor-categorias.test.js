@@ -18,6 +18,7 @@ const CASOS = [
   () => ({ cfg: {}, categorias: ["Navidad"], produtos: [{ cats: ["Halloween"], cat: "Halloween" }] }),
   () => ({ cfg: {}, categorias: ["Navidad", "Sensoriales", "Halloween"], produtos: [{ cats: ["Navidad", "Sensoriales"], cat: "Halloween" }] }),
   () => ({ cfg: { temaSitio: "navidad" }, produtos: [] }),
+  () => ({ cfg: {}, categorias: ["Navidad"], produtos: [{ cats: ["🎄", "Navidad"], cat: "🎄" }] }),
 ];
 
 test("paridad de migración", () => {
@@ -34,7 +35,7 @@ test("paridad de texto", () => {
   const g = cargar();
   const lista = ["Navidad", "Biología"];
   for (const crear of [false, true]) {
-    assert.deepEqual(js(g.catsDesdeTexto_("navidad, Natal ,biologia", lista, crear)), C.catsDesdeTexto("navidad, Natal ,biologia", lista, { crear }));
+    assert.deepEqual(js(g.catsDesdeTexto_("navidad, Natal ,biologia, ★", lista, crear)), C.catsDesdeTexto("navidad, Natal ,biologia, ★", lista, { crear }));
   }
 });
 

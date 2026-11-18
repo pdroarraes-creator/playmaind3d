@@ -25,7 +25,7 @@
     const out = [];
     (cats || []).forEach((c) => {
       c = limpio(c);
-      if (c && !out.some((x) => slugCat(x) === slugCat(c))) out.push(c);
+      if (slugCat(c) && !out.some((x) => slugCat(x) === slugCat(c))) out.push(c);
     });
     p.cats = out;
     p.cat = out[0] || "";
@@ -34,7 +34,7 @@
   /** Nombre canónico de la lista; si no está, lo agrega al final. */
   function asegurar(D, nombre) {
     const n = limpio(nombre);
-    if (!n) return null;
+    if (!slugCat(n)) return null; // "🎄" o "★" solos no se pueden buscar ni enlazar
     const ya = buscar(D.categorias, n);
     if (ya) return ya;
     D.categorias.push(n);
@@ -69,7 +69,7 @@
     String(texto || "")
       .split(",")
       .map(limpio)
-      .filter(Boolean)
+      .filter((t) => slugCat(t))
       .forEach((t) => {
         const ya = buscar(lista, t) || buscar(nuevas, t);
         if (buscar(lista, t)) cats.push(ya);
@@ -82,6 +82,18 @@
   }
 
   const agregarCategoria = (D, nombre) => asegurar(D, nombre);
+
+  /** Lo que manda el chat: sólo cambia si alguna categoría existe; nunca borra por un nombre desconocido. */
+  function catsDelChat(p, texto, lista) {
+    const r = catsDesdeTexto(texto, lista, { crear: false });
+    if (!r.cats.length) return { cambio: false, nuevas: r.nuevas };
+    ponerCats(p, r.cats);
+    return { cambio: true, nuevas: r.nuevas };
+  }
+
+  /** Deja sólo las categorías que siguen en la lista, con el nombre de la lista. */
+  const depurarCats = (cats, lista) =>
+    (cats || []).map((c) => buscar(lista, c)).filter((c, i, a) => c && a.indexOf(c) === i);
 
   function renombrarCategoria(D, viejo, nuevo) {
     const v = buscar(D.categorias, viejo);
@@ -133,7 +145,7 @@
         nome: p.nome || "Pieza",
         precio: Math.round(Number(o.precioDe(p)) || 0),
         foto: (Array.isArray(p.fotos) && p.fotos[0]) || p.foto || "",
-        color: p.libre ? "" : "Elegís el color",
+        color: p.libre ? "Elegís el color" : "",
       }))
       .sort((a, b) => a.nome.localeCompare(b.nome, "es"));
     return {
@@ -158,7 +170,7 @@
     ".pdf";
 
   const api = {
-    armarCatalogo, nombreArchivoCatalogo,
+    armarCatalogo, nombreArchivoCatalogo, catsDelChat, depurarCats,
     CATS_INICIALES, slugCat, migrarCategorias, catsDesdeTexto, ponerCats, agregarCategoria,
     renombrarCategoria, moverCategoria, borrarCategoria, usoCategoria, piezasDeCategoria, linkCategoria,
   };

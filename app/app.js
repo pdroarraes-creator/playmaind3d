@@ -668,6 +668,7 @@ let catsTmp = []; // categorías marcadas en el editor
 function renderCatsEditor() {
   const box = $("#c_cats");
   box.textContent = "";
+  catsTmp = depurarCats(catsTmp, D.categorias); // lo borrado o renombrado en Ajustes no vuelve al guardar
   D.categorias.forEach((c) => {
     const on = catsTmp.some((x) => slugCat(x) === slugCat(c));
     box.appendChild(
@@ -680,8 +681,13 @@ function renderCatsEditor() {
   });
   box.appendChild(
     chip("+ nueva", false, () => {
-      const n = agregarCategoria(D, prompt("Nombre de la categoría") || "");
-      if (!n) return;
+      const pedido = prompt("Nombre de la categoría");
+      if (pedido == null) return;
+      const n = agregarCategoria(D, pedido);
+      if (!n) {
+        toast("Poné un nombre con letras o números.");
+        return;
+      }
       if (!catsTmp.some((x) => slugCat(x) === slugCat(n))) catsTmp.push(n);
       save();
       renderCatsEditor();
@@ -2803,10 +2809,14 @@ function accionEditarPieza(a) {
   if (a.detalhe != null) p.detalle = String(a.detalhe);
   if (a.medida != null) p.medida = String(a.medida);
   if (a.tags != null) p.tags = String(a.tags);
-  if (a.categoria != null) ponerCats(p, catsDesdeTexto(a.categoria, D.categorias, { crear: false }).cats);
+  let avisoCat = "";
+  if (a.categoria != null) {
+    const r = catsDelChat(p, a.categoria, D.categorias);
+    if (r.nuevas.length) avisoCat = " (no encontré la categoría: " + r.nuevas.join(", ") + ")";
+  }
   save();
   renderAll();
-  return "Pronto, " + p.nome + " atualizada.";
+  return "Pronto, " + p.nome + " atualizada." + avisoCat;
 }
 
 function accionAjustarStock(a) {
@@ -3667,7 +3677,9 @@ function renderCategoriasCfg() {
       value: c,
       "aria-label": "Nombre de la categoría",
       onchange: (e) => {
-        renombrarCategoria(D, c, e.target.value);
+        const nuevo = e.target.value;
+        renombrarCategoria(D, c, nuevo);
+        catsTmp = catsTmp.map((x) => (slugCat(x) === slugCat(c) ? nuevo : x));
         save();
         renderAll();
       },
@@ -3696,7 +3708,10 @@ function renderCategoriasCfg() {
 }
 function agregarCatCfg() {
   const n = agregarCategoria(D, $("#s_catNueva").value);
-  if (!n) return;
+  if (!n) {
+    toast("Poné un nombre con letras o números.");
+    return;
+  }
   $("#s_catNueva").value = "";
   save();
   renderAll();

@@ -1142,14 +1142,14 @@ function ponerCats_(p, cats) {
   var out = [];
   (cats || []).forEach(function (c) {
     c = limpioCat_(c);
-    if (c && !buscarCat_(out, c)) out.push(c);
+    if (slugCat_(c) && !buscarCat_(out, c)) out.push(c);
   });
   p.cats = out;
   p.cat = out[0] || '';
 }
 function asegurarCat_(data, nombre) {
   var n = limpioCat_(nombre);
-  if (!n) return null;
+  if (!slugCat_(n)) return null;
   var ya = buscarCat_(data.categorias, n);
   if (ya) return ya;
   data.categorias.push(n);
@@ -1175,7 +1175,7 @@ function migrarCategorias_(data) {
 }
 function catsDesdeTexto_(texto, lista, crear) {
   var cats = [], nuevas = [];
-  String(texto || '').split(',').map(limpioCat_).filter(Boolean).forEach(function (t) {
+  String(texto || '').split(',').map(limpioCat_).filter(function (t) { return slugCat_(t); }).forEach(function (t) {
     var enLista = buscarCat_(lista, t);
     if (enLista) { cats.push(enLista); return; }
     var ya = buscarCat_(nuevas, t);

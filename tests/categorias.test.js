@@ -117,12 +117,39 @@ test("arma catálogo de una categoría", () => {
   assert.equal(cat.fecha, "18/11/2026");
   assert.equal(cat.link, "https://playmind3d.com/?cat=navidad");
   assert.deepEqual(cat.items.map((i) => i.nome), ["Estrella", "Reno"]);
-  assert.deepEqual(cat.items[0], { nome: "Estrella", precio: 2000, foto: "f1", color: "" });
-  assert.equal(cat.items[1].color, "Elegís el color");
+  assert.deepEqual(cat.items[0], { nome: "Estrella", precio: 2000, foto: "f1", color: "Elegís el color" });
+  assert.equal(cat.items[1].color, "");
   for (const k of ["custo", "lucro", "horas"]) assert.ok(!JSON.stringify(cat).includes(k), k);
 });
 
 test("nombre del archivo del catálogo", () => {
   assert.equal(C.nombreArchivoCatalogo("Biología"), "Catalogo-Biologia.pdf");
   assert.equal(C.nombreArchivoCatalogo("Navidad 2026"), "Catalogo-Navidad-2026.pdf");
+});
+
+test("chat con categoría desconocida no borra las que había", () => {
+  const p = { cats: ["Navidad", "Sensoriales"], cat: "Navidad" };
+  const r = C.catsDelChat(p, "Natal", ["Navidad", "Sensoriales"]);
+  assert.equal(r.cambio, false);
+  assert.deepEqual(r.nuevas, ["Natal"]);
+  assert.deepEqual(p.cats, ["Navidad", "Sensoriales"]);
+  assert.equal(C.catsDelChat(p, "", ["Navidad"]).cambio, false);
+  assert.deepEqual(p.cats, ["Navidad", "Sensoriales"]);
+  const r2 = C.catsDelChat(p, "sensoriales, Natal", ["Navidad", "Sensoriales"]);
+  assert.equal(r2.cambio, true);
+  assert.deepEqual(p.cats, ["Sensoriales"]);
+});
+
+test("depura categorías que ya no existen", () => {
+  assert.deepEqual(C.depurarCats(["Navidad", "Halloween", "biologia"], ["Navidad", "Biología"]), ["Navidad", "Biología"]);
+});
+
+test("nombre sin letras ni números no entra ni se duplica", () => {
+  const D = { cfg: {}, categorias: ["Navidad"], produtos: [{ cats: ["🎄"], cat: "🎄" }] };
+  assert.equal(C.agregarCategoria(D, "🎄"), null);
+  C.migrarCategorias(D);
+  C.migrarCategorias(D);
+  assert.deepEqual(D.categorias, ["Navidad"]);
+  assert.deepEqual(D.produtos[0].cats, []);
+  assert.deepEqual(C.catsDesdeTexto("★, navidad", ["Navidad"], { crear: true }).cats, ["Navidad"]);
 });
