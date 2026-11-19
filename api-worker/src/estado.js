@@ -11,6 +11,12 @@ export async function leerEstado(db) {
   return { data: JSON.parse(fila.json), v: fila.v };
 }
 
+// Sólo el número de versión: lectura barata para chavear caches sin traer el JSON.
+export async function leerVersion(db) {
+  const fila = await db.prepare("SELECT v FROM estado WHERE clave = 'estado'").first();
+  return fila ? fila.v : 0;
+}
+
 // Copia del estado sin lo que no se archiva: token/key de sesión (son del
 // navegador, no del negocio) y los marcadores locales _v y _sucio (la versión
 // vive en la columna). No muta lo que pasó quien llama.

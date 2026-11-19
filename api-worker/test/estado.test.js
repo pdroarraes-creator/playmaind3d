@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { crearD1 } from "./d1-falso.js";
-import { leerEstado, guardarEstado, guardarConFusion, sanear } from "../src/estado.js";
+import { leerEstado, leerVersion, guardarEstado, guardarConFusion, sanear } from "../src/estado.js";
 
 test("banco vacío: lee null y el primer guardado queda en v 1", async () => {
   const db = crearD1();
@@ -143,4 +143,13 @@ test("sanear devuelve copia limpia sin mutar el original", () => {
   const d = { cfg: { token: "t", key: "k" }, _v: 1, _sucio: true };
   assert.deepEqual(sanear(d), { cfg: { token: "", key: "" } });
   assert.equal(d.cfg.token, "t");
+});
+
+test("leerVersion: 0 sin fila y la versión actual después de grabar", async () => {
+  const db = crearD1();
+  assert.equal(await leerVersion(db), 0);
+  await guardarEstado(db, { a: 1 }, 0);
+  assert.equal(await leerVersion(db), 1);
+  await guardarEstado(db, { a: 2 }, 1);
+  assert.equal(await leerVersion(db), 2);
 });
