@@ -45,7 +45,16 @@ const SERVIDOR =
    Apps Script; el modo pasa a "worker" cuando el Apps Script contesta "migrado"
    y vuelve a "apps" si el Worker contesta "revertido" (ver protocolo.js). */
 const SERVIDOR_ESTADO = "https://playmind3d-api-prod.pdroarraes.workers.dev/";
-let MODO_SERVIDOR = Protocolo.leerModo(window.localStorage);
+/* Si el navegador bloquea el almacenamiento, el getter de window.localStorage lanza:
+   se protege acá para que app.js cargue igual (sin memoria del modo, queda en "apps"). */
+function almacenModo() {
+  try {
+    return window.localStorage;
+  } catch (e) {
+    return null;
+  }
+}
+let MODO_SERVIDOR = Protocolo.leerModo(almacenModo());
 /** POST sin encabezados propios (evita el preflight de CORS). Devuelve el JSON. */
 async function enviarEstado(servidor, cuerpo) {
   const url = servidor === "worker" ? SERVIDOR_ESTADO : (D.cfg.api || SERVIDOR || "").trim();
@@ -61,11 +70,11 @@ function pedirEstado(cuerpo) {
     enviar: enviarEstado,
     alCambiarModo(m) {
       MODO_SERVIDOR = m;
-      Protocolo.guardarModo(window.localStorage, m);
+      Protocolo.guardarModo(almacenModo(), m);
     },
   });
 }
-const WORKER_CADASTRO ="https://playmind3d-cadastro.pdroarraes.workers.dev";
+const WORKER_CADASTRO = "https://playmind3d-cadastro.pdroarraes.workers.dev";
 const KEY = "playmind3d:v2";
 const local = {
   async get() {
