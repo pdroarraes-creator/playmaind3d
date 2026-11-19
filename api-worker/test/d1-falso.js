@@ -23,6 +23,10 @@ export function crearD1() {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec(MIGRACION);
   return {
+    // para cargar SQL de varias sentencias (p. ej. la carga de migración)
+    exec(sql) {
+      sqlite.exec(sql);
+    },
     prepare(sql) {
       const stmt = sqlite.prepare(sql);
       const armar = (valores) => ({
