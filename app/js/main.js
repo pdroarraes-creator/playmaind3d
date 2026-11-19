@@ -10,10 +10,11 @@ import {
   LOGO,
   LOGO_FULL,
 } from "./estado.js";
+import { toast, showTab, renderAll, renderLight } from "./ui.js";
 
 let editId = null,
-  fotosTmp = [],
-  insumosSel = {};
+  fotosTmp = [];
+export let insumosSel = {};
 
 /* ---------- cálculo ---------- */
 // La fórmula vive en calculo.js (la comparte el servidor); acá solo se delega.
@@ -243,7 +244,7 @@ function renderAvisos() {
     ),
   );
 }
-function renderCat() {
+export function renderCat() {
   renderAvisos();
   const q = ($("#q").value || "").toLowerCase(),
     box = $("#catList");
@@ -414,7 +415,7 @@ function ventaRapida(p) {
   renderAll();
   toast("Vendida: " + money(r.preco) + ". Quedan " + p.stock + ".");
 }
-const filName = (id) => {
+export const filName = (id) => {
   const f = D.filamentos.find((x) => x.id === id);
   if (!f) return "—";
   // el número va adelante: es lo que está escrito en el rollo de verdad
@@ -473,12 +474,12 @@ function cargarPieza(p) {
   pintarFoto();
   renderCalc();
 }
-function fillSel(sel, list, val) {
+export function fillSel(sel, list, val) {
   sel.textContent = "";
   list.forEach((x) => sel.appendChild(el("option", { value: x.id }, x.nome)));
   if (val) sel.value = val;
 }
-function insumosInputs(sel) {
+export function insumosInputs(sel) {
   insumosSel = {};
   for (const k in sel || {}) if (num(sel[k]) > 0) insumosSel[k] = num(sel[k]);
   pintarInsumos();
@@ -617,7 +618,7 @@ function piezaActual() {
     tags: $("#c_tags").value.trim(),
   };
 }
-function renderCalc() {
+export function renderCalc() {
   const p = piezaActual(),
     r = calc(p);
   $("#r_preco").textContent = money(r.preco);
@@ -873,7 +874,7 @@ function pedidoTotales() {
     canal,
   };
 }
-function renderPed() {
+export function renderPed() {
   const box = $("#pedList");
   box.textContent = "";
   const t = pedidoTotales();
@@ -1126,7 +1127,7 @@ function agrupado() {
   });
   return g;
 }
-function renderVit() {
+export function renderVit() {
   $("#vitTitulo").textContent = D.cfg.marca || "PlayMind 3d";
   const lg = $("#vitLogo");
   if (D.cfg.logo) lg.src = D.cfg.logo;
@@ -1382,7 +1383,7 @@ function seniaMes(i, mes) {
   return null;
 }
 
-function renderRad() {
+export function renderRad() {
   const box = $("#radList");
   box.textContent = "";
   const meses = mesesDelRadar();
@@ -2941,7 +2942,7 @@ function migrarStockVentas() {
     }
   });
 }
-function renderVen() {
+export function renderVen() {
   const mes = hoy().slice(0, 7);
   const delMes = D.vendas.filter((v) => (v.data || "").slice(0, 7) === mes);
   let fat = 0,
@@ -3516,7 +3517,7 @@ function fieldPlain(obj, campos, onDel, nota, acciones, alCambiar) {
   if (barra.childNodes.length) w.appendChild(barra);
   return w;
 }
-function renderAccesos() {
+export function renderAccesos() {
   const box = $("#accesos");
   if (!box) return;
   const base = location.origin && location.origin !== "null" ? location.origin : "";
@@ -3568,7 +3569,7 @@ function renderAccesos() {
     );
   });
 }
-function renderCfgLists() {
+export function renderCfgLists() {
   const qf = (($("#qFil") && $("#qFil").value) || "").toLowerCase();
   const qi = (($("#qIns") && $("#qIns").value) || "").toLowerCase();
 
@@ -4394,50 +4395,6 @@ $("#fImp").addEventListener("change", (e) => {
 });
 
 /* ---------- plumbing ---------- */
-function renderLight() {
-  renderCat();
-  renderPed();
-  renderVen();
-  renderVit();
-  renderRad();
-  renderCalc();
-}
-function renderAll() {
-  const kf = $("#c_fil").value,
-    ki = $("#c_imp").value;
-  fillSel(
-    $("#c_fil"),
-    D.filamentos.map((f) => ({ id: f.id, nome: filName(f.id) })),
-    kf,
-  );
-  fillSel($("#c_imp"), D.impressoras, ki);
-  insumosInputs(insumosSel);
-  renderAccesos();
-  renderCfgLists();
-  renderCat();
-  renderPed();
-  renderVen();
-  renderVit();
-  renderRad();
-  renderCalc();
-}
-let tId;
-function toast(m) {
-  const t = $("#toast");
-  t.textContent = m;
-  t.classList.add("on");
-  clearTimeout(tId);
-  tId = setTimeout(() => t.classList.remove("on"), 1800);
-}
-function showTab(n) {
-  document
-    .querySelectorAll("nav.tabs button")
-    .forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === n)));
-  ["cat", "calc", "ped", "vit", "rad", "ven", "cfg"].forEach((t) => {
-    $("#tab-" + t).hidden = t !== n;
-  });
-  window.scrollTo({ top: 0, behavior: "instant" });
-}
 document
   .querySelectorAll("nav.tabs button")
   .forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
