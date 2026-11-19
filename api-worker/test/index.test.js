@@ -7,7 +7,7 @@ import Calculo from "../src/calculo.js";
 test("GET /salud responde ok", async () => {
   const r = await worker.fetch(new Request("https://api.test/salud"), {});
   assert.equal(r.status, 200);
-  assert.deepEqual(await r.json(), { ok: true });
+  assert.deepEqual(await r.json(), { ok: true, modo: "escritura", snapshot: null });
 });
 
 test("OPTIONS con origen permitido devuelve 204 y el encabezado CORS", async () => {

@@ -24,8 +24,8 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 |---|---|
 | `app/index.html` | Shell da app: markup das abas. Sem CSS e sem JS inline. |
 | `app/app.css` | Todo o estilo. Design tokens em `:root`. |
-| `app/app.js` | Toda a lógica (4.670 linhas, dividida em seções comentadas). |
-| `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy.** |
+| `app/app.js` | Toda a lógica (4.663 linhas, dividida em seções comentadas). |
+| `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy.** Atual: `playmind3d-v28`. |
 | `app/manifest.json` | PWA. `scope` e `start_url` = `/app/`. |
 | `index.html` (raiz) | Catálogo público. Consome `?action=catalogo`, não faz login. |
 | `vender/index.html` | Página curta de venda. |
@@ -34,12 +34,16 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
 | `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
 | `app/calculo.js` | Cálculo de custo e preço como módulo puro (Node e navegador); base do Worker novo. |
-| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), migração do Sheets em andamento: implementa a API POST completa do estado (load/save com merge e versão otimista, editarPieza/agregarPieza/agregarFilamento/resumenNegocio), o catálogo público e a validação de sessão via Apps Script. Publicado só em staging (o D1 de staging guarda o estado real do dono); banco de produção vazio; ainda **não ligado ao app** (o app continua falando só com o Apps Script). `wrangler` e npm só aqui e em `cadastro-worker/`. |
+| `app/protocolo.js` | Protocolo de dois servidores como módulo puro (sem DOM nem rede; Node e navegador): decide se cada ação vai ao Apps Script ou ao Worker e como reagir a `migrado`, `revertido`, `clave` e `auth_no_disponible`. Testado em `tests/protocolo.test.js`; o `cadastro-worker` também o usa. |
+| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), migração do Sheets em andamento: implementa a API POST completa do estado (load/save com merge e versão otimista, editarPieza/agregarPieza/agregarFilamento/resumenNegocio), o catálogo público e a validação de sessão via Apps Script. Publicado em staging (o D1 de staging guarda o estado real do dono) e em produção: `playmind3d-api-prod` (banco `playmind-prod`, vazio), no ar em `MODO=solo-lectura`, com a migração 0002 aplicada nos dois bancos; em `solo-lectura` o Worker recusa com `revertido` toda ação de estado (`load` incluído), só o catálogo e `/salud` respondem. O código do app (`app/app.js` com `SERVIDOR_ESTADO`, e `app/protocolo.js`) já sabe trocar para o Worker de produção quando o Apps Script responde `migrado`; enquanto a chave `d1:migrado` estiver desligada o app só fala com o Apps Script. `wrangler` e npm só aqui e em `cadastro-worker/`. |
 | `scripts/migracion-d1.js` | Gera o SQL de carga do estado no D1 e compara contagens e hash. Usa só arquivos de `datos-privados/` (ignorada pelo git: estado real nunca vai para o repositório). |
 | `docs/migracion-d1*.md` | Estado da migração, limites medidos do D1 e o que a próxima etapa precisa saber. |
 | `cadastro-worker/` | Worker da Cloudflare com Gemini para cadastro por chat; chama o Apps Script. |
 | `scripts/medir-catalogo.js` | Mede o tempo do catálogo e o peso das fotos. `node scripts/medir-catalogo.js` |
-| `tests/` | Testes `node:test` (9 arquivos aqui e 9 em `api-worker/test/`). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. Precisa de Node 22.13 ou mais novo (os de `api-worker/` usam `node:sqlite`). |
+| `scripts/ensayo-protocolo.js` | Ensaio do protocolo de dois servidores no navegador, com o Playwright do ambiente (nada é instalado no repo) e todas as chamadas aos dois servidores interceptadas. `node scripts/ensayo-protocolo.js` |
+| `cadastro-worker/test/` | Teste `node:test` do cliente do Apps Script do `cadastro-worker` (1 arquivo: `appsscript.test.js`). |
+| `docs/migracion-d1-corte.md` | Roteiro do dia do corte do Apps Script/Sheets para o Worker/D1 e do rollback (Etapa 1b). |
+| `tests/` | Testes `node:test` (10 arquivos aqui, 10 em `api-worker/test/` e 1 em `cadastro-worker/test/`). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js cadastro-worker/test/*.test.js`. Precisa de Node 22.13 ou mais novo (os de `api-worker/` usam `node:sqlite`). |
 | `docs/superpowers/` | Specs e planos de trabalho. |
 | `docs/calculo-de-custo.md` | Explicação em português da fórmula de preço, pra humanos — não é lida pelo app. Cópia dela vive também no Drive, pasta `2brain-compartilhado-Pedro&Raquel/Playmind`, pra Raquel usar com o Claude dela. |
 
@@ -81,7 +85,7 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    o usuário disso.
    Vale também para as chaves da migração no Apps Script: Script Properties
    `d1:migrado` e `d1:catalogoUrl`, os três itens "D1:" do menu "PlayMind 3d" e as
-   actions novas `subirFotos` e `guardarSnapshot`. Ligar `d1:migrado` **é** o corte
+   actions novas `subirFotos`, `guardarSnapshot` e `exportarEstado`. Ligar `d1:migrado` **é** o corte
    (as cópias antigas do app deixam de salvar); não ligar antes de o plano 1b entrar.
 6. **`sw.js`:** qualquer arquivo novo em `app/` precisa entrar em `ARCHIVOS` e o
    `CACHE` precisa mudar de versão, senão os usuários ficam com a versão antiga.
@@ -148,9 +152,9 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
   35.000 caracteres.
 - Um token de sessão revogado pode continuar valendo no Worker por até 10 minutos
   (cache por isolate de `validarSesion`).
-- Cobertura de testes pequena: há 18 arquivos `node:test` (9 em `tests/`, 9 em `api-worker/test/`), rodados com
-  `node --test tests/*.test.js api-worker/test/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
-  o diretório como módulo e falha. Não há testes do `app.js` nem de interface.
+- Cobertura de testes pequena: há 21 arquivos `node:test` (10 em `tests/`, 10 em `api-worker/test/`, 1 em `cadastro-worker/test/`), rodados com
+  `node --test tests/*.test.js api-worker/test/*.test.js cadastro-worker/test/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
+  o diretório como módulo e falha. Não há testes do `app.js` nem de interface, só o ensaio do protocolo em `scripts/ensayo-protocolo.js`.
 - `app.js` é um arquivo só. Dividir em módulos é possível, mas exigiria `type="module"`
   e mexer nos 50 `onclick=` inline do HTML.
 

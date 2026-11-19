@@ -109,3 +109,25 @@ O `save` regrava no staging o estado que veio do `load`; o servidor devolve o es
 - **Worker de produção:** publicar com `--env prod`, carregar o D1 de produção e definir `d1:catalogoUrl` como `<worker>/catalogo` ANTES de ligar a chave (o menu avisa se faltar).
 - **Fuso horário:** confirmar que o projeto do Apps Script está em America/Argentina/Buenos_Aires (o `resumenNegocio` do Worker assume UTC-3; o repositório não tem `appsscript.json`).
 - **Pendente:** o Passo 4 da fumaça (com o token do Pedro) ainda não foi feito.
+
+## Etapa 1b: Workers publicados (2026-11-19)
+
+Publicado na Cloudflare com o aval do Pedro. **O app e o Apps Script continuam como estavam**: a chave `d1:migrado` e o `SNAPSHOT` seguem desligados, então ninguém fala com o Worker de produção ainda.
+
+| Worker | URL | Versão | O que está publicado |
+|---|---|---|---|
+| `playmind3d-api` (staging) | https://playmind3d-api.pdroarraes.workers.dev | `9b2f72c5-3091-4cf6-873e-fd3adfad4f25` (redeploy com a correção da revisão final) | Código da 1b (`MODO`, `/salud`, snapshots, tabela `meta`). `MODO=escritura`, `SNAPSHOT=off`. Banco `playmind-staging` (estado real do dono). |
+| `playmind3d-api-prod` | https://playmind3d-api-prod.pdroarraes.workers.dev | `32886520-2695-46a7-b4e2-ab5a9c0d2bf6` (redeploy com a correção: em `solo-lectura` recusa também o `load`) | Mesmo código, banco `playmind-prod` **vazio**. Publicado com `--var MODO:solo-lectura` (só leitura) até o passo 4 do roteiro. `SNAPSHOT=off`. |
+| `playmind3d-cadastro` | https://playmind3d-cadastro.pdroarraes.workers.dev | `12772422-4324-402d-ad33-651ab2096fb6` | Chat de cadastro com o protocolo de dois servidores. `API_WORKER_URL` aponta para o Worker de produção, `MODO_SERVIDOR=apps` (mesmo comportamento de antes). Segredo `GEMINI_API_KEY` preservado. |
+
+- Migração `0002_meta.sql` aplicada nos dois bancos (só criou a tabela `meta`); `estado` e `meta` existem nos dois.
+- Conferido com `curl`: `GET /salud` → `{"ok":true,"modo":"escritura","snapshot":null}` (staging) e `{"ok":true,"modo":"solo-lectura","snapshot":null}` (produção); `POST` sem token → `{"ok":false,"error":"clave"}` nos dois; `GET /catalogo` de produção → `{"ok":true,"catalogo":{"marca":"","wa":"","piezas":[]}}` com `access-control-allow-origin: *`.
+- O bundle do `cadastro-worker` (import de `app/protocolo.js`) foi validado com `wrangler deploy --dry-run` e deploy real; nenhuma chamada ao Gemini foi feita.
+- **Atenção:** qualquer deploy do Worker de produção antes do passo 4 do roteiro tem de levar `--var MODO:solo-lectura`; sem a opção, o valor do `wrangler.toml` (`escritura`) volta.
+
+### O que ainda depende do Pedro (ver `docs/migracion-d1-corte.md`)
+
+1. Publicar o `server/Codigo.gs` atual no Apps Script (**Versão: NUEVA**; `exportarEstado`, `guardarSnapshot` versionado e o bloqueio `migrado`). Versão ativa hoje: 30 (rollback).
+2. Decidir quando publicar o app novo na `main` (precisa estar no ar ≥ 3 dias antes do corte).
+3. Rodar o teste de fumaça da 1a com o token dele (só colar a saída).
+4. Escolher o dia e a hora do corte, com ele online e fora do horário de venda.

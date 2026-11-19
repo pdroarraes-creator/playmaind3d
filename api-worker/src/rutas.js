@@ -2,6 +2,7 @@
 // objeto { ok: true, ... } o { ok: false, error }; el HTTP lo arma index.js.
 import { leerEstado, guardarConFusion } from "./estado.js";
 import { contieneFotosNuevas, subirFotos } from "./fotos.js";
+import { snapshotTrasGrabar } from "./snapshot.js";
 import { editarPieza, agregarPieza, agregarFilamento, resumenNegocio } from "./acciones.js";
 
 // La versión llega del cliente como cualquier cosa ("", un sello de hora del
@@ -19,19 +20,6 @@ function esObjeto(x) {
   return x !== null && typeof x === "object" && !Array.isArray(x);
 }
 
-// Copia de seguridad de mejor esfuerzo en el Apps Script; nunca rechaza.
-function enviarSnapshot(ctx, data) {
-  try {
-    const p = ctx.fetchFn(ctx.env.APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "guardarSnapshot", token: ctx.token, data }),
-    });
-    ctx.esperar(Promise.resolve(p).catch(() => {}));
-  } catch {
-    // el snapshot nunca cambia la respuesta
-  }
-}
-
 export const ACCIONES = {
   async load(_body, ctx) {
     const { data, v } = await leerEstado(ctx.db);
@@ -45,7 +33,7 @@ export const ACCIONES = {
     if (contieneFotosNuevas(data)) data = await subirFotos(ctx.env, ctx.token, data, ctx.fetchFn);
     const r = await guardarConFusion(ctx.db, data, baseV);
     if (!r.ok) return { ok: false, error: r.error };
-    if (ctx.env.SNAPSHOT === "on") enviarSnapshot(ctx, r.data);
+    snapshotTrasGrabar(ctx, r);
     return {
       ok: true,
       actualizado: new Date(ctx.ahora()).toISOString(),
@@ -69,6 +57,14 @@ export async function manejarPost(body, ctx) {
     if (!sesion.ok) return sesion;
     if (typeof body.action !== "string" || !Object.hasOwn(ACCIONES, body.action)) {
       return { ok: false, error: "accion desconocida" };
+    }
+    // Con MODO "solo-lectura" (antes del corte o tras un rollback) el D1 es una copia
+    // congelada: NINGUNA acción de estado se atiende, ni siquiera load o resumenNegocio.
+    // Si un aparelho en modo worker leyera de acá y luego guardara en el Apps Script con la
+    // versión del D1, la fusión dejaría ganar la copia vieja y se perdería un cambio.
+    // El catálogo público (GET) y /salud no pasan por acá y siguen funcionando.
+    if (ctx.env.MODO === "solo-lectura") {
+      return { ok: false, error: "revertido" };
     }
     return await ACCIONES[body.action](body, { ...ctx, token });
   } catch (err) {

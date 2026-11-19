@@ -1,6 +1,6 @@
 // D1 falso para los tests: SQL real sobre node:sqlite en memoria, con la
 // misma forma de API que D1 (prepare/bind/first/run/all).
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 // node:sqlite imprime un ExperimentalWarning al importarse; se silencia sólo
 // ese aviso para que la salida de los tests quede limpia.
@@ -17,11 +17,20 @@ try {
   process.emitWarning = emitOriginal;
 }
 
-const MIGRACION = readFileSync(new URL("../migrations/0001_estado.sql", import.meta.url), "utf8");
+const DIR = new URL("../migrations/", import.meta.url);
+const MIGRACIONES = readdirSync(DIR)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .map((f) => ({ f, sql: readFileSync(new URL(f, DIR), "utf8") }));
 
-export function crearD1() {
+// Aplica todas las migraciones en orden; con { soloEstado: true } sólo la 0001
+// (un banco al que todavía no llegó la tabla meta).
+export function crearD1({ soloEstado = false } = {}) {
   const sqlite = new DatabaseSync(":memory:");
-  sqlite.exec(MIGRACION);
+  for (const m of MIGRACIONES) {
+    if (soloEstado && m.f !== "0001_estado.sql") continue;
+    sqlite.exec(m.sql);
+  }
   return {
     // para cargar SQL de varias sentencias (p. ej. la carga de migración)
     exec(sql) {

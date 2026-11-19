@@ -41,6 +41,39 @@ const LOGO = "/assets/logo-app.png";
 /* Dirección del servidor (Apps Script). Es la misma para todos los que entren. */
 const SERVIDOR =
   "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec";
+/* Servidor nuevo del estado (Worker + D1). Hasta el corte, todo sigue yendo al
+   Apps Script; el modo pasa a "worker" cuando el Apps Script contesta "migrado"
+   y vuelve a "apps" si el Worker contesta "revertido" (ver protocolo.js). */
+const SERVIDOR_ESTADO = "https://playmind3d-api-prod.pdroarraes.workers.dev/";
+/* Si el navegador bloquea el almacenamiento, el getter de window.localStorage lanza:
+   se protege acá para que app.js cargue igual (sin memoria del modo, queda en "apps"). */
+function almacenModo() {
+  try {
+    return window.localStorage;
+  } catch (e) {
+    return null;
+  }
+}
+let MODO_SERVIDOR = Protocolo.leerModo(almacenModo());
+/** POST sin encabezados propios (evita el preflight de CORS). Devuelve el JSON. */
+async function enviarEstado(servidor, cuerpo) {
+  const url = servidor === "worker" ? SERVIDOR_ESTADO : (D.cfg.api || SERVIDOR || "").trim();
+  if (!url) throw new Error("sin servidor");
+  const r = await fetch(url, { method: "POST", body: JSON.stringify(cuerpo) });
+  return await r.json();
+}
+/** Acción sobre el estado (load/save): elige servidor y reacciona al error recibido. */
+function pedirEstado(cuerpo) {
+  return Protocolo.pedirEstado({
+    modo: MODO_SERVIDOR,
+    cuerpo,
+    enviar: enviarEstado,
+    alCambiarModo(m) {
+      MODO_SERVIDOR = m;
+      Protocolo.guardarModo(almacenModo(), m);
+    },
+  });
+}
 const WORKER_CADASTRO = "https://playmind3d-cadastro.pdroarraes.workers.dev";
 const KEY = "playmind3d:v2";
 const local = {
@@ -4267,18 +4300,14 @@ async function subirALaNube() {
   const enviado = JSON.parse(JSON.stringify(D)); // foto exacta que se manda, para calzar la respuesta
   try {
     setSync("", "Guardando…");
-    const r = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "save",
-        email: D.cfg.email || "",
-        token: D.cfg.token || "",
-        v: D._v || "",
-        data: enviado,
-      }),
+    const { respuesta: j, reaccion: rc } = await pedirEstado({
+      action: "save",
+      email: D.cfg.email || "",
+      token: D.cfg.token || "",
+      v: D._v || "",
+      data: enviado,
     });
-    const j = await r.json();
-    if (j && j.ok) {
+    if (rc.tipo === "ok") {
       if (j.data && j.data.produtos) {
         // Cambiamos las fotos pesadas por los links que ya guardó el servidor,
         // calzando por el contenido (la foto en sí), no por la posición: si
@@ -4349,8 +4378,20 @@ async function subirALaNube() {
         toast("Había cambios de otra persona: se juntaron los dos.");
         await bajarDeLaNube();
       }
-    } else if (j && j.error === "clave") {
+    } else if (rc.tipo === "clave") {
       claveVencida();
+    } else if (rc.tipo === "sinAcceso") {
+      // el servidor que valida sesiones no contesta: no es una clave mala, no se desloguea
+      setSync("err", "El servidor de acceso no responde. Reintento solo.");
+      programarReintento();
+    } else if (rc.tipo === "conflicto") {
+      setSync("err", "Choque de cambios");
+      toast("Hubo un choque de cambios. Se reintenta solo.");
+      programarReintento();
+    } else if (rc.tipo === "fotos") {
+      setSync("err", "Error al subir fotos");
+      toast("No se pudieron subir las fotos. Se reintenta solo.");
+      programarReintento();
     } else {
       setSync("err", "Error al guardar");
       if (!avisoSyncPendiente) {
@@ -4396,12 +4437,12 @@ async function bajarDeLaNube() {
   }
   try {
     setSync("", "Trayendo…");
-    const j = await pedir({
+    const { respuesta: j, reaccion: rc } = await pedirEstado({
       action: "load",
       email: D.cfg.email || "",
       token: D.cfg.token || "",
     });
-    if (j && j.ok && j.data && j.data.cfg) {
+    if (rc.tipo === "ok" && j.data && j.data.cfg) {
       const api = D.cfg.api,
         tk = D.cfg.token;
       D = Object.assign(defaults(), j.data);
@@ -4428,12 +4469,21 @@ async function bajarDeLaNube() {
         showTab("ven");
         abrirPOS();
       }
-    } else if (j && j.error === "clave") {
+    } else if (rc.tipo === "clave") {
       claveVencida();
-    } else {
+    } else if (rc.tipo === "ok") {
+      // respuesta buena pero sin datos: el servidor está vacío, se puede subir lo local
       listoParaSubir = true;
       setSync("err", "No había datos guardados");
       toast("El servidor todavía no tiene datos.");
+    } else {
+      // Un load con error NO libera el save: si se subiera ahora, el estado
+      // local (posiblemente viejo o vacío) pisaría lo que hay en el servidor.
+      setSync(
+        "err",
+        rc.tipo === "sinAcceso" ? "El servidor de acceso no responde" : "No se pudo traer de la nube",
+      );
+      toast("No se pudo traer lo de la nube.");
     }
   } catch (e) {
     setSync("err", "Sin conexión");
