@@ -868,6 +868,11 @@ function unitario_(it, n) {
   return n(it.preco);
 }
 
+// Igual que ceilTo de app/calculo.js: un paso de 1 o menos redondea al entero.
+function ceilTo_(v, paso) {
+  return paso > 1 ? Math.ceil(v / paso) * paso : Math.ceil(v);
+}
+
 function calcular_(p, data) {
   var c = data.cfg || {};
   var n = function (x) {
@@ -876,9 +881,10 @@ function calcular_(p, data) {
     return isFinite(v) ? v : 0;
   };
   var buscar = function (lista, id) {
-    var out = null;
-    (lista || []).forEach(function (x) { if (x.id === id) out = x; });
-    return out;
+    // Gana el PRIMERO con ese id: mismo criterio que find en app/calculo.js.
+    var l = lista || [];
+    for (var i = 0; i < l.length; i++) { if (l[i].id === id) return l[i]; }
+    return null;
   };
   // Si la pieza apunta a un filamento/impresora que ya no existe (se borró y
   // la pieza quedó apuntando al vacío), se cae al primero de la lista, IGUAL
@@ -901,7 +907,7 @@ function calcular_(p, data) {
   var desgaste = (n(imp.preco) / Math.max(n(imp.vida), 1)
     + n(imp.bico) / Math.max(n(imp.bicoVida), 1)
     + n(imp.mesa) / Math.max(n(imp.mesaVida), 1)) * hs;
-  var trabajo = n(c.maoObra) * n(p.mo) / 60;
+  var trabajo = n(c.maoObra) * (n(p.mo) / 60); // paréntesis: igual que app/calculo.js, evita diferencias de último bit
 
   var insumos = 0;
   for (var k in (p.insumos || {})) {
@@ -909,9 +915,14 @@ function calcular_(p, data) {
     if (it) insumos += unitario_(it, n) * n(p.insumos[k]);
   }
 
+  // Reproduce Calculo.calcular de app/calculo.js (misma fórmula, mismo orden
+  // de sumas): la reserva se suma aparte, no como impresion * (1 + riesgo),
+  // porque eso cambia el último bit del punto flotante y el techo del precio
+  // salta en las fronteras.
   var impresion = material + luz + desgaste;
   var riesgo = (p.risco === null || p.risco === undefined ? n(c.risco) : n(p.risco)) / 100;
-  var costo = impresion * (1 + riesgo) + trabajo + insumos;
+  var reserva = impresion * riesgo;
+  var costo = impresion + reserva + trabajo + insumos;
 
   var mult = (p.mult === null || p.mult === undefined ? n(c.mult) : n(p.mult)) || 1;
   var paso = n(c.round) || 1;
@@ -919,7 +930,7 @@ function calcular_(p, data) {
   // cero. Con el truthy pelado, un manual en "0" o negativo salía publicado
   // tal cual en el catálogo.
   var hayManual = p.manual !== null && p.manual !== undefined && p.manual !== '' && n(p.manual) > 0;
-  var precio = hayManual ? n(p.manual) : Math.ceil(costo * mult * (n(p.cplx) || 1) / paso) * paso;
+  var precio = hayManual ? n(p.manual) : ceilTo_(costo * mult * (n(p.cplx) || 1), paso);
   return { custo: costo, preco: precio, gramos: gramos, horas: hs };
 }
 

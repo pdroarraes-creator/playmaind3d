@@ -1,75 +1,80 @@
-// Paridad de precio: calc() de app/app.js debe coincidir con calcular_() de server/Codigo.gs.
+// Prueba que app/calculo.js reproduce a calc() de app.js (casos dorados) y que
+// calcular_() de server/Codigo.gs da lo mismo.
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const vm = require("vm");
-const { cargarApp } = require("./helpers/cargar-app");
+const Calculo = require("../app/calculo.js");
 
-const srv = {};
-vm.createContext(srv);
-vm.runInContext(fs.readFileSync(__dirname + "/../server/Codigo.gs", "utf8"), srv);
-const app = cargarApp();
+const casos = JSON.parse(fs.readFileSync(__dirname + "/fixtures/calculo-dorados.json", "utf8"));
 
-const clonar = (o) => JSON.parse(JSON.stringify(o));
-const base = () => ({
-  cfg: { kwh: 150, maoObra: 4000, risco: 10, mult: 3, round: 100, merma: 12 },
-  filamentos: [{ id: "f1", precoKg: 24000 }],
-  impressoras: [{ id: "i1", preco: 600000, vida: 5000, watts: 200, bico: 3000, bicoVida: 500, mesa: 15000, mesaVida: 2000 }],
-  insumos: [],
-  produtos: [],
+test("calculo.js reproduce los casos dorados del app", () => {
+  for (const c of casos) {
+    assert.deepEqual(Calculo.calcular(c.pieza, c.data), { ...c.esperado }, c.nombre);
+  }
 });
-const pieza = () => ({ fil: "f1", imp: "i1", peso: 40, h: 2, m: 30, mo: 15, risco: null, mult: null, cplx: 1, manual: "", insumos: {} });
 
-function comparar(p, estado) {
-  app.setD(clonar(estado));
-  const a = app.calc(clonar(p));
-  const s = srv.calcular_(clonar(p), clonar(estado));
-  assert.equal(a.preco, s.preco, `preco app=${a.preco} servidor=${s.preco}`);
-  // El costo se suma en distinto orden (impresion + reserva vs impresion * (1 + riesgo)):
-  // difiere en el último bit del float, sin efecto sobre el precio redondeado.
-  assert.ok(Math.abs(a.custo - s.custo) < 1e-9, `custo app=${a.custo} servidor=${s.custo}`);
-  return a;
+test("calcular_ del servidor coincide con calculo.js", () => {
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(__dirname + "/../server/Codigo.gs", "utf8"), ctx);
+  for (const c of casos) {
+    const s = ctx.calcular_(c.pieza, c.data);
+    const a = Calculo.calcular(c.pieza, c.data);
+    for (const k of ["custo", "preco", "horas", "gramos"]) assert.equal(s[k], a[k], c.nombre + " " + k);
+  }
+});
+
+test("calcular no falla con data vacia", () => {
+  const r = Calculo.calcular({ peso: 10, h: 1 }, {});
+  for (const v of Object.values(r)) assert.ok(Number.isFinite(v));
+});
+
+// Ids duplicados: calcular_ (servidor) y Calculo.calcular (app) deben elegir el
+// PRIMERO, si no el catálogo y la pantalla cobran distinto (restricción 9).
+function servidor_() {
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(__dirname + "/../server/Codigo.gs", "utf8"), ctx);
+  return ctx;
+}
+const CAMPOS = ["custo", "preco", "horas", "gramos"];
+const cfgBase = { merma: 12, kwh: 120, maoObra: 3000, risco: 10, mult: 2.5, round: 50 };
+const impBase = { id: "i1", preco: 300000, vida: 5000, watts: 150, bico: 2000, bicoVida: 500, mesa: 10000, mesaVida: 2000 };
+
+function verificarDuplicado(nombre, duplicado, sinDuplicar, pieza) {
+  const ctx = servidor_();
+  const a = Calculo.calcular(pieza, duplicado);
+  const s = ctx.calcular_(pieza, duplicado);
+  const esperado = Calculo.calcular(pieza, sinDuplicar);
+  for (const k of CAMPOS) {
+    assert.equal(s[k], a[k], nombre + " servidor=app " + k);
+    assert.equal(a[k], esperado[k], nombre + " app usa el primero " + k);
+    assert.equal(s[k], esperado[k], nombre + " servidor usa el primero " + k);
+  }
+  assert.ok(a.custo > 0, nombre + " custo > 0");
 }
 
-test("caso base coincide", () => {
-  const r = comparar(pieza(), base());
-  assert.ok(r.preco > 0 && r.custo > 0);
+test("id de filamento duplicado: gana el primero", () => {
+  const pieza = { fil: "f1", imp: "i1", peso: 100, h: 2, m: 0, mo: 10 };
+  const dup = { cfg: cfgBase, impressoras: [impBase], insumos: [],
+    filamentos: [{ id: "f1", precoKg: 20000 }, { id: "f1", precoKg: 90000 }] };
+  const solo = { ...dup, filamentos: [{ id: "f1", precoKg: 20000 }] };
+  verificarDuplicado("filamento", dup, solo, pieza);
 });
 
-test("filamento apagado cae al primero", () => {
-  const p = pieza();
-  p.fil = "fX";
-  comparar(p, base());
+test("id de impresora duplicado: gana el primero", () => {
+  const pieza = { fil: "f1", imp: "i1", peso: 100, h: 2, m: 0, mo: 10 };
+  const dup = { cfg: cfgBase, filamentos: [{ id: "f1", precoKg: 20000 }], insumos: [],
+    impressoras: [impBase, { ...impBase, preco: 3000000, watts: 900 }] };
+  const solo = { ...dup, impressoras: [impBase] };
+  verificarDuplicado("impresora", dup, solo, pieza);
 });
 
-test("merma ausente vale 12", () => {
-  const e = base();
-  delete e.cfg.merma;
-  comparar(pieza(), e);
-});
-
-test("gramos a un decimal", () => {
-  const p = pieza();
-  p.peso = 33.33;
-  comparar(p, base());
-});
-
-test("precio manual 0 se ignora", () => {
-  const p = pieza();
-  p.manual = "0";
-  comparar(p, base());
-  p.manual = -5;
-  comparar(p, base());
-});
-
-test("precio manual positivo manda", () => {
-  const p = pieza();
-  p.manual = 4500;
-  assert.equal(comparar(p, base()).preco, 4500);
-});
-
-test("round fraccionario", { todo: "calc usa ceilTo, calcular_ usa Math.ceil(x/paso)*paso con round<1" }, () => {
-  const e = base();
-  e.cfg.round = 0.5;
-  comparar(pieza(), e);
+test("id de insumo duplicado: gana el primero", () => {
+  const pieza = { fil: "f1", imp: "i1", peso: 100, h: 2, m: 0, mo: 10, insumos: { s1: 2 } };
+  const dup = { cfg: cfgBase, filamentos: [{ id: "f1", precoKg: 20000 }], impressoras: [impBase],
+    insumos: [{ id: "s1", preco: 100 }, { id: "s1", preco: 5000 }] };
+  const solo = { ...dup, insumos: [{ id: "s1", preco: 100 }] };
+  verificarDuplicado("insumo", dup, solo, pieza);
 });

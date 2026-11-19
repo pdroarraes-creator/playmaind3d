@@ -33,9 +33,11 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `server/Codigo.gs` | O Apps Script. **Não roda daqui** — é copiado e colado no editor. |
 | `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
 | `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
+| `app/calculo.js` | Cálculo de custo e preço como módulo puro (Node e navegador); base do Worker novo. |
+| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), esqueleto da migração: CORS e `/salud`, sem lógica de estado ainda. Só aqui vale `wrangler`. |
 | `cadastro-worker/` | Worker da Cloudflare com Gemini para cadastro por chat; chama o Apps Script. |
 | `scripts/medir-catalogo.js` | Mede o tempo do catálogo e o peso das fotos. `node scripts/medir-catalogo.js` |
-| `tests/` | Testes `node:test` (7 arquivos). Rodar com `node --test tests/*.test.js`. |
+| `tests/` | Testes `node:test` (7 arquivos). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. |
 | `docs/superpowers/` | Specs e planos de trabalho. |
 | `docs/calculo-de-custo.md` | Explicação em português da fórmula de preço, pra humanos — não é lida pelo app. Cópia dela vive também no Drive, pasta `2brain-compartilhado-Pedro&Raquel/Playmind`, pra Raquel usar com o Claude dela. |
 
@@ -133,7 +135,7 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
   espacio queda". Gatilho proposto para revisitar a decisão do banco: 70% =
   35.000 caracteres.
 - Cobertura de testes pequena: há `tests/` com 7 arquivos `node:test`, rodados com
-  `node --test tests/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
+  `node --test tests/*.test.js api-worker/test/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
   o diretório como módulo e falha. Não há testes do `app.js` nem de interface.
 - `app.js` é um arquivo só. Dividir em módulos é possível, mas exigiria `type="module"`
   e mexer nos 50 `onclick=` inline do HTML.
