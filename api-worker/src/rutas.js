@@ -20,9 +20,6 @@ function esObjeto(x) {
   return x !== null && typeof x === "object" && !Array.isArray(x);
 }
 
-// Acciones que modifican el estado: con MODO "solo-lectura" se rechazan.
-export const ESCRIBEN = ["save", "editarPieza", "agregarPieza", "agregarFilamento"];
-
 export const ACCIONES = {
   async load(_body, ctx) {
     const { data, v } = await leerEstado(ctx.db);
@@ -61,7 +58,12 @@ export async function manejarPost(body, ctx) {
     if (typeof body.action !== "string" || !Object.hasOwn(ACCIONES, body.action)) {
       return { ok: false, error: "accion desconocida" };
     }
-    if (ctx.env.MODO === "solo-lectura" && ESCRIBEN.includes(body.action)) {
+    // Con MODO "solo-lectura" (antes del corte o tras un rollback) el D1 es una copia
+    // congelada: NINGUNA acción de estado se atiende, ni siquiera load o resumenNegocio.
+    // Si un aparelho en modo worker leyera de acá y luego guardara en el Apps Script con la
+    // versión del D1, la fusión dejaría ganar la copia vieja y se perdería un cambio.
+    // El catálogo público (GET) y /salud no pasan por acá y siguen funcionando.
+    if (ctx.env.MODO === "solo-lectura") {
       return { ok: false, error: "revertido" };
     }
     return await ACCIONES[body.action](body, { ...ctx, token });

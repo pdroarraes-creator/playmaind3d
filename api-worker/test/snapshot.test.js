@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { crearD1 } from "./d1-falso.js";
-import { manejarPost } from "../src/rutas.js";
+import { manejarPost, ACCIONES } from "../src/rutas.js";
 import { leerUltimoSnapshot } from "../src/snapshot.js";
 import worker from "../src/index.js";
 
@@ -90,14 +90,18 @@ for (const [accion, cuerpo] of RUTAS) {
   });
 }
 
-test("MODO solo-lectura: load y resumenNegocio funcionan; ausente o escritura no bloquea", async () => {
+test("MODO solo-lectura: TODA acción de estado responde revertido (load y resumenNegocio incluidos)", async () => {
   const { ctx } = armar({ env: { SNAPSHOT: "off" } });
   await post(ctx, { action: "save", v: "", data: SEMILLA });
   ctx.env.MODO = "solo-lectura";
-  assert.equal((await post(ctx, { action: "load" })).ok, true);
-  assert.equal((await post(ctx, { action: "resumenNegocio" })).ok, true);
+  for (const action of ["load", "save", "editarPieza", "agregarPieza", "agregarFilamento", "resumenNegocio"]) {
+    assert.deepEqual(await post(ctx, { action, data: SEMILLA }), { ok: false, error: "revertido" }, action);
+  }
+  // Contrato: todas las acciones del Worker son de estado; si aparece una nueva, este test obliga a decidirlo.
+  assert.deepEqual(Object.keys(ACCIONES).sort(), ["agregarFilamento", "agregarPieza", "editarPieza", "load", "resumenNegocio", "save"]);
   for (const modo of [undefined, "escritura"]) {
     ctx.env.MODO = modo;
+    assert.equal((await post(ctx, { action: "load" })).ok, true, String(modo));
     const r = await post(ctx, { action: "agregarFilamento", filamento: { nome: "PETG" } });
     assert.equal(r.ok, true, String(modo));
   }

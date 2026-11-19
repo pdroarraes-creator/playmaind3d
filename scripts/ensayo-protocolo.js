@@ -76,7 +76,17 @@ async function correr(browser, base, cfg, fn) {
   await page.route(APPS, manejador("apps", () => stubs.apps));
   await page.route(WORKER, manejador("worker", () => stubs.worker));
   const semilla = estadoSemilla();
-  await page.addInitScript(
+  if (cfg.sinStorage) {
+    // navegador que bloquea el almacenamiento: el getter de window.localStorage lanza
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "localStorage", {
+        get() {
+          throw new DOMException("bloqueado", "SecurityError");
+        },
+      });
+    });
+  }
+  if (!cfg.sinStorage) await page.addInitScript(
     ([s, modo, clave]) => {
       if (!window.localStorage.getItem("playmind3d:v2"))
         window.localStorage.setItem("playmind3d:v2", JSON.stringify(s));
@@ -197,6 +207,40 @@ const escenarios = [
         [t.cuenta("apps", "save") === 1, "apps save=" + t.cuenta("apps", "save")],
         [e.sucio === false, "_sucio=" + e.sucio],
         [/En la nube/.test(await t.sync()), "sync=" + (await t.sync())],
+      ];
+    },
+  ],
+  [
+    "4b. Rollback con load (Worker en solo-lectura: revertido a todo)",
+    {
+      modo: "worker",
+      worker: porAccion({ load: () => ({ ok: false, error: "revertido" }), save: () => ({ ok: false, error: "revertido" }) }),
+      apps: porAccion({ load: () => okLoad("55"), save: () => ({ ok: true, v: "56" }) }),
+    },
+    async (t) => {
+      const e = await t.estado();
+      return [
+        [(await t.modo()) === "apps", "modo=" + (await t.modo())],
+        [t.cuenta("worker", "load") === 1, "worker load=" + t.cuenta("worker", "load")],
+        [t.cuenta("apps", "load") === 1, "apps load=" + t.cuenta("apps", "load")],
+        [e.v === "55", "v=" + e.v + " (debe venir del Apps Script)"],
+        [e.listo === true, "listoParaSubir=" + e.listo],
+        [e.entrada === false, "no debe aparecer el login"],
+      ];
+    },
+  ],
+  [
+    "4c. Solo-lectura: load revertido y el Apps Script también falla -> sin subida",
+    {
+      modo: "worker",
+      worker: porAccion({ load: () => ({ ok: false, error: "revertido" }), save: () => ({ ok: false, error: "revertido" }) }),
+      apps: porAccion({ load: () => ({ ok: false, error: "caído" }) }),
+    },
+    async (t) => {
+      const e = await t.estado();
+      return [
+        [e.listo === false, "listoParaSubir=" + e.listo + " (solo con ok:true)"],
+        [t.cuenta("worker", "load") === 1 && t.cuenta("apps", "load") >= 1, "load worker/apps"],
       ];
     },
   ],
@@ -325,6 +369,18 @@ const escenarios = [
       return [
         [t.cuenta("apps", "editarPieza") === 0 && t.cuenta("worker", "editarPieza") === 1, "debe ir solo al Worker"],
         [r && r.desde === "worker", "retorno=" + JSON.stringify(r)],
+      ];
+    },
+  ],
+  [
+    "12. Almacenamiento bloqueado: app.js carga (sin sesión guardada, pide entrar)",
+    { sinStorage: true, apps: porAccion({ load: () => okLoad("9") }) },
+    async (t) => {
+      const e = await t.estado();
+      return [
+        [t.errores.length === 0, "errores de página: " + t.errores.join(" | ")],
+        [e.entrada === true, "sin sesión guardada debe aparecer el login"],
+        [t.cuenta("worker") === 0, "nada debe ir al Worker"],
       ];
     },
   ],
