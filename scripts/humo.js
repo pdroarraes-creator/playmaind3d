@@ -141,6 +141,14 @@ async function main() {
       if (m.type() === "error") errores.push("console.error: " + m.text());
     });
 
+    // las fuentes de Google no deben decidir el resultado (máquina sin red)
+    await page.route("**/fonts.googleapis.com/**", (route) =>
+      route.fulfill({ status: 200, contentType: "text/css", body: "" }),
+    );
+    await page.route("**/fonts.gstatic.com/**", (route) =>
+      route.fulfill({ status: 200, contentType: "font/woff2", body: "" }),
+    );
+
     const saves = [];
     await page.route("**/script.google.com/**", async (route) => {
       const req = route.request();
@@ -177,13 +185,27 @@ async function main() {
         timeout: 10000,
       });
       await page.waitForFunction(
-        () => /nube/i.test(document.querySelector("#syncTxt")?.textContent || ""),
+        () => (document.querySelector("#syncTxt")?.textContent || "").trim() === "En la nube",
         null,
         { timeout: 10000 },
       );
-      chequeo("(a) arranca desde estado viejo y sincroniza", true);
+      // el estado sembrado es viejo: las migraciones de arranque tienen que haberlo completado
+      const faltan = await page.evaluate(() => {
+        const D = window.PM.D;
+        const f = [];
+        if (!Array.isArray(D.radar)) f.push("radar");
+        if (!Array.isArray(D.packs)) f.push("packs");
+        if (!Array.isArray(D.opiniones)) f.push("opiniones");
+        if (!D.cfg || typeof D.cfg.leti !== "object" || !D.cfg.leti) f.push("cfg.leti");
+        // cfg.merma NO se chequea: init() la pone en 12, pero bajarDeLaNube() reemplaza
+        // D.cfg por el del servidor (Object.assign superficial) y la pierde; el cálculo
+        // cae a 12 por su cuenta. Comportamiento previo, anotado en el informe.
+        return f;
+      });
+      if (faltan.length) throw new Error("estado sin migrar: " + faltan.join(","));
+      chequeo("(a) arranca desde estado viejo, sincroniza (En la nube) y migra", true);
     } catch (e) {
-      chequeo("(a) arranca desde estado viejo y sincroniza", false, e.message.split("\n")[0]);
+      chequeo("(a) arranca desde estado viejo, sincroniza (En la nube) y migra", false, e.message.split("\n")[0]);
     }
 
     // (b) cada pestaña visible se abre
