@@ -3,11 +3,11 @@ import { $ } from "./util.js";
 import {
   renderPed,
   renderVen,
-  renderVit,
   renderRad,
   renderAccesos,
   renderCfgLists,
 } from "./main.js";
+import { renderVit } from "./vitrina.js";
 import { renderCat, filName } from "./catalogo.js";
 import { renderCalc, fillSel, insumosInputs, insumosSel } from "./editor.js";
 
