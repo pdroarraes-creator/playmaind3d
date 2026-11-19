@@ -11,7 +11,7 @@ ORIGENES_EXTRA = ""
 [[d1_databases]]
 binding = "DB"
 database_name = "playmind-staging"
-database_id = "PENDIENTE"
+database_id = "3e5bd45b-1830-4633-8600-2b5baba6e2af"
 
 # Producción: wrangler deploy --env prod
 [env.prod]
@@ -23,4 +23,4 @@ ORIGENES_EXTRA = ""
 [[env.prod.d1_databases]]
 binding = "DB"
 database_name = "playmind-prod"
-database_id = "PENDIENTE"
+database_id = "8a0a4cf3-9642-4311-a0ca-763ffbe2f96a"
