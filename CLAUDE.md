@@ -72,7 +72,9 @@ Regras dos módulos:
 - Um `let`/`var` exportado só é reatribuído pelo módulo dono; os outros usam um setter
   exportado (ex.: `setFotosTmp`, `setPosForma`).
 - O código executável de topo de cada seção vive numa função `iniciar<Modulo>()` que o
-  `main.js` chama numa ordem fixa.
+  `main.js` chama numa ordem fixa. Exceções inofensivas: `main.js` ainda mantém no topo
+  os listeners de `nube`/`plumbing`, e `radar.js` mantém no topo o IIFE somente-leitura
+  `PIEZA_PENDIENTE`.
 - Há ciclos de import deliberados com `main.js`; só são seguros porque nada roda na
   avaliação dos módulos. **Não adicione leituras de topo de bindings de outro módulo.**
 
@@ -96,7 +98,9 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
 2. **Sem build step.** Nada de npm, bundler ou framework. O que está no repo é
    exatamente o que vai pro ar. Prettier é a única ferramenta, e é opcional.
 3. **Não quebrar o formato do JSON salvo.** Mudou o shape de `D`? Escreva migração
-   em `cargar()`, como a que trata logo base64 legado.
+   em `init()` (`app/js/main.js`, o IIFE de arranque) ou nas funções `migrar*` que ele
+   chama (os carregadores como `bajarDeLaNube` também as chamam), como a que trata logo
+   base64 legado.
 4. **Nunca voltar a colocar credencial no código.** Usuário novo ou troca de clave
    se faz pelo menu da planilha, sem redeploy.
 5. **Deploy do Apps Script:** salvar não basta. `Implementar > Administrar
@@ -185,4 +189,6 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
 - Chamar função de outro módulo exige `export` no módulo dono e `import` onde se usa; o erro
   só aparece quando aquele caminho de código roda (toque/clique). Por isso, rode o eslint
   sempre que mover ou adicionar código entre módulos.
-- Teste abrindo `python3 -m http.server` na raiz e acessando `/app/`.
+- Teste abrindo `python3 -m http.server` na raiz e acessando `/app/`. A app agora carrega
+  módulos ES: no Windows o Python pode servir `.js` como `text/plain` (mapeamento MIME do
+  registro) e a página fica em branco; se acontecer, corrija o MIME ou use outro servidor estático.

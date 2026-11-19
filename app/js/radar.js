@@ -541,6 +541,8 @@ export function verPost(p) {
 /* ----- capturar una idea desde afuera ----- */
 /** Cuando compartís algo al app, Android manda título, texto y link acá. */
 /** Si venís del catálogo con ?pieza=Nombre, abrimos esa ficha. */
+// Es `undefined` hasta que corre iniciarRadar() (la llama main.js donde estaba la sección radar):
+// ningún módulo puede leerla al evaluarse, solo dentro de funciones.
 export let MODO_VENTA;
 var PIEZA_PENDIENTE = (function () {
   try {
