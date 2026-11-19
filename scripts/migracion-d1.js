@@ -1,6 +1,6 @@
 // Migración del estado (Sheets -> D1): genera el SQL de carga y verifica que
 // lo cargado coincide con el original (conteos por lista + hash del contenido).
-//   node scripts/migracion-d1.js carga <estado.json> <salida.sql>
+//   node scripts/migracion-d1.js carga <estado.json> <salida.sql> [--v-inicial N]
 //   node scripts/migracion-d1.js resumen <estado.json>
 //   node scripts/migracion-d1.js comparar <a.json> <b.json>
 const crypto = require("node:crypto");
@@ -50,36 +50,71 @@ function comparar(a, b) {
   return { iguales: diferencias.length === 0, diferencias };
 }
 
-function sqlCarga(data, ahora) {
+// INSERT puro, sin OR REPLACE ni ON CONFLICT: si ya hay una fila 'estado' la
+// clave primaria rechaza la carga y la fila existente queda intacta. Así una
+// carga repetida por error nunca pisa el estado vivo.
+// La v inicial sale del reloj en segundos (10 dígitos): la versión que emite el
+// D1 cuenta desde 1 y no puede repetir una ya emitida, y tampoco debe parecerse
+// a los sellos de hora del Sheets (13 dígitos, milisegundos).
+function sqlCarga(data, ahora, vInicial = Math.floor(Date.now() / 1000)) {
+  if (!Number.isSafeInteger(vInicial) || vInicial < 1) {
+    throw new TypeError("vInicial debe ser un entero seguro mayor o igual a 1");
+  }
   const json = JSON.stringify(limpiar(data)).replace(/'/g, "''");
   const fecha = String(ahora).replace(/'/g, "''");
-  return `INSERT OR REPLACE INTO estado (clave, json, v, actualizado) VALUES ('estado', '${json}', 1, '${fecha}');\n`;
+  return `INSERT INTO estado (clave, json, v, actualizado) VALUES ('estado', '${json}', ${vInicial}, '${fecha}');\n`;
 }
 
-const leer = (ruta) => JSON.parse(fs.readFileSync(ruta, "utf8"));
+class ErrorLectura extends Error {}
+
+function leer(ruta) {
+  try {
+    return JSON.parse(fs.readFileSync(ruta, "utf8"));
+  } catch (e) {
+    // sin eco del contenido del archivo: puede ser el estado real
+    throw new ErrorLectura(`No se pudo leer ${ruta} como JSON (${e.code || "JSON inválido"})`);
+  }
+}
 
 function uso() {
   console.error([
     "Uso:",
-    "  node scripts/migracion-d1.js carga <estado.json> <salida.sql>",
+    "  node scripts/migracion-d1.js carga <estado.json> <salida.sql> [--v-inicial N]",
     "  node scripts/migracion-d1.js resumen <estado.json>",
     "  node scripts/migracion-d1.js comparar <a.json> <b.json>",
+    "Códigos de salida: 0 ok, 1 comparar con diferencias, 2 uso incorrecto,",
+    "3 archivo ilegible o JSON inválido.",
   ].join("\n"));
   process.exit(2);
 }
 
 function main(args) {
-  const [cmd, a, b] = args;
-  if (cmd === "carga" && a && b) {
-    fs.writeFileSync(b, sqlCarga(leer(a), new Date().toISOString()));
-  } else if (cmd === "resumen" && a) {
-    console.log(JSON.stringify(resumen(leer(a)), null, 2));
-  } else if (cmd === "comparar" && a && b) {
-    const r = comparar(resumen(leer(a)), resumen(leer(b)));
-    if (r.iguales) console.log("iguales: true");
-    else { console.log("iguales: false"); r.diferencias.forEach((d) => console.log("- " + d)); process.exit(1); }
-  } else {
-    uso();
+  let vInicial;
+  const pos = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--v-inicial") {
+      const n = args[++i];
+      if (!/^\d+$/.test(n || "") || !Number.isSafeInteger(Number(n)) || Number(n) < 1) uso();
+      vInicial = Number(n);
+    } else pos.push(args[i]);
+  }
+  const [cmd, a, b] = pos;
+  try {
+    if (cmd === "carga" && a && b) {
+      fs.writeFileSync(b, sqlCarga(leer(a), new Date().toISOString(), vInicial));
+    } else if (cmd === "resumen" && a) {
+      console.log(JSON.stringify(resumen(leer(a)), null, 2));
+    } else if (cmd === "comparar" && a && b) {
+      const r = comparar(resumen(leer(a)), resumen(leer(b)));
+      if (r.iguales) console.log("iguales: true");
+      else { console.log("iguales: false"); r.diferencias.forEach((d) => console.log("- " + d)); process.exit(1); }
+    } else {
+      uso();
+    }
+  } catch (e) {
+    if (!(e instanceof ErrorLectura)) throw e;
+    console.error(e.message);
+    process.exit(3);
   }
 }
 
