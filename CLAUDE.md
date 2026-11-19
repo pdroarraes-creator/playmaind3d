@@ -178,4 +178,11 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
   antigo, visita todas as abas e confere save < 50.000 caracteres, zero erros de
   console e os handlers de `PM`). Playwright **não** é dependência do repo: existe no
   ambiente cloud do Claude.
+- Checagem estática entre módulos (rodar da raiz do repo; ESLint global do ambiente cloud,
+  não é dependência): `eslint -c scripts/eslint.config.mjs app/js/*.js`. Linha de base:
+  exatamente 3 erros `no-undef` de `copy` (bug latente conhecido, chamada em `radar.js` e
+  `ajustes.js` e definida em lugar nenhum). Qualquer outra coisa = `import`/`export` faltando.
+- Chamar função de outro módulo exige `export` no módulo dono e `import` onde se usa; o erro
+  só aparece quando aquele caminho de código roda (toque/clique). Por isso, rode o eslint
+  sempre que mover ou adicionar código entre módulos.
 - Teste abrindo `python3 -m http.server` na raiz e acessando `/app/`.
