@@ -13,9 +13,17 @@ async function enviar(ctx, resultado) {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const r = JSON.parse(await res.text());
-    if (r && r.ok === true && r.guardado === true) return { ok: true, motivo: null };
-    if (r && r.ok === true) return { ok: false, motivo: String(r.motivo) };
-    return { ok: false, motivo: "error: " + String(r && r.error) };
+    if (r !== null && typeof r === "object") {
+      if (r.ok === true && r.guardado === true) return { ok: true, motivo: null };
+      if (r.ok === true && r.guardado === false && typeof r.motivo === "string" && r.motivo) {
+        return { ok: false, motivo: r.motivo };
+      }
+      // /salud es público: el texto del error se acota
+      if (r.ok === false && typeof r.error === "string" && r.error) {
+        return { ok: false, motivo: "error: " + r.error.slice(0, 120) };
+      }
+    }
+    return { ok: false, motivo: "respuesta inesperada" };
   } catch {
     return { ok: false, motivo: "red" };
   }
@@ -27,7 +35,9 @@ async function registrar(ctx, v, estado) {
   await ctx.db
     .prepare(
       "INSERT INTO meta (clave, valor, actualizado) VALUES (?, ?, ?) " +
-        "ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado = excluded.actualizado"
+        "ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado = excluded.actualizado " +
+        // un snapshot más viejo que el registrado nunca lo pisa; sin v legible, se reemplaza
+        "WHERE COALESCE(CASE WHEN json_valid(meta.valor) THEN CAST(json_extract(meta.valor, '$.v') AS INTEGER) END, -1) <= CAST(json_extract(excluded.valor, '$.v') AS INTEGER)"
     )
     .bind(CLAVE, valor, cuando)
     .run();

@@ -78,8 +78,12 @@ for (const [accion, cuerpo] of RUTAS) {
     llamadas.length = 0;
     const antes = [await filaEstado(db), await filasMeta(db)];
     ctx.env.MODO = "solo-lectura";
-    const r = await post(ctx, cuerpo());
-    assert.deepEqual(r, { ok: false, error: "revertido" });
+    let accesos = 0;
+    const prepare = db.prepare;
+    db.prepare = (...a) => { accesos++; return prepare.apply(db, a); };
+    assert.deepEqual(await post(ctx, cuerpo()), { ok: false, error: "revertido" });
+    assert.equal(accesos, 0);
+    db.prepare = prepare;
     assert.deepEqual([await filaEstado(db), await filasMeta(db)], antes);
     assert.equal(esperas.length, 0);
     assert.equal(llamadas.length, 0);
@@ -113,6 +117,13 @@ const CASOS = [
   ["red (rechaza)", async () => { throw new Error("caído"); }, { ok: false, motivo: "red" }],
   ["red (lanza)", () => { throw new Error("caído"); }, { ok: false, motivo: "red" }],
   ["no es JSON", async () => new Response("<html>"), { ok: false, motivo: "red" }],
+  ["ok sin guardado", resp({ ok: true }), { ok: false, motivo: "respuesta inesperada" }],
+  ["ok:false sin error", resp({ ok: false }), { ok: false, motivo: "respuesta inesperada" }],
+  ["error vacío", resp({ ok: false, error: "" }), { ok: false, motivo: "respuesta inesperada" }],
+  ["JSON null", resp(null), { ok: false, motivo: "respuesta inesperada" }],
+  ["JSON número", resp(5), { ok: false, motivo: "respuesta inesperada" }],
+  ["JSON texto", resp("hola"), { ok: false, motivo: "respuesta inesperada" }],
+  ["error largo: el texto se trunca a 120", resp({ ok: false, error: "x".repeat(500) }), { ok: false, motivo: "error: " + "x".repeat(120) }],
 ];
 
 for (const [nombre, fetchFn, esperado] of CASOS) {
@@ -131,6 +142,67 @@ for (const [nombre, fetchFn, esperado] of CASOS) {
     });
   });
 }
+
+// fetchFn controlable: cada llamada queda pendiente hasta que el test la resuelve.
+function manual() {
+  const pendientes = [];
+  const fetchFn = () => new Promise((resolve) => pendientes.push((obj) => resolve(new Response(JSON.stringify(obj)))));
+  return { pendientes, fetchFn };
+}
+const RED = { ok: false, error: "x" }; // se registra como error, distinto de "red"
+
+async function dosSnapshots(m, resolver) {
+  const { ctx, db, esperas } = armar({ fetchFn: m.fetchFn });
+  await post(ctx, { action: "save", v: "", data: SEMILLA });
+  await post(ctx, { action: "agregarFilamento", filamento: { nome: "PLA" } });
+  assert.equal(m.pendientes.length, 2);
+  await resolver(esperas);
+  return db;
+}
+
+test("orden inverso (a): v2 excede primero, v1 ok después: queda v2 excede", async () => {
+  const m = manual();
+  const db = await dosSnapshots(m, async (e) => {
+    m.pendientes[1]({ ok: true, guardado: false, motivo: "excede" });
+    await e[1];
+    m.pendientes[0]({ ok: true, guardado: true });
+    await e[0];
+  });
+  assert.deepEqual(await leerUltimoSnapshot(db), { v: 2, ok: false, motivo: "excede", cuando: "2026-01-02T03:04:05.000Z" });
+});
+
+test("orden inverso (b): v2 ok primero, v1 falla después: queda v2 ok", async () => {
+  const m = manual();
+  const db = await dosSnapshots(m, async (e) => {
+    m.pendientes[1]({ ok: true, guardado: true });
+    await e[1];
+    m.pendientes[0](RED);
+    await e[0];
+  });
+  assert.deepEqual(await leerUltimoSnapshot(db), { v: 2, ok: true, motivo: null, cuando: "2026-01-02T03:04:05.000Z" });
+});
+
+test("la misma v reintentada reemplaza el registro", async () => {
+  const { ctx, db, esperas } = armar({ fetchFn: resp(RED) });
+  await post(ctx, { action: "save", v: "", data: SEMILLA });
+  await Promise.all(esperas.splice(0));
+  assert.equal((await leerUltimoSnapshot(db)).ok, false);
+  ctx.fetchFn = async () => new Response(JSON.stringify({ ok: true, guardado: true }));
+  const { snapshotTrasGrabar } = await import("../src/snapshot.js");
+  snapshotTrasGrabar(ctx, { data: SEMILLA, v: 1 });
+  await Promise.all(esperas);
+  assert.equal((await leerUltimoSnapshot(db)).ok, true);
+});
+
+test("una fila guardada con JSON roto o sin v se reemplaza con el próximo snapshot", async () => {
+  for (const viejo of ["{roto", "{}", '{"v":"x"}']) {
+    const { ctx, db, esperas } = armar();
+    await db.prepare("INSERT INTO meta (clave, valor, actualizado) VALUES ('snapshot:ultimo', ?, 'x')").bind(viejo).run();
+    await post(ctx, { action: "save", v: "", data: SEMILLA });
+    await Promise.all(esperas);
+    assert.equal((await leerUltimoSnapshot(db)).v, 1, viejo);
+  }
+});
 
 test("el registro reemplaza al anterior: una sola fila snapshot:ultimo", async () => {
   const { ctx, db, esperas } = armar();
