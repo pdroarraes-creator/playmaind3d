@@ -5,6 +5,7 @@
 //   node scripts/migracion-d1.js comparar <a.json> <b.json>
 const crypto = require("node:crypto");
 const fs = require("node:fs");
+const path = require("node:path");
 
 const LISTAS = ["produtos", "filamentos", "impressoras", "insumos", "vendas", "canais", "packs", "opiniones", "radar"];
 
@@ -83,9 +84,19 @@ function uso() {
     "  node scripts/migracion-d1.js resumen <estado.json>",
     "  node scripts/migracion-d1.js comparar <a.json> <b.json>",
     "Códigos de salida: 0 ok, 1 comparar con diferencias, 2 uso incorrecto,",
-    "3 archivo ilegible o JSON inválido.",
+    "3 no se pudo leer o escribir un archivo, o JSON inválido.",
   ].join("\n"));
   process.exit(2);
+}
+
+// ¿entrada y salida son el mismo archivo? (por ruta o, si la salida existe, por archivo real)
+function mismoArchivo(entrada, salida) {
+  if (path.resolve(entrada) === path.resolve(salida)) return true;
+  try {
+    return fs.realpathSync(entrada) === fs.realpathSync(salida);
+  } catch {
+    return false;
+  }
 }
 
 function main(args) {
@@ -94,22 +105,34 @@ function main(args) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--v-inicial") {
       const n = args[++i];
+      if (vInicial !== undefined) uso();
       if (!/^\d+$/.test(n || "") || !Number.isSafeInteger(Number(n)) || Number(n) < 1) uso();
       vInicial = Number(n);
+    } else if (args[i].startsWith("--")) {
+      uso();
     } else pos.push(args[i]);
   }
   const [cmd, a, b] = pos;
+  const esperados = { carga: 3, resumen: 2, comparar: 3 }[cmd];
+  if (!esperados || pos.length !== esperados || (vInicial !== undefined && cmd !== "carga")) uso();
   try {
-    if (cmd === "carga" && a && b) {
-      fs.writeFileSync(b, sqlCarga(leer(a), new Date().toISOString(), vInicial));
-    } else if (cmd === "resumen" && a) {
+    if (cmd === "carga") {
+      if (mismoArchivo(a, b)) {
+        console.error("La salida no puede ser el mismo archivo que la entrada.");
+        process.exit(2);
+      }
+      const sql = sqlCarga(leer(a), new Date().toISOString(), vInicial);
+      try {
+        fs.writeFileSync(b, sql);
+      } catch (e) {
+        throw new ErrorLectura(`No se pudo escribir ${b} (${e.code || "error"})`);
+      }
+    } else if (cmd === "resumen") {
       console.log(JSON.stringify(resumen(leer(a)), null, 2));
-    } else if (cmd === "comparar" && a && b) {
+    } else {
       const r = comparar(resumen(leer(a)), resumen(leer(b)));
       if (r.iguales) console.log("iguales: true");
       else { console.log("iguales: false"); r.diferencias.forEach((d) => console.log("- " + d)); process.exit(1); }
-    } else {
-      uso();
     }
   } catch (e) {
     if (!(e instanceof ErrorLectura)) throw e;

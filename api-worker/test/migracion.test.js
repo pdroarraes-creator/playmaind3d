@@ -117,11 +117,13 @@ test("CLI: códigos de salida y --v-inicial", () => {
 
     const falta = cli("resumen", join(dir, "no-existe.json"));
     assert.equal(falta.status, 3);
-    assert.ok(falta.stderr.length > 0 && falta.stderr.length < 300);
+    assert.ok(falta.stderr.length > 0);
+    assert.ok(!/^\s+at /m.test(falta.stderr), "sin stack trace");
 
     const malo = cli("resumen", roto);
     assert.equal(malo.status, 3);
     assert.ok(!malo.stderr.includes("secreto-inventado"));
+    assert.ok(!/^\s+at /m.test(malo.stderr), "sin stack trace");
 
     assert.equal(cli("inexistente").status, 2);
     assert.equal(cli("carga", a, sql, "--v-inicial", "abc").status, 2);
@@ -134,6 +136,45 @@ test("CLI: códigos de salida y --v-inicial", () => {
 
     assert.equal(cli("comparar", a, b).status, 1);
     assert.equal(cli("comparar", a, a).status, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("CLI: seguridad de carga y validación de argumentos", () => {
+  const dir = mkdtempSync(join(tmpdir(), "migracion-d1-"));
+  try {
+    const a = join(dir, "a.json");
+    const y = join(dir, "y.sql");
+    const contenido = JSON.stringify(ejemplo());
+    writeFileSync(a, contenido);
+
+    // fallo al escribir la salida: exit 3, sin stack
+    const r = cli("carga", a, join(dir, "no-existe", "o.sql"));
+    assert.equal(r.status, 3);
+    assert.ok(r.stderr.length > 0);
+    assert.ok(!/^\s+at /m.test(r.stderr), "sin stack trace");
+
+    // entrada == salida: exit 2 y la entrada queda intacta
+    const mismo = cli("carga", a, a);
+    assert.equal(mismo.status, 2);
+    assert.equal(readFileSync(a, "utf8"), contenido);
+    assert.equal(cli("carga", a, join(dir, ".", "a.json")).status, 2);
+
+    // sobrescribir un .sql distinto sigue permitido
+    writeFileSync(y, "viejo");
+    assert.equal(cli("carga", a, y, "--v-inicial", "5").status, 0);
+    assert.ok(readFileSync(y, "utf8").startsWith("INSERT INTO estado"));
+
+    // argumentos inválidos
+    assert.equal(cli("carga", a, y, "--v-inicial", "5", "--v-inicial", "6").status, 2);
+    assert.equal(cli("carga", a, y, "extra").status, 2);
+    assert.equal(cli("carga", a, y, "--foo").status, 2);
+    assert.equal(cli("carga", a, y, "--v-inicial").status, 2);
+
+    // la opción antes de los posicionales vale
+    assert.equal(cli("--v-inicial", "7", "carga", a, y).status, 0);
+    assert.ok(readFileSync(y, "utf8").includes(", 7, "));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
