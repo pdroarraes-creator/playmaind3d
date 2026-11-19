@@ -1,7 +1,7 @@
 // PlayMind 3d - guarda la app para que abra sin internet
-const CACHE = 'playmind3d-v31';
+const CACHE = 'playmind3d-v32';
 const ARCHIVOS = [
-  './', './index.html', './app.css', './js/main.js', './js/util.js', './js/estado.js', './js/ui.js', './js/calculo.js', './js/stock.js', './manifest.json',
+  './', './index.html', './app.css', './js/main.js', './js/util.js', './js/estado.js', './js/ui.js', './js/calculo.js', './js/stock.js', './js/fotos.js', './manifest.json',
   './icon-192.png', './icon-512.png',
   './calculo.js', './presupuesto.js', './presupuesto-pdf.js', './vendor/jspdf.umd.min.js', './vendor/fredoka.js',
   '/assets/logo-app.png', '/assets/logo-app-full.png'
