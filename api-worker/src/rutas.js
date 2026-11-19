@@ -2,6 +2,7 @@
 // objeto { ok: true, ... } o { ok: false, error }; el HTTP lo arma index.js.
 import { leerEstado, guardarConFusion } from "./estado.js";
 import { contieneFotosNuevas, subirFotos } from "./fotos.js";
+import { editarPieza, agregarPieza, agregarFilamento, resumenNegocio } from "./acciones.js";
 
 // La versión llega del cliente como cualquier cosa ("", un sello de hora del
 // Sheets, basura). Sólo un entero seguro >= 0 vale; lo demás es 0 y cae en la fusión.
@@ -53,6 +54,11 @@ export const ACCIONES = {
       fusionado: r.fusionado,
     };
   },
+
+  editarPieza,
+  agregarPieza,
+  agregarFilamento,
+  resumenNegocio,
 };
 
 export async function manejarPost(body, ctx) {

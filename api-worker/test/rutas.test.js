@@ -177,6 +177,8 @@ test("snapshot que falla (rechaza o lanza) no cambia la respuesta", async () => 
   }
 });
 
-test("ACCIONES expone load y save", () => {
-  assert.deepEqual(Object.keys(ACCIONES).sort(), ["load", "save"]);
+test("ACCIONES expone load, save y las cuatro acciones que graban", () => {
+  for (const k of ["load", "save", "editarPieza", "agregarPieza", "agregarFilamento", "resumenNegocio"]) {
+    assert.equal(typeof ACCIONES[k], "function", k);
+  }
 });
