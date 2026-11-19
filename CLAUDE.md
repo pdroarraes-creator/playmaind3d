@@ -34,10 +34,12 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
 | `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
 | `app/calculo.js` | Cálculo de custo e preço como módulo puro (Node e navegador); base do Worker novo. |
-| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), esqueleto da migração: CORS e `/salud`, sem lógica de estado ainda. Só aqui vale `wrangler`. |
+| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), migração do Sheets em andamento: CORS, `/salud` e `estado.js` (estado em D1 com lock otimista), ainda **não ligado ao app**; staging publicado, produção vazia. `wrangler` e npm só aqui e em `cadastro-worker/`. |
+| `scripts/migracion-d1.js` | Gera o SQL de carga do estado no D1 e compara contagens e hash. Usa só arquivos de `datos-privados/` (ignorada pelo git: estado real nunca vai para o repositório). |
+| `docs/migracion-d1*.md` | Estado da migração, limites medidos do D1 e o que a próxima etapa precisa saber. |
 | `cadastro-worker/` | Worker da Cloudflare com Gemini para cadastro por chat; chama o Apps Script. |
 | `scripts/medir-catalogo.js` | Mede o tempo do catálogo e o peso das fotos. `node scripts/medir-catalogo.js` |
-| `tests/` | Testes `node:test` (7 arquivos). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. |
+| `tests/` | Testes `node:test` (8 arquivos aqui e 3 em `api-worker/test/`). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. Precisa de Node 22.13 ou mais novo (os de `api-worker/` usam `node:sqlite`). |
 | `docs/superpowers/` | Specs e planos de trabalho. |
 | `docs/calculo-de-custo.md` | Explicação em português da fórmula de preço, pra humanos — não é lida pelo app. Cópia dela vive também no Drive, pasta `2brain-compartilhado-Pedro&Raquel/Playmind`, pra Raquel usar com o Claude dela. |
 
@@ -66,8 +68,10 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    (`moverFotosADrive_` no servidor); logos são arquivos em `/assets/`. No
    catálogo público (`catalogoPublico_`), as fotos do Drive saem redimensionadas
    (`=w800`) por `fotoChica_`.
-2. **Sem build step.** Nada de npm, bundler ou framework. O que está no repo é
-   exatamente o que vai pro ar. Prettier é a única ferramenta, e é opcional.
+2. **Sem build step no app.** Em `app/` nada de npm, bundler ou framework. O que
+   está no repo é exatamente o que vai pro ar. Prettier é a única ferramenta, e é
+   opcional. (Os Workers `api-worker/` e `cadastro-worker/` usam npm e `wrangler`,
+   isolados em suas pastas; o `wrangler.toml` da raiz é o da restrição 8.)
 3. **Não quebrar o formato do JSON salvo.** Mudou o shape de `D`? Escreva migração
    em `cargar()`, como a que trata logo base64 legado.
 4. **Nunca voltar a colocar credencial no código.** Usuário novo ou troca de clave
@@ -91,9 +95,13 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    no Wix). `.assetsignore` exclui `.git/`, `.wrangler/` e `wrangler.toml` do
    deploy: sem isso, o Wrangler sobe a pasta `.git/` inteira como arquivo
    estático público.
-9. **O cálculo de preço existe duas vezes: `calc()` em `app/app.js` e
-   `calcular_()` em `server/Codigo.gs`.** Mexeu em uma, mexa na outra na mesma
-   hora. Não é preferência de estilo: o preço do catálogo público sai do
+9. **O cálculo de preço existe duas vezes: `Calculo.calcular` em `app/calculo.js`
+   (o `calc()` de `app/app.js` só delega a ele) e `calcular_()` em
+   `server/Codigo.gs`.** Mexeu em uma, mexa na outra na mesma
+   hora; `tests/calculo-paridad.test.js` (217 casos dourados, mais ids duplicados)
+   falha se divergirem. Quando o catálogo passar para o Worker (Etapa 1 da
+   migração), o `calcular_` deixa de existir e sobra uma cópia só. Não é
+   preferência de estilo: o preço do catálogo público sai do
    servidor e o que vocês veem sai do app, então divergir significa cobrar do
    cliente um valor diferente do que aparece na tela. Em ago/2026 elas estavam
    divergentes em quatro pontos — o pior era a peça apontando para um filamento
@@ -134,7 +142,7 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
   Agora dá para ver o espaço em uso no menu da planilha: "PlayMind 3d > Ver cuánto
   espacio queda". Gatilho proposto para revisitar a decisão do banco: 70% =
   35.000 caracteres.
-- Cobertura de testes pequena: há `tests/` com 7 arquivos `node:test`, rodados com
+- Cobertura de testes pequena: há 11 arquivos `node:test` (8 em `tests/`, 3 em `api-worker/test/`), rodados com
   `node --test tests/*.test.js api-worker/test/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
   o diretório como módulo e falha. Não há testes do `app.js` nem de interface.
 - `app.js` é um arquivo só. Dividir em módulos é possível, mas exigiria `type="module"`
