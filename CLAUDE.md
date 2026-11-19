@@ -34,12 +34,12 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
 | `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
 | `app/calculo.js` | Cálculo de custo e preço como módulo puro (Node e navegador); base do Worker novo. |
-| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), migração do Sheets em andamento: CORS, `/salud` e `estado.js` (estado em D1 com lock otimista), ainda **não ligado ao app**; staging publicado, produção vazia. `wrangler` e npm só aqui e em `cadastro-worker/`. |
+| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), migração do Sheets em andamento: implementa a API POST completa do estado (load/save com merge e versão otimista, editarPieza/agregarPieza/agregarFilamento/resumenNegocio), o catálogo público e a validação de sessão via Apps Script. Publicado só em staging (o D1 de staging guarda o estado real do dono); banco de produção vazio; ainda **não ligado ao app** (o app continua falando só com o Apps Script). `wrangler` e npm só aqui e em `cadastro-worker/`. |
 | `scripts/migracion-d1.js` | Gera o SQL de carga do estado no D1 e compara contagens e hash. Usa só arquivos de `datos-privados/` (ignorada pelo git: estado real nunca vai para o repositório). |
 | `docs/migracion-d1*.md` | Estado da migração, limites medidos do D1 e o que a próxima etapa precisa saber. |
 | `cadastro-worker/` | Worker da Cloudflare com Gemini para cadastro por chat; chama o Apps Script. |
 | `scripts/medir-catalogo.js` | Mede o tempo do catálogo e o peso das fotos. `node scripts/medir-catalogo.js` |
-| `tests/` | Testes `node:test` (8 arquivos aqui e 3 em `api-worker/test/`). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. Precisa de Node 22.13 ou mais novo (os de `api-worker/` usam `node:sqlite`). |
+| `tests/` | Testes `node:test` (9 arquivos aqui e 9 em `api-worker/test/`). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. Precisa de Node 22.13 ou mais novo (os de `api-worker/` usam `node:sqlite`). |
 | `docs/superpowers/` | Specs e planos de trabalho. |
 | `docs/calculo-de-custo.md` | Explicação em português da fórmula de preço, pra humanos — não é lida pelo app. Cópia dela vive também no Drive, pasta `2brain-compartilhado-Pedro&Raquel/Playmind`, pra Raquel usar com o Claude dela. |
 
@@ -79,6 +79,10 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
 5. **Deploy do Apps Script:** salvar não basta. `Implementar > Administrar
    implementaciones > lápis > Versão: NUEVA`. Se alterou `server/Codigo.gs`, lembre
    o usuário disso.
+   Vale também para as chaves da migração no Apps Script: Script Properties
+   `d1:migrado` e `d1:catalogoUrl`, os três itens "D1:" do menu "PlayMind 3d" e as
+   actions novas `subirFotos` e `guardarSnapshot`. Ligar `d1:migrado` **é** o corte
+   (as cópias antigas do app deixam de salvar); não ligar antes de o plano 1b entrar.
 6. **`sw.js`:** qualquer arquivo novo em `app/` precisa entrar em `ARCHIVOS` e o
    `CACHE` precisa mudar de versão, senão os usuários ficam com a versão antiga.
 7. **Hospedagem do domínio próprio = GitHub Pages, servindo a branch `main` na
@@ -109,7 +113,7 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    concordar: fallback para o primeiro filamento/impressora quando o id não
    existe mais, arredondamento dos gramas a uma casa, `merma` assumindo 12
    quando não houver valor, e preço manual só valendo se for maior que zero.
-10. **Toda função que grava a célula `estado` (hoje `guardarEstado_` e
+10. **Toda função que grava a célula `estado` (hoje `guardarEstado_`, `guardarSnapshot_` e
    `editarPieza_`) deve chamar `invalidarCatalogo_()` logo após o `setValues`
    bem-sucedido.** O catálogo público é servido de um cache de 15 minutos
    (`CATALOGO_TTL_S`); sem isso, os visitantes veriam preço e estoque velhos. O cache também usa uma
@@ -142,7 +146,9 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
   Agora dá para ver o espaço em uso no menu da planilha: "PlayMind 3d > Ver cuánto
   espacio queda". Gatilho proposto para revisitar a decisão do banco: 70% =
   35.000 caracteres.
-- Cobertura de testes pequena: há 11 arquivos `node:test` (8 em `tests/`, 3 em `api-worker/test/`), rodados com
+- Um token de sessão revogado pode continuar valendo no Worker por até 10 minutos
+  (cache por isolate de `validarSesion`).
+- Cobertura de testes pequena: há 18 arquivos `node:test` (9 em `tests/`, 9 em `api-worker/test/`), rodados com
   `node --test tests/*.test.js api-worker/test/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
   o diretório como módulo e falha. Não há testes do `app.js` nem de interface.
 - `app.js` é um arquivo só. Dividir em módulos é possível, mas exigiria `type="module"`
