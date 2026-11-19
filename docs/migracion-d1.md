@@ -2,7 +2,7 @@
 
 - `app/calculo.js` es el cálculo de costo y precio sacado de `app.js` a un módulo puro (sin pantalla ni estado global): recibe la pieza y los datos y devuelve costo, precio, horas y gramos.
 - Existe para que la app, el servidor y el futuro Worker usen la misma cuenta; `tests/calculo-paridad.test.js` compara contra casos dorados de la app y contra `calcular_()`, así un precio nunca sale distinto en el catálogo y en la pantalla.
-- `api-worker/` es el Worker `playmind3d-api` (esqueleto): responde `GET /salud`, maneja CORS para `playmind3d.com` (más `ORIGENES_EXTRA`) y devuelve 404 JSON en el resto; todavía no tiene lógica de estado ni autenticación.
+- `api-worker/` es el Worker `playmind3d-api`: responde `GET /salud`, sirve el catálogo público, maneja CORS para `playmind3d.com` (más `ORIGENES_EXTRA`) y atiende el `POST` con las acciones de estado (`load`, `save`, `editarPieza`, `agregarPieza`, `agregarFilamento`, `resumenNegocio`), validando la sesión contra el Apps Script; devuelve 404 JSON en el resto. Ver "Etapa 1a" más abajo.
 - La configuración base de `wrangler.toml` es staging (`playmind-staging`) y producción va en `[env.prod]`; los `database_id` de ambas bases ya están completos en `api-worker/wrangler.toml` (ver "Estado real da Etapa 0" más abajo).
 - O estado vive numa única linha da tabela `estado` (`api-worker/migrations/0001_estado.sql`) com um número de versão `v` que sobe de 1 em 1; `leerEstado`/`guardarEstado` ficam em `api-worker/src/estado.js`.
 - O lock é "só grava se a versão ainda for a que você leu": um único `UPDATE ... WHERE v = ?` decide no próprio SQL (sem ler e gravar em JS), então duas gravações com a mesma base nunca passam as duas; quem perde recebe o estado atual para fundir. Os testes usam SQLite real (`node:sqlite`) em vez de mock.
@@ -20,7 +20,7 @@ Ensaio feito com o estado real do Pedro, carregado só em `playmind-staging` (`p
 ### O que a Etapa 1 precisa saber
 
 - Bancos: `playmind-staging` = `3e5bd45b-1830-4633-8600-2b5baba6e2af`; `playmind-prod` = `8a0a4cf3-9642-4311-a0ca-763ffbe2f96a` (vazio, sem Worker publicado).
-- Staging: https://playmind3d-api.pdroarraes.workers.dev (só `/salud` e 404; o Worker `prod` não foi publicado). `playmind-staging` guarda o estado real (ensaio feito); `playmind-prod` está vazio. Os `database_id` já estão em `api-worker/wrangler.toml`.
+- Staging: https://playmind3d-api.pdroarraes.workers.dev (API completa da Etapa 1a: `/salud`, catálogo e `POST` com autenticação; o Worker `prod` não foi publicado). `playmind-staging` guarda o estado real (ensaio feito); `playmind-prod` está vazio. Os `database_id` já estão em `api-worker/wrangler.toml`.
 - Migrations: os comandos de prod precisam de `--env prod`; os de staging, de `--env=""` (há `[env.prod]`).
 - O CLI `scripts/migracion-d1.js comparar` sai com código 1 tanto para "diferentes" quanto para arquivo ilegível; ler a saída impressa.
 - O estado exportado vinha com `_sucio: true`: o navegador tinha mudanças ainda não sincronizadas; a Etapa 1 deve decidir como tratar isso no primeiro corte.
@@ -62,9 +62,9 @@ Staging `/catalogo` contra `?action=catalogo` do Apps Script de produção (mesm
 | Preço diferente | 0 | |
 | Outros campos diferentes | 0 | |
 
-`opiniones`, `marca`, `wa`, `colores`, `packs` e `leti` também idênticos. Era esperado poder haver diferenças de preço vindas das divergências do `calcular_` antigo (o Apps Script de produção ainda não foi republicado); com o estado de hoje nenhuma peça cai nesses casos, então o resultado não prova nada sobre eles (isso fica coberto por `tests/calculo-paridad.test.js`).
+`opiniones`, `marca`, `wa`, `colores`, `packs` e `leti` também idênticos. Era esperado poder haver diferenças de preço vindas das divergências do `calcular_` antigo (em 19/11/2026, ao fim da Etapa 1a, o Apps Script de produção ainda não tinha sido republicado); com o estado de hoje nenhuma peça cai nesses casos, então o resultado não prova nada sobre eles (isso fica coberto por `tests/calculo-paridad.test.js`).
 
-Tempos (do sandbox, via proxy): staging 0,26 s na 1a chamada e 0,22 s na 2a; Apps Script 4,26 s. A resposta de staging não traz `cf-cache-status`, então **não deu para confirmar** que a 2a veio de cache (a diferença de tempo é pequena demais para concluir; o Worker calcula em ~0,03 ms de qualquer forma).
+Tempos (do sandbox, via proxy): staging 0,26 s na 1a chamada e 0,22 s na 2a; Apps Script 4,26 s. A resposta de staging não traz `cf-cache-status`, então **não deu para confirmar** que a 2a veio de cache (a diferença de tempo é pequena demais para concluir; o Worker calcula em ~0,03 ms de qualquer forma). A documentação da Cloudflare só garante `cache` funcional em Workers com domínio próprio (ver "Cache API em workers.dev" em `docs/migracion-d1-limites.md`): em `*.workers.dev` o cache do catálogo é inofensivo, mas pode não fazer nada.
 
 ### Fumaça com o Pedro (Passo 4: **ainda não feito**, precisa do token dele)
 
@@ -95,6 +95,6 @@ O `save` regrava no staging o mesmo estado que veio do `load` (só sobe `v`). Ve
 - O Worker **não** faz login, logout, foto nem "mundo": o app terá que falar com dois servidores (Worker para estado e catálogo, Apps Script para o resto).
 - `SNAPSHOT` está `"off"`; a ação `guardarSnapshot` do Apps Script só grava quando o dono ligar `d1:migrado`.
 - O Apps Script precisa ser republicado (Implementar > Administrar implementaciones > lápis > Versão: NUEVA) com as ações novas `subirFotos` e `guardarSnapshot` antes de `subirFotos` funcionar; não foram exercitadas aqui.
-- CORS: a rota do catálogo responde `*` (pública); o `POST` só aceita a lista de origens (`playmind3d.com`, `www`, mais `ORIGENES_EXTRA`).
+- CORS: a rota do catálogo responde `*` (pública); no `POST` o Worker **não rejeita** outras origens, só deixa de enviar `Access-Control-Allow-Origin` para elas (`playmind3d.com`, `www`, mais `ORIGENES_EXTRA` recebem o cabeçalho). Navegadores ficam bloqueados; clientes que não são navegador (curl, scripts) passam. A proteção real é o token de sessão.
 - `v` volta como texto (`"1"`), e o app deve devolvê-lo como veio no `save`.
 - O staging guarda o estado real do dono: o `save` do teste de fumaça muda `v` lá. Quem decide limpar a linha é o dono.
