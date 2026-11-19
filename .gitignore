@@ -7,5 +7,5 @@ Thumbs.db
 tests/salida-ejemplo.pdf
 *.estado.json
 *.carga.sql
-salida-d1.json
+salida-d1*.json
 datos-privados/
