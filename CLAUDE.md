@@ -24,7 +24,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 |---|---|
 | `app/index.html` | Shell da app: markup das abas. Sem CSS e sem JS inline. |
 | `app/app.css` | Todo o estilo. Design tokens em `:root`. |
-| `app/app.js` | Toda a lógica (4.670 linhas, dividida em seções comentadas). |
+| `app/js/*.js` | Toda a lógica da app, em módulos ES (`<script type="module" src="js/main.js">`). Ver a tabela de módulos abaixo. |
 | `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy.** |
 | `app/manifest.json` | PWA. `scope` e `start_url` = `/app/`. |
 | `index.html` (raiz) | Catálogo público. Consome `?action=catalogo`, não faz login. |
@@ -37,17 +37,44 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), esqueleto da migração: CORS e `/salud`, sem lógica de estado ainda. Só aqui vale `wrangler`. |
 | `cadastro-worker/` | Worker da Cloudflare com Gemini para cadastro por chat; chama o Apps Script. |
 | `scripts/medir-catalogo.js` | Mede o tempo do catálogo e o peso das fotos. `node scripts/medir-catalogo.js` |
-| `tests/` | Testes `node:test` (7 arquivos). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. |
+| `tests/` | Testes `node:test` (13 arquivos). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. |
 | `docs/superpowers/` | Specs e planos de trabalho. |
 | `docs/calculo-de-custo.md` | Explicação em português da fórmula de preço, pra humanos — não é lida pelo app. Cópia dela vive também no Drive, pasta `2brain-compartilhado-Pedro&Raquel/Playmind`, pra Raquel usar com o Claude dela. |
 
-## Seções de `app/app.js`
+## Módulos de `app/js/`
 
-Cada seção começa com `/* ---------- nome ---------- */`. Use `grep -n` para achar,
-não leia o arquivo inteiro.
+O antigo `app/app.js` foi dividido em módulos ES, sem mudar comportamento. Sem build:
+o navegador carrega os módulos direto. Use `grep -n` para achar, não leia tudo.
 
-`almacenamiento` · `cálculo` · `stock` · `fotos` · `catálogo` · `editor` · `pedido` ·
-`vitrina` · `radar` · `punto de venta` · `ventas` · `ajustes` · `entrada` · `nube` · `plumbing`
+| Módulo | O que guarda |
+|---|---|
+| `main.js` | Boot, registro do service worker, a ponte `window.PM` e as seções ainda **não extraídas**: `entrada` (login), `nube` (sync: `pedir`, `subirALaNube`, `bajarDeLaNube`, `sincronizarAlAbrir`…) e `plumbing`. |
+| `util.js` | Helpers puros (`$`, `el`, `num`, `money`…). |
+| `estado.js` | O estado `D`, `reemplazarEstado`, `defaults`, `local`, constantes `SERVIDOR`/`WORKER_CADASTRO`/`KEY`/`LOGO`. |
+| `ui.js` | `toast`, `showTab`, `renderAll`, `renderLight`. |
+| `calculo.js` | Delegadores finos para o global `Calculo` (`app/calculo.js`) + `migrarInsumos`. |
+| `stock.js` · `fotos.js` · `catalogo.js` · `editor.js` · `pedido.js` · `vitrina.js` · `ventas.js` · `radar.js` · `ajustes.js` | Uma por seção antiga, mesmo nome. |
+| `pos.js` | Seção `punto de venta`. |
+| `chat.js` | Seção `cadastro por chat`. |
+
+`entrada` e `nube` ficam em `main.js` de propósito, até a troca do servidor (migração
+para D1) ser feita em outra frente; extrair agora só criaria conflito.
+
+`app/calculo.js` **não** é módulo: é script clássico (global `Calculo`), também
+empacotado pelo Worker da Cloudflare. Deve continuar clássico.
+
+Regras dos módulos:
+
+- **Handlers inline:** toda função chamada por um `on*=` de `app/index.html` precisa
+  estar exposta em `window.PM` (`main.js`) e ser chamada como `PM.fn(...)`.
+  `tests/handlers-inline.test.js` confere (os nomes saem do HTML).
+- `D` só se reatribui via `reemplazarEstado(x)`; quem importa lê o binding vivo.
+- Um `let`/`var` exportado só é reatribuído pelo módulo dono; os outros usam um setter
+  exportado (ex.: `setFotosTmp`, `setPosForma`).
+- O código executável de topo de cada seção vive numa função `iniciar<Modulo>()` que o
+  `main.js` chama numa ordem fixa.
+- Há ciclos de import deliberados com `main.js`; só são seguros porque nada roda na
+  avaliação dos módulos. **Não adicione leituras de topo de bindings de outro módulo.**
 
 ## O estado (`D`)
 
@@ -76,7 +103,8 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    implementaciones > lápis > Versão: NUEVA`. Se alterou `server/Codigo.gs`, lembre
    o usuário disso.
 6. **`sw.js`:** qualquer arquivo novo em `app/` precisa entrar em `ARCHIVOS` e o
-   `CACHE` precisa mudar de versão, senão os usuários ficam com a versão antiga.
+   `CACHE` precisa mudar de versão, senão os usuários ficam com a versão antiga (inclui `app/js/*.js`;
+   `tests/sw-archivos.test.js` confere a lista).
 7. **Hospedagem do domínio próprio = GitHub Pages, servindo a branch `main` na
    raiz.** Push na `main` já publica. O domínio é do Wix, que **não deixa trocar
    os nameservers** dos próprios domínios — por isso não dá para apontar
@@ -91,7 +119,7 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    no Wix). `.assetsignore` exclui `.git/`, `.wrangler/` e `wrangler.toml` do
    deploy: sem isso, o Wrangler sobe a pasta `.git/` inteira como arquivo
    estático público.
-9. **O cálculo de preço existe duas vezes: `calc()` em `app/app.js` e
+9. **O cálculo de preço existe duas vezes: `Calculo.calcular` em `app/calculo.js` (`calc()` em `app/js/calculo.js` só delega) e
    `calcular_()` em `server/Codigo.gs`.** Mexeu em uma, mexa na outra na mesma
    hora. Não é preferência de estilo: o preço do catálogo público sai do
    servidor e o que vocês veem sai do app, então divergir significa cobrar do
@@ -134,15 +162,20 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
   Agora dá para ver o espaço em uso no menu da planilha: "PlayMind 3d > Ver cuánto
   espacio queda". Gatilho proposto para revisitar a decisão do banco: 70% =
   35.000 caracteres.
-- Cobertura de testes pequena: há `tests/` com 7 arquivos `node:test`, rodados com
+- Cobertura de testes pequena: há `tests/` com 13 arquivos `node:test`, rodados com
   `node --test tests/*.test.js api-worker/test/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
-  o diretório como módulo e falha. Não há testes do `app.js` nem de interface.
-- `app.js` é um arquivo só. Dividir em módulos é possível, mas exigiria `type="module"`
-  e mexer nos 50 `onclick=` inline do HTML.
+  o diretório como módulo e falha. Os módulos de `app/js/` só têm testes de `estado`, `stock`, delegadores do cálculo e handlers; interface só é coberta pelo `scripts/humo.js`.
+- `copy(...)` é chamada em `radar.js` (duas vezes) e em `ajustes.js` (uma), mas nenhuma
+  função `copy` está definida em lugar nenhum: esses botões lançam ReferenceError ao
+  clicar. Vem de antes da modularização; não foi corrigido.
 
 ## Como trabalhar aqui
 
-- Antes de editar, `grep -n` a seção. Não abra `app.js` inteiro sem necessidade.
+- Antes de editar, `grep -n` o módulo certo em `app/js/`. Não abra arquivos inteiros sem necessidade.
 - Um commit por mudança, mensagem em português.
-- Depois de mexer em `app.js`: `node --check app/app.js`.
+- Depois de mexer em JS: `node --check app/js/<arquivo>.js`, `node --test tests/*.test.js`
+  e `node scripts/humo.js` (smoke com Playwright: sobe `/app/` com um estado em formato
+  antigo, visita todas as abas e confere save < 50.000 caracteres, zero erros de
+  console e os handlers de `PM`). Playwright **não** é dependência do repo: existe no
+  ambiente cloud do Claude.
 - Teste abrindo `python3 -m http.server` na raiz e acessando `/app/`.
