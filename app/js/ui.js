@@ -1,6 +1,6 @@
 import { D } from "./estado.js";
 import { $ } from "./util.js";
-import { renderAccesos, renderCfgLists } from "./main.js";
+import { renderAccesos, renderCfgLists } from "./ajustes.js";
 import { renderRad } from "./radar.js";
 import { renderPed } from "./pedido.js";
 import { renderVen } from "./ventas.js";
