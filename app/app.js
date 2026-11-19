@@ -139,66 +139,18 @@ let D = defaults(),
   insumosSel = {};
 
 /* ---------- cálculo ---------- */
+// La fórmula vive en calculo.js (la comparte el servidor); acá solo se delega.
 function calc(p) {
-  const c = D.cfg;
-  const fil = D.filamentos.find((f) => f.id === p.fil) || D.filamentos[0] || { precoKg: 0 };
-  const imp = D.impressoras.find((i) => i.id === p.imp) ||
-    D.impressoras[0] || { preco: 0, vida: 1, watts: 0, bico: 0, bicoVida: 1, mesa: 0, mesaVida: 1 };
-  const gr = gramosCon(p),
-    hs = num(p.h) + num(p.m) / 60;
-  const material = (num(fil.precoKg) / 1000) * gr;
-  const luz = (num(imp.watts) / 1000) * hs * num(c.kwh);
-  const desgaste =
-    (num(imp.preco) / Math.max(num(imp.vida), 1) +
-      num(imp.bico) / Math.max(num(imp.bicoVida), 1) +
-      num(imp.mesa) / Math.max(num(imp.mesaVida), 1)) *
-    hs;
-  const trabalho = num(c.maoObra) * (num(p.mo) / 60);
-  let insumos = 0;
-  for (const k in p.insumos || {}) {
-    const it = D.insumos.find((x) => x.id === k);
-    if (it) insumos += unitario(it) * num(p.insumos[k]);
-  }
-  const impresion = material + luz + desgaste;
-  const rp = (p.risco === null || p.risco === undefined ? num(c.risco) : num(p.risco)) / 100;
-  const reserva = impresion * rp;
-  const custo = impresion + reserva + trabalho + insumos;
-  const mult = (p.mult === null || p.mult === undefined ? num(c.mult) : num(p.mult)) || 1;
-  const cplx = num(p.cplx) || 1;
-  let preco;
-  if (p.manual !== null && p.manual !== undefined && p.manual !== "" && num(p.manual) > 0)
-    preco = num(p.manual);
-  else preco = ceilTo(custo * mult * cplx, num(c.round) || 1);
-  const lucro = preco - custo;
-  return {
-    material,
-    luz,
-    desgaste,
-    trabalho,
-    insumos,
-    reserva,
-    custo,
-    preco,
-    lucro,
-    margem: preco > 0 ? lucro / preco : 0,
-    horas: hs,
-    porHora: hs > 0 ? lucro / hs : 0,
-  };
+  return Calculo.calcular(p, D);
 }
 const prod = (id) => D.produtos.find((p) => p.id === id);
 /** Lo que se gasta de verdad: la pieza más el desperdicio estimado. */
 function gramosCon(p) {
-  const base = num(p && p.peso);
-  // 12 por defecto, igual que calcular_ en Codigo.gs: en datos viejos sin
-  // merma guardada, acá daba 0 y del otro lado 12, y los precios no coincidían
-  const m = D.cfg.merma === null || D.cfg.merma === undefined ? 12 : num(D.cfg.merma);
-  return Math.round(base * (1 + m / 100) * 10) / 10;
+  return Calculo.gramosCon(p, D.cfg);
 }
 /** Lo que cuesta UNA unidad del insumo, sacado del precio del paquete. */
 function unitario(it) {
-  if (!it) return 0;
-  if (it.pack !== undefined && it.pack !== null) return num(it.pack) / Math.max(num(it.unid), 1);
-  return num(it.preco); // formato viejo: ya venía por unidad
+  return Calculo.unitario(it);
 }
 function migrarInsumos() {
   (D.insumos || []).forEach((i) => {
