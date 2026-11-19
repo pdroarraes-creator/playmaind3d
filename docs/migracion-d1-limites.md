@@ -102,6 +102,11 @@ a resposta pública. O mais simples é calcular na leitura (uma única fonte da
 fórmula, `app/calculo.js`) e só pré-calcular se a medição no Worker real
 mostrar CPU perto do limite.
 
+## Staging raiz e .assetsignore
+
+- Fonte: https://developers.cloudflare.com/workers/static-assets/binding/ (seção "Ignoring assets", lida em 2026-11-19): o Wrangler não sobe os arquivos que casam com o `.assetsignore` da raiz do diretório de assets, que usa o formato do `.gitignore`. A página não diz que o Wrangler leia o `.gitignore` nem que ignore `node_modules` por padrão; por isso o `.assetsignore` da raiz exclui `datos-privados`, `node_modules`, `.superpowers`, `api-worker` e os arquivos `*.estado.json`, `*.carga.sql`, `salida-d1*.json`.
+- Verificação local (guardando só contagens): percorrendo os 11.223 arquivos do repositório (sem `.git`) com a semântica do `.gitignore`, sobram 57 e nenhum é dado privado, `node_modules` ou `.superpowers`.
+
 ## Não confirmado
 
 - Tempo real de CPU num Worker (só há estimativa em Node); medir com o Worker
