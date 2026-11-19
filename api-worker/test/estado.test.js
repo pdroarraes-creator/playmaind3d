@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { crearD1 } from "./d1-falso.js";
-import { leerEstado, guardarEstado } from "../src/estado.js";
+import { leerEstado, guardarEstado, guardarConFusion, sanear } from "../src/estado.js";
 
 test("banco vacío: lee null y el primer guardado queda en v 1", async () => {
   const db = crearD1();
@@ -75,4 +75,72 @@ test("baseV inválido lanza TypeError y no toca la fila guardada", async () => {
     await assert.rejects(() => guardarEstado(db, { a: 2 }, malo), TypeError);
     assert.deepEqual(await leerEstado(db), { data: { a: 1 }, v: 1 }, `baseV=${String(malo)}`);
   }
+});
+
+test("guardarConFusion sin conflicto: no fusiona y avanza la versión", async () => {
+  const db = crearD1();
+  await guardarEstado(db, { a: 1 }, 0);
+  const r = await guardarConFusion(db, { cfg: { token: "t", key: "k" }, _v: 1, _sucio: true, a: 2 }, 1);
+  assert.equal(r.ok, true);
+  assert.equal(r.fusionado, false);
+  assert.equal(r.v, 2);
+  assert.deepEqual(r.data, { cfg: { token: "", key: "" }, a: 2 });
+  assert.deepEqual((await leerEstado(db)).data, r.data);
+});
+
+test("guardarConFusion con base vieja funde los ítems de otro cliente", async () => {
+  const db = crearD1();
+  await guardarEstado(db, { produtos: [{ id: "a", n: 1 }] }, 0);
+  await guardarEstado(db, { produtos: [{ id: "a", n: 1 }] }, 1);
+  await guardarEstado(db, { produtos: [{ id: "a", n: 1 }, { id: "x", n: 9 }] }, 2);
+  const r = await guardarConFusion(db, { produtos: [{ id: "a", n: 1 }, { id: "b", n: 2 }] }, 2);
+  assert.equal(r.ok, true);
+  assert.equal(r.fusionado, true);
+  assert.equal(r.v, 4);
+  const guardado = await leerEstado(db);
+  assert.equal(guardado.v, 4);
+  assert.deepEqual(guardado.data.produtos.map((p) => p.id).sort(), ["a", "b", "x"]);
+  assert.deepEqual(r.data, guardado.data);
+});
+
+test("guardarConFusion: una baja desde copia vieja no se aplica", async () => {
+  const db = crearD1();
+  await guardarEstado(db, { produtos: [{ id: "a" }, { id: "x" }] }, 0);
+  await guardarEstado(db, { produtos: [{ id: "a" }, { id: "x" }] }, 1);
+  const r = await guardarConFusion(db, { produtos: [{ id: "a" }] }, 1);
+  assert.equal(r.ok, true);
+  assert.deepEqual((await leerEstado(db)).data.produtos.map((p) => p.id).sort(), ["a", "x"]);
+});
+
+test("guardarConFusion con maxIntentos 1 y base vieja: conflicto y banco intacto", async () => {
+  const db = crearD1();
+  await guardarEstado(db, { a: 1 }, 0);
+  await guardarEstado(db, { a: 2 }, 1);
+  const r = await guardarConFusion(db, { a: 3 }, 1, { maxIntentos: 1 });
+  assert.deepEqual(r, { ok: false, error: "conflicto" });
+  assert.deepEqual(await leerEstado(db), { data: { a: 2 }, v: 2 });
+});
+
+test("guardarConFusion con versión desconocida enorme cae en la fusión", async () => {
+  const db = crearD1();
+  await guardarEstado(db, { produtos: [{ id: "a" }] }, 0);
+  const r = await guardarConFusion(db, { produtos: [{ id: "b" }] }, 1795055024564);
+  assert.equal(r.ok, true);
+  assert.equal(r.fusionado, true);
+  assert.equal(r.v, 2);
+  assert.deepEqual((await leerEstado(db)).data.produtos.map((p) => p.id).sort(), ["a", "b"]);
+});
+
+test("guardarConFusion con banco vacío y base desconocida inserta", async () => {
+  const db = crearD1();
+  const r = await guardarConFusion(db, { a: 1 }, 5);
+  assert.equal(r.ok, true);
+  assert.equal(r.v, 1);
+  assert.deepEqual((await leerEstado(db)).data, { a: 1 });
+});
+
+test("sanear devuelve copia limpia sin mutar el original", () => {
+  const d = { cfg: { token: "t", key: "k" }, _v: 1, _sucio: true };
+  assert.deepEqual(sanear(d), { cfg: { token: "", key: "" } });
+  assert.equal(d.cfg.token, "t");
 });
