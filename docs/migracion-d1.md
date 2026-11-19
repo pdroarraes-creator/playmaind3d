@@ -33,3 +33,5 @@ Ensaio feito com o estado real do Pedro, carregado só em `playmind-staging` (`p
 - No escopo medido (só `calcular` sobre as peças mais um `JSON.parse`, a quente, em Node), calcular na leitura cabe com folga larga. **Não confirmado:** a CPU real num Worker (inclui serializar a resposta, reescrever URLs de fotos, ler o D1 e isolate a frio) e o plano real da conta. Medir o endpoint real na Etapa 1 antes de adotar a recomendação de calcular na leitura.
 - O bundle de `src/calculo.js` empacota e coincide com `app/calculo.js` (217 casos).
 - Dados reais ficam só em `datos-privados/` (ignorado pelo git).
+- Etapa 1a: `api-worker/src/fusionar.js` porta `fusionar_` do Apps Script (cliente vence, o que só o servidor tem é preservado, vendas da mais nova para a mais velha); não muta as entradas.
+- `api-worker/test/fusionar.test.js` carrega `server/Codigo.gs` num `vm` e compara as duas versões em 100 pares gerados (semente fixa): mexeu em uma, mexa na outra.
