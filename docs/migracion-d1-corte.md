@@ -10,14 +10,14 @@ Nomes reais usados abaixo (conferidos no código):
 - `GET /salud` devolve `{"ok":true,"modo":"escritura"|"solo-lectura","snapshot":null|{"v":…,"ok":true|false,"motivo":…,"cuando":"…"}}`.
 - `scripts/migracion-d1.js`: `carga <estado.json> <saida.sql> [--v-inicial N]`, `resumen <estado.json>`, `comparar <a.json> <b.json>`. Códigos de saída: 0 ok, 1 `comparar` com diferenças, 2 uso incorreto, 3 arquivo ilegível ou JSON inválido.
 
-Convenções: os comandos `node` rodam na raiz do repositório; os `npx wrangler` rodam em `api-worker/` (por isso os arquivos ficam em `../datos-privados/`). Todos os arquivos com dados reais ficam em `datos-privados/` (ignorada pelo git, junto com `*.estado.json`, `*.carga.sql` e `salida-d1*.json`). Nada disso vai para o git, para o chat ou para a nuvem.
+Convenções: **todos os comandos rodam a partir da raiz do repositório**. Os `npx wrangler` vão entre parênteses `(cd api-worker && …)`, um subshell que volta sozinho à raiz; por isso, dentro deles, os arquivos aparecem como `../datos-privados/…`, e nos comandos `node` como `datos-privados/…`. Todos os arquivos com dados reais ficam em `datos-privados/` (ignorada pelo git, junto com `*.estado.json`, `*.carga.sql` e `salida-d1*.json`). Nada disso vai para o git, para o chat ou para a nuvem.
 
 ## Avisos que valem para o dia inteiro
 
-1. **`MODO` com qualquer valor diferente de exatamente `solo-lectura` é tratado como escritura** (`rutas.js` só bloqueia quando `env.MODO === "solo-lectura"`; `/salud` também). Um erro de digitação (`solo-lectura ` com espaço, `solo_lectura`, maiúscula) vira escrita **sem aviso**. Depois de cada deploy que mexe em `MODO`, conferir em `/salud` que `modo` mostra o que se queria.
+1. **`MODO` com qualquer valor diferente de exatamente `solo-lectura` é tratado como escritura** (`rutas.js` só bloqueia quando `env.MODO === "solo-lectura"`; `/salud` também). Um erro de digitação (`solo-lectura ` com espaço, `solo_lectura`, maiúscula) vira escrita **sem aviso**. Depois de cada deploy que mexe em `MODO`, conferir em `/salud` que `modo` mostra o que se queria. **O mesmo vale para `SNAPSHOT`: qualquer valor diferente de exatamente `on` desliga o snapshot** (`api-worker/src/snapshot.js`: `env.SNAPSHOT !== "on"`), então `On` ou `on ` falham em silêncio e o rollback fica sem rede; conferir que o primeiro `/salud` depois de uma gravação mostra `snapshot` preenchido.
 2. **Rollback só é prometido com o estado abaixo de ~45.000 caracteres** (célula do Sheets = 50.000). O estado hoje tem ~34.500. Acima disso o snapshot responde `excede`, a célula não é atualizada e voltar para o Apps Script perderia tudo o que o D1 recebeu desde o último snapshot gravado.
 3. **O `MODO_SERVIDOR` do `cadastro-worker` deve ir para `"worker"` num redeploy depois do corte** (hoje é `"apps"`: cada pedido paga uma ida extra ao Apps Script para receber `migrado` e só então chama o Worker). Ver "Depois do corte". Antes de qualquer deploy do `cadastro-worker`, fazer o dry-run descrito na checklist (item 11).
-4. Edições de `wrangler.toml` no dia (`MODO`, `SNAPSHOT`) são o jeito de trocar as variáveis: o deploy lê o arquivo. No fim do dia o arquivo tem que refletir o que está no ar, e então vai para um commit.
+4. **De hoje até o passo 4 do corte o Worker de produção fica em `MODO=solo-lectura`**, publicado com `--var MODO:solo-lectura` (o `--var` vale só para aquele deploy; o `wrangler.toml` continua dizendo `MODO = "escritura"`). **Nunca fazer um deploy de produção sem esse `--var` antes do passo 4**, nem depois de um rollback, ou o Worker volta a escritura. No passo 4 o `wrangler.toml` passa a dizer `SNAPSHOT = "on"` e o deploy sem `--var` é o que liga a escritura; a partir daí o arquivo reflete o que está no ar.
 
 ## Antes (dias antes do corte)
 
@@ -27,22 +27,22 @@ Checklist. Cada item tem que estar marcado antes de combinar o dia. Quem faz: o 
 |---|---|---|---|
 | 1 | App novo (com o protocolo de dois servidores, `CACHE` `playmind3d-v27` em `app/sw.js`) publicado há **3 dias ou mais** na `main` (GitHub Pages) | `git log origin/main -1 --format=%cd -- app/` e pedir ao Pedro que confirme que os 3 aparelhos já abriram o app depois disso | controlador + Pedro |
 | 2 | Apps Script com `exportarEstado` e `guardarSnapshot` publicados | No editor do Apps Script: colar `server/Codigo.gs`, salvar, **Implementar > Administrar implementaciones > lápis > Versão: NUEVA**. Salvar não basta | Pedro |
-| 3 | Banco de produção com as duas migrations | `cd api-worker && npx wrangler d1 migrations list playmind-prod --remote --env prod` deve dizer que não há migrations pendentes. Se houver: `npx wrangler d1 migrations apply playmind-prod --remote --env prod` | controlador |
-| 4 | Banco de produção **vazio** | `npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT COUNT(*) AS n FROM estado"` deve dar `n = 0` | controlador |
-| 5 | Worker de produção no ar com `MODO=escritura` e `SNAPSHOT=off` | `cd api-worker && npx wrangler deploy --env prod` (o `wrangler.toml` já traz `MODO = "escritura"` e `SNAPSHOT = "off"` em `[env.prod.vars]`). Depois: `curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/salud` deve dar `{"ok":true,"modo":"escritura","snapshot":null}` | controlador |
+| 3 | Banco de produção com as duas migrations | `(cd api-worker && npx wrangler d1 migrations list playmind-prod --remote --env prod)` deve dizer que não há migrations pendentes. Se houver: `(cd api-worker && npx wrangler d1 migrations apply playmind-prod --remote --env prod)` | controlador |
+| 4 | Banco de produção **vazio** | `(cd api-worker && npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT COUNT(*) AS n FROM estado")` deve dar `n = 0` | controlador |
+| 5 | Worker de produção no ar em **`MODO=solo-lectura`** e `SNAPSHOT=off`. Em só leitura, `load` e o catálogo funcionam, e `save`, `editarPieza`, `agregarPieza` e `agregarFilamento` respondem `revertido` (`api-worker/src/rutas.js`). Isso garante que, entre a chave ligada (passo 1) e a carga (passo 3), nenhum aparelho consiga escrever no D1 vazio (um aparelho com `_sucio` pendente, ao receber `migrado`, tentaria gravar ali e criaria a linha `estado` com a cópia local dele) | `(cd api-worker && npx wrangler deploy --env prod --var MODO:solo-lectura)` (o `wrangler.toml` traz `SNAPSHOT = "off"`). Depois: `curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/salud` deve dar `{"ok":true,"modo":"solo-lectura","snapshot":null}` (palavra exata: aviso 1) | controlador |
 | 6 | `d1:catalogoUrl` definido | Menu "PlayMind 3d" > **"D1: dirección del catálogo en el Worker"** > colar `https://playmind3d-api-prod.pdroarraes.workers.dev/catalogo` (tem que começar com `https://`). Confirmar que o alerta diz "Dirección guardada." O menu "D1: activar modo migrado" avisa com "OJO" se isto faltar | Pedro |
 | 7 | Catálogo do Worker responde | `curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/catalogo` deve dar `ok:true` e uma lista `piezas` **vazia** (o D1 de produção ainda está vazio): é esperado agora, e só passa a ter peças depois do passo 3 do corte | controlador |
 | 8 | Fuso do projeto do Apps Script = **America/Argentina/Buenos_Aires** (o `resumenNegocio` do Worker assume UTC-3; o repositório não tem `appsscript.json`) | No editor do Apps Script: Configuración del proyecto (engrenagem) > Zona horaria | Pedro |
 | 9 | Medidor de espaço **abaixo de 45.000** | Menu "PlayMind 3d" > **"Ver cuánto espacio queda"**. Anotar o valor. Se disser que ainda não há medida, esperar o próximo save do app | Pedro |
 | 10 | Pedro online, no computador, e **fora do horário de venda**; os outros dois da família avisados de que o app pode piscar um erro por alguns minutos | combinado no chat | Pedro |
-| 11 | Dry-run dos dois Workers (nada sobe) | `cd cadastro-worker && npx wrangler deploy --dry-run --outdir <pasta-temporária>` e `cd api-worker && npx wrangler deploy --env prod --dry-run --outdir <pasta-temporária>`. O bundle do `cadastro-worker` **não tinha sido verificado antes desta tarefa**; em 19/11/2026 o dry-run dele deu 19,35 KiB (gzip 6,59 KiB) e o do `api-worker` prod 28,03 KiB (gzip 8,68 KiB), sem erro. Repetir no dia anterior | controlador |
-| 12 | Backup e Time Travel do banco de produção | `npx wrangler d1 time-travel info playmind-prod --env prod` imprime o bookmark atual (a janela é de 7 dias no plano gratuito, 30 no pago: ver `docs/migracion-d1-limites.md`). Opcional: `npx wrangler d1 export playmind-prod --remote --env prod --output ../datos-privados/prod-antes.sql` | controlador |
+| 11 | Dry-run dos dois Workers (nada sobe) | `(cd cadastro-worker && npx wrangler deploy --dry-run --outdir <pasta-temporária>)` e `(cd api-worker && npx wrangler deploy --env prod --dry-run --outdir <pasta-temporária>)`. O bundle do `cadastro-worker` **não tinha sido verificado antes desta tarefa**; em 19/11/2026 o dry-run dele deu 19,35 KiB (gzip 6,59 KiB) e o do `api-worker` prod 28,03 KiB (gzip 8,68 KiB), sem erro. Repetir no dia anterior | controlador |
+| 12 | Backup e Time Travel do banco de produção | `(cd api-worker && npx wrangler d1 time-travel info playmind-prod --env prod)` imprime o bookmark atual (a janela é de 7 dias no plano gratuito, 30 no pago: ver `docs/migracion-d1-limites.md`). Opcional: `(cd api-worker && npx wrangler d1 export playmind-prod --remote --env prod --output ../datos-privados/prod-antes.sql)` | controlador |
 | 13 | Foto do catálogo de hoje | Ver passo 0 do corte | controlador |
 | 14 | Testes verdes | `node --test tests/*.test.js api-worker/test/*.test.js cadastro-worker/test/*.test.js` (Node 22.13 ou mais novo) e `node scripts/ensayo-protocolo.js` | controlador |
 
 ## O corte
 
-Só começar com a checklist inteira marcada. Meta de duração: 30 a 40 minutos. Ninguém edita nada no app, em nenhum aparelho, entre o passo 1 e o passo 5.
+Só começar com a checklist inteira marcada. Meta de duração: 30 a 40 minutos. Combinar com o Pedro que os aparelhos da família ficam **com o app fechado** (e, se possível, que cada um abra o app e espere a sincronização terminar antes de fechar) do passo 1 até o passo 5. Mesmo se algum ficar aberto, o Worker em `solo-lectura` impede que escreva no D1 e o `_sucio` dele fica guardado (ver tabela); mas ninguém edita nada nessa janela.
 
 **Passo 0. Foto do catálogo de antes** (controlador, 1 minuto, **antes** de ligar a chave: depois dela o Apps Script passa a encaminhar o catálogo ao Worker).
 
@@ -97,31 +97,28 @@ node scripts/migracion-d1.js carga datos-privados/corte.estado.json datos-privad
 (`$(date +%s)` são os segundos atuais, 10 dígitos: muito acima de qualquer versão que o D1 já emitiu e diferente dos carimbos de 13 dígitos do Sheets. Anotar o número usado.) Esperado: sem saída, código 0, arquivo `corte.carga.sql` com um `INSERT` puro (sem `OR REPLACE`): se já existir a linha `estado`, a carga **falha** e não sobrescreve nada.
 
 ```
-cd api-worker
-npx wrangler d1 execute playmind-prod --remote --env prod --file ../datos-privados/corte.carga.sql -y
+(cd api-worker && npx wrangler d1 execute playmind-prod --remote --env prod --file ../datos-privados/corte.carga.sql -y)
 ```
 
-Esperado: `success`, 1 linha escrita. Ler de volta e extrair o campo `json` (o `wrangler` entrega `[{ "results": [{ "json": "…", "v": … }] }]`):
+Esperado: `success`, 1 linha escrita. Se falhar por chave primária repetida, **não apagar nada**: ver a tabela. Ler de volta e extrair o campo `json` (o `wrangler` entrega `[{ "results": [{ "json": "…", "v": … }] }]`):
 
 ```
-npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT json, v FROM estado WHERE clave='estado'" --json > ../datos-privados/salida-d1-raw.json
-cd ..
+(cd api-worker && npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT json, v FROM estado WHERE clave='estado'" --json > ../datos-privados/salida-d1-raw.json)
 node -e 'const fs=require("fs");const fila=JSON.parse(fs.readFileSync("datos-privados/salida-d1-raw.json","utf8"))[0].results[0];fs.writeFileSync("datos-privados/salida-d1.json",fila.json);console.log("v en D1:",fila.v)'
 node scripts/migracion-d1.js comparar datos-privados/corte.estado.json datos-privados/salida-d1.json
 ```
 
-Esperado: `v en D1:` igual ao `--v-inicial` usado, e `iguales: true` (contagens e hash). Se vier `iguales: false` (código 1) ou código 3, **parar e fazer o rollback** (ver abaixo; ainda não há nada novo no D1 que precise de snapshot porque ninguém gravou lá).
+Esperado: `v en D1:` igual ao `--v-inicial` usado, e `iguales: true` (contagens e hash). Se vier `iguales: false` (código 1) ou código 3, **parar**: o Worker está em `solo-lectura`, então nada novo foi gravado no D1 por esta via e a célula está congelada (ligada a chave). Ver a tabela (`iguales: false`) e o rollback abaixo.
 
-**Passo 4. Deploy do Worker de produção com `SNAPSHOT=on`** (controlador).
-Editar `api-worker/wrangler.toml`, em `[env.prod.vars]`, trocar `SNAPSHOT = "off"` por `SNAPSHOT = "on"` (o `MODO` continua `"escritura"`), e:
+**Passo 4. Ligar a escritura e o snapshot juntos** (controlador). Só depois do `iguales: true` do passo 3.
+Editar `api-worker/wrangler.toml`, em `[env.prod.vars]`: `SNAPSHOT = "off"` passa a `SNAPSHOT = "on"` (o `MODO` do arquivo já é `"escritura"`). Fazer o deploy **sem** `--var`, para que o arquivo mande:
 
 ```
-cd api-worker
-npx wrangler deploy --env prod
+(cd api-worker && npx wrangler deploy --env prod)
 curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/salud
 ```
 
-Esperado: `{"ok":true,"modo":"escritura","snapshot":null}` (ainda não houve gravação depois do corte, por isso `snapshot` é `null`).
+Esperado: `{"ok":true,"modo":"escritura","snapshot":null}` (ainda não houve gravação depois do corte, por isso `snapshot` é `null`). Conferir as duas palavras exatas (avisos 1 e 4). Se for um deploy depois de um rollback, o estado anterior era `solo-lectura`: este deploy sem `--var` é o que o desfaz.
 
 **Passo 5. Fumaça com o Pedro** (Pedro cola no console de `https://playmind3d.com/app/`; é o trecho da Etapa 1a apontando para o Worker de produção). Lê o token do `localStorage`, nunca o imprime, e imprime só contagens. O `save` regrava o mesmo estado: sobe `v` em 1 e **dispara o primeiro snapshot** (`SNAPSHOT=on`).
 
@@ -161,65 +158,66 @@ node -e 'const fs=require("fs");const f=p=>JSON.parse(fs.readFileSync(p,"utf8"))
 
 (Define `APPS` como no passo 0 se for outro terminal.) Esperado: `antes`, `despues` e `worker` com a **mesma contagem**; `piezasDistintas: 0` (na Etapa 1a estavam idênticas). Se alguma peça diferir, só pode ser por preço de peça com os casos de divergência antigos do `calcular_` (filamento apagado, etc.): investigar peça a peça antes de seguir. Depois, no menu "PlayMind 3d" > **"Ver cuánto espacio queda"**: tem que mostrar uma "Última medida" **nova** (agora) e `chars` perto do `chars` do `resumen` do passo 2 (o medidor passa a ser atualizado pelo snapshot, `medida:estado`). Se continuar com a medida antiga, o snapshot não gravou: ver `/salud`.
 
-**Passo 7. Ida e volta** (controlador e Pedro; ninguém edita nada no app durante este passo; é o ensaio do rollback, com o Pedro online e fora do horário de venda).
+**Passo 7. Ida e volta** (controlador e Pedro; os aparelhos da família ficam **com o app fechado** durante todo este passo, só o do Pedro abre quando o roteiro mandar, e ninguém edita nada; é o ensaio do rollback, com o Pedro online e fora do horário de venda).
 
-7.1. Colocar o Worker em só leitura. Em `api-worker/wrangler.toml`, `[env.prod.vars]`: `MODO = "solo-lectura"`, e
+7.1. Colocar o Worker em só leitura:
 
 ```
-cd api-worker
-npx wrangler deploy --env prod
+(cd api-worker && npx wrangler deploy --env prod --var MODO:solo-lectura)
 curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/salud
 ```
 
-Esperado: `"modo":"solo-lectura"` (conferir **a palavra exata**, ver aviso 1). Um app que esteja aberto e tente salvar recebe `revertido`, passa ao modo `apps` e repete o pedido no Apps Script, que ainda responde `migrado` porque a chave está ligada: por uns instantes pode aparecer erro e reintento, sem perder dados locais.
+Esperado: `"modo":"solo-lectura"` (conferir **a palavra exata**, ver aviso 1). Um app que esteja aberto e tente salvar recebe `revertido` do Worker, passa ao modo `apps` e repete o pedido no Apps Script, que ainda responde `migrado` porque a chave está ligada: o protocolo repete uma vez só e termina em erro, então aparece erro e reintento a cada 20 s, sem perder dados locais.
 
 7.2. Conferir que o último snapshot tem a `v` igual à do D1 (esperar uns 10 segundos desde a última gravação):
 
 ```
 curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/salud
-cd api-worker
-npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT v FROM estado WHERE clave='estado'" --json
+(cd api-worker && npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT v FROM estado WHERE clave='estado'" --json)
 ```
 
 Esperado: `snapshot.v` do `/salud` **igual** ao `v` do D1 e `snapshot.ok: true`. Se forem diferentes, **não desligar a chave** (ver tabela).
 
 7.3. Desligar a chave: Pedro, menu "PlayMind 3d" > **"D1: desactivar modo migrado"** > Sí. Esperado: "Modo migrado desactivado." Abrir o app: ele tem que funcionar no Apps Script (dados iguais, sincronização normal).
 
-7.4. **Antes de ligar de novo, provar que a célula não mudou** (se alguém salvou enquanto a chave estava desligada, a célula tem gravações que o D1 não tem, e ligar a chave as perderia). O Pedro cola outra vez o trecho de download do passo 2 (muda o nome do arquivo para `idavuelta.estado.json` trocando `a.download`), entrega, o controlador salva em `datos-privados/idavuelta.estado.json` e roda:
+7.4. **Antes de ligar de novo, provar que a célula não mudou** (se alguém salvou enquanto a chave estava desligada, a célula tem gravações que o D1 não tem, e ligar a chave as perderia; e uma gravação na célula entre este passo e o 7.5 também se perderia, por isso os aparelhos continuam **fechados**, menos o do Pedro, que só baixa o arquivo). O Pedro cola outra vez o trecho de download do passo 2 (muda o nome do arquivo para `idavuelta.estado.json` trocando `a.download`), entrega, o controlador salva em `datos-privados/idavuelta.estado.json`, **relê sempre o D1** (está congelado em `solo-lectura`; nunca reusar o `salida-d1.json` do passo 3, que é anterior à fumaça) e compara:
 
 ```
-node scripts/migracion-d1.js comparar datos-privados/idavuelta.estado.json datos-privados/salida-d1.json
+(cd api-worker && npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT json, v FROM estado WHERE clave='estado'" --json > ../datos-privados/salida-d1-raw.json)
+node -e 'const fs=require("fs");const fila=JSON.parse(fs.readFileSync("datos-privados/salida-d1-raw.json","utf8"))[0].results[0];fs.writeFileSync("datos-privados/salida-d1-idavuelta.json",fila.json);console.log("v en D1:",fila.v)'
+node scripts/migracion-d1.js comparar datos-privados/idavuelta.estado.json datos-privados/salida-d1-idavuelta.json
 ```
 
-Esperado: `iguales: true` (a célula é o snapshot, que é o estado do D1 do passo 3 mais o `save` do passo 5, o mesmo estado). Atenção: o `salida-d1.json` do passo 3 só serve se nada mais foi gravado no D1 depois da fumaça; se o Pedro mexeu no app depois do passo 5, reler o D1 antes (repetir a leitura do passo 3, trocando o nome do arquivo de saída). Se vier `iguales: false`, **não ligar a chave**: ver "O que fazer se… a célula e o D1 divergem".
+Esperado: `iguales: true` (a célula é o snapshot, o mesmo estado do D1). Se vier `iguales: false`, **não ligar a chave**: ver "O que fazer se… a célula e o D1 divergem".
 
 7.5. Ligar de novo: Pedro, menu "D1: activar modo migrado" > Sí.
 
-7.6. Voltar o Worker para escritura. Em `wrangler.toml`: `MODO = "escritura"` e
+7.6. Voltar o Worker para escritura (deploy **sem** `--var`: o `wrangler.toml` tem `MODO = "escritura"` e `SNAPSHOT = "on"`):
 
 ```
-cd api-worker
-npx wrangler deploy --env prod
+(cd api-worker && npx wrangler deploy --env prod)
 curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/salud
 ```
 
 Esperado: `"modo":"escritura"`. O Pedro abre o app: recebe `migrado` do Apps Script, vai ao Worker, e os dados aparecem. Pedro faz uma venda de teste pequena **ou** uma edição inofensiva (e a desfaz), confere que salvou, e o controlador confere em `/salud` que o `snapshot.v` avançou. (Se for uma venda de teste, o Pedro a apaga depois pelo app: apagar numa cópia atualizada funciona.)
 
-Fim do corte: o `wrangler.toml` tem que estar com `MODO = "escritura"` e `SNAPSHOT = "on"`, igual ao que está no ar. Commit dessa mudança de `SNAPSHOT` (mensagem em português, um commit só).
+Fim do corte: o `wrangler.toml` tem `MODO = "escritura"` e `SNAPSHOT = "on"`, igual ao que está no ar. Commit da mudança de `SNAPSHOT` (mensagem em português, um commit só).
 
 ## Rollback a qualquer momento (alvo: até 2 minutos)
 
 Ordem fixa. Não inverter: desligar a chave antes do `solo-lectura` deixaria os apps novos gravando no D1 enquanto os antigos gravam na célula (duas verdades).
 
-1. `api-worker/wrangler.toml`: `MODO = "solo-lectura"` em `[env.prod.vars]`; `cd api-worker && npx wrangler deploy --env prod`. Conferir em `curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/salud` que mostra `"modo":"solo-lectura"` (palavra exata: aviso 1).
-2. Esperar uns 10 segundos e conferir que `snapshot.v` do `/salud` é igual ao `v` do D1 (`npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT v FROM estado WHERE clave='estado'" --json`) e `snapshot.ok: true`.
+1. `(cd api-worker && npx wrangler deploy --env prod --var MODO:solo-lectura)`. Conferir em `curl -sS https://playmind3d-api-prod.pdroarraes.workers.dev/salud` que mostra `"modo":"solo-lectura"` (palavra exata: aviso 1).
+2. Esperar uns 10 segundos e conferir que `snapshot.v` do `/salud` é igual ao `v` do D1 (`(cd api-worker && npx wrangler d1 execute playmind-prod --remote --env prod --command "SELECT v FROM estado WHERE clave='estado'" --json)`) e `snapshot.ok: true`.
 3. Menu "PlayMind 3d" > "D1: desactivar modo migrado" > Sí. Conferir que o app abre e funciona no Apps Script.
+
+**Estado resultante de `MODO`:** depois do rollback o Worker de produção **continua em `solo-lectura`** (foi publicado com `--var`; o `wrangler.toml` segue dizendo `escritura`). É o estado seguro: o app aberto cai no Apps Script. **Não fazer deploy de produção sem `--var MODO:solo-lectura` enquanto a chave estiver desligada**; só o passo 4 (ou o 7.6) volta a escritura, depois de religar a chave.
 
 Durante os passos 1 a 3 os apps podem mostrar erro e reintentar a cada 20 segundos: nenhum dado local se perde (`_sucio` fica até um save dar certo).
 
-**O limite honesto:** a promessa vale só com o estado abaixo de ~45.000 caracteres (aviso 2). **O que pode se perder:** as gravações que o D1 recebeu depois do último snapshot gravado e antes do `solo-lectura` (o snapshot sai depois de cada gravação, então são segundos de trabalho, e só se o snapshot falhou ou estourou). Se no passo 2 as versões forem diferentes, o D1 é a verdade mais nova: não desligar a chave; esperar e repetir; se persistir, exportar o D1 (`npx wrangler d1 export playmind-prod --remote --env prod --output ../datos-privados/rollback.sql`) antes de qualquer decisão, e o Time Travel (`npx wrangler d1 time-travel info playmind-prod --env prod`) guarda 7 ou 30 dias.
+**O limite honesto:** a promessa vale só com o estado abaixo de ~45.000 caracteres (aviso 2). **O que pode se perder:** as gravações que o D1 recebeu depois do último snapshot gravado e antes do `solo-lectura` (o snapshot sai depois de cada gravação, então são segundos de trabalho, e só se o snapshot falhou ou estourou). Se no passo 2 as versões forem diferentes, o D1 é a verdade mais nova: não desligar a chave; esperar e repetir; se persistir, exportar o D1 (`(cd api-worker && npx wrangler d1 export playmind-prod --remote --env prod --output ../datos-privados/rollback.sql)`) antes de qualquer decisão, e o Time Travel (`(cd api-worker && npx wrangler d1 time-travel info playmind-prod --env prod)`) guarda 7 ou 30 dias.
 
-Depois de um rollback **não recarregar o D1 com `--v-inicial` menor do que o `v` mais alto já emitido**: use sempre os segundos atuais e, se o `v` atual do D1 for maior, `v + 1` no mínimo. A carga só entra se a linha `estado` não existir (`INSERT` puro): para recarregar é preciso um `DELETE FROM estado` explícito, decisão do Pedro, e só com a chave desligada.
+Depois de um rollback **não recarregar o D1 com `--v-inicial` menor do que o `v` mais alto já emitido**: use sempre os segundos atuais e, se o `v` atual do D1 for maior, `v + 1` no mínimo. O `--v-inicial` também tem que ser **maior que o `d1:snapshotV`** guardado no Apps Script (a última versão de snapshot gravada, visível em Propriedades do script): com um valor menor ou igual, todos os snapshots são descartados como `vieja` sem aviso. A carga só entra se a linha `estado` não existir (`INSERT` puro): para recarregar é preciso um `DELETE FROM estado` explícito, decisão do Pedro, e só com a chave desligada.
 
 ## Critérios de sucesso (do spec, "Etapa 1b")
 
@@ -233,13 +231,14 @@ Depois de um rollback **não recarregar o D1 com `--v-inicial` menor do que o `v
 | Situação | O que significa | O que fazer |
 |---|---|---|
 | Um app **antigo** (sem o protocolo) mostra "El servidor todavía no tiene datos" ou "Error al guardar" depois de ligar a chave | Recebeu `migrado` e não sabe o que fazer com isso. Nada se perde: o `_sucio` do aparelho continua até um app atualizado subir | Abrir o app com rede para o service worker atualizar (`CACHE` `playmind3d-v27`); se não atualizar, fechar e abrir de novo. Nunca "limpar dados do site" antes de sincronizar |
+| Entre o passo 1 e o passo 4 um app novo mostra erro ao salvar (ou "sin datos" ao carregar) | Esperado: o Apps Script diz `migrado`, o Worker em `solo-lectura` diz `revertido` (ou o D1 ainda está vazio) e o protocolo termina em erro sem lazo. Nada é gravado e o `_sucio` do aparelho fica guardado | Fechar o app e só abrir depois do passo 4; não editar nada. Se o app ficar preso em erro 5 minutos depois do passo 4, ver o critério 3 |
 | O app mostra o erro de acesso ("o servidor de acesso não responde") | O Worker devolveu `auth_no_disponible`: o Apps Script (que valida a sessão) não respondeu | Não deslogar. O app reintenta a cada 20 s. Conferir que o Apps Script está no ar (abrir a URL `/exec?action=catalogo`). Quando voltar, tudo segue. O Worker **depende do Apps Script** para validar sessão: se ele ficar fora do ar por muito tempo, ninguém salva, e rollback também não é possível (a chave mora no Apps Script). Esperar |
 | Apps Script fora do ar durante o corte (passos 1 a 3) | `exportarEstado` não responde | Parar. Se a chave já estiver ligada, nada foi carregado: quando o Apps Script voltar, repetir o passo 2. Se demorar, desligar a chave quando voltar (a célula nunca foi tocada) |
 | Medidor perto de 45.000 (ou `/salud` mostra `snapshot.motivo` = `excede`) | O estado não cabe mais na célula: o snapshot não grava e o rollback deixa de ser possível sem perda | Avisar o Pedro: o rollback prometido acabou. Decidir **antes** de seguir se desliga o `SNAPSHOT` (`SNAPSHOT = "off"`, deploy) e aceita a perda da rede de segurança, ou se se antecipa a Etapa 2 (vendas como tabela). O gatilho de revisão do banco continua sendo 70% = 35.000 |
-| `snapshot.ok: false` com outro `motivo` (`red`, `error: …`, `respuesta inesperada`, `vieja`) | O Apps Script não aceitou o snapshot (fora do ar, versão antiga do script sem `guardarSnapshot`, ou chega uma versão menor) | `error: no migrado`: a chave está desligada. `error: accion desconocida`: falta publicar o Apps Script (Versão: NUEVA). `red`: Apps Script fora do ar ou lento (timeout de 15 s). `vieja`: já havia snapshot de versão igual ou maior (inofensivo). Corrigir e fazer qualquer gravação no app para gerar novo snapshot; conferir `/salud` |
-| Passo 3: `comparar` dá `iguales: false` ou código 3 | A carga não reflete o arquivo exportado | Não seguir. Rollback (a chave está ligada e o D1 não recebeu gravações). Para tentar de novo: com a chave desligada, `DELETE FROM estado` no D1 de produção e repetir os passos 1 a 3 com `--v-inicial` novo |
-| Passo 3: a carga falha por chave primária repetida | Já existe uma linha `estado` no D1 de produção | Não sobrescrever. Descobrir quem gravou (`SELECT v, actualizado FROM estado`). Se foi um teste, o Pedro decide o `DELETE FROM estado`; se for estado real, parar |
-| A célula e o D1 divergem na ida e volta (passo 7.4: `iguales: false`) | Alguém gravou no Apps Script com a chave desligada | **Não ligar a chave.** A célula é agora a verdade mais nova: com a chave desligada, `DELETE FROM estado` no D1 e refazer os passos 2, 3 e seguintes com a exportação nova e `--v-inicial` novo (segundos atuais) |
+| `snapshot.ok: false` com outro `motivo` (`red`, `error: …`, `respuesta inesperada`, `vieja`) | O Apps Script não aceitou o snapshot (fora do ar, versão antiga do script sem `guardarSnapshot`, ou chega uma versão menor) | `error: no migrado`: a chave está desligada. `error: accion desconocida`: falta publicar o Apps Script (Versão: NUEVA). `red`: Apps Script fora do ar ou lento (timeout de 15 s). `vieja`: já havia snapshot de versão igual ou maior. É inofensivo só no caso normal (um snapshot atrasado); mas depois de uma recarga do D1 com `--v-inicial` menor que o `d1:snapshotV` do Apps Script, **todos** os snapshots ficam `vieja` em silêncio e a célula deixa de ser atualizada: ver a regra de `--v-inicial` no fim da seção "Rollback". Corrigir e fazer qualquer gravação no app para gerar novo snapshot; conferir `/salud` |
+| Passo 3: `comparar` dá `iguales: false` ou código 3 | A carga não reflete o arquivo exportado | Não seguir. O Worker está em `solo-lectura` desde a checklist, então o D1 não deve ter recebido gravações por esta via, mas **conferir**, não presumir: `SELECT v, actualizado FROM estado` e a leitura do passo 3. Se a linha reflete a exportação (carga parcial ou hash que não bate), exportar a linha para um arquivo, comparar com `corte.estado.json` e decidir com o Pedro; só então, com ele de acordo, a chave desligada e a célula ainda íntegra, repetir os passos 1 a 3 com `--v-inicial` novo. Rollback conforme a seção acima |
+| Passo 3: a carga falha por chave primária repetida | Já existe uma linha `estado` no D1 de produção | **Não apagar.** Pode ser a única cópia de uma edição pendente de um aparelho (a célula está congelada). Exportar a linha (`SELECT json, v, actualizado FROM estado`, como no passo 3), `comparar` com `corte.estado.json` e decidir com o Pedro entre fundir (o que só existe na linha e não na célula entra na exportação nova) e descartar; qualquer `DELETE FROM estado` só depois dessa decisão e com a cópia guardada |
+| A célula e o D1 divergem na ida e volta (passo 7.4: `iguales: false`) | Alguém gravou no Apps Script com a chave desligada | **Não ligar a chave.** A célula é agora a verdade mais nova: com a chave desligada, exportar e conferir a linha do D1 (ela está congelada em `solo-lectura`), decidir com o Pedro, e só então `DELETE FROM estado` e refazer **os passos 1, 2, 3 e seguintes** (o passo 1 religa a chave e congela a célula **antes** da exportação nova; sem isso, uma gravação feita depois do export seria sobrescrita pelo primeiro snapshot) com `--v-inicial` novo (segundos atuais) |
 | `/salud` mostra `modo` diferente do que se queria | Erro de digitação em `MODO` (aviso 1) ou deploy que não subiu | Corrigir `wrangler.toml` e fazer deploy de novo; só seguir quando `/salud` mostrar a palavra certa |
 | O cadastro por chat (`cadastro-worker`) falha depois do corte | Pode estar com o código antigo (sem o protocolo) ou o Worker de estado em `solo-lectura`/fora do ar | Conferir `/salud`; se o `cadastro-worker` publicado for anterior a esta etapa, fazer deploy dele depois do dry-run (ver "Depois") |
 
