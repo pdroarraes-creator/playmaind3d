@@ -155,7 +155,15 @@ function doPost(e) {
       // pisaría la celda viva (sin versión, fusión ni fotos) con estado ajeno.
       if (!migrado_()) return json_({ ok: false, error: 'no migrado' });
       if (!datosValidos_(body.data)) return json_({ ok: false, error: 'datos invalidos' });
-      return json_(guardarSnapshot_(body.data));
+      var vSnap = versionSnapshot_(body.v);
+      if (vSnap === null) return json_({ ok: false, error: 'falta v' });
+      return json_(guardarSnapshot_(body.data, vSnap));
+    }
+    // Entrega el estado vivo de la celda para exportarlo a D1. Sólo lee y no
+    // consulta la chave: tiene que servir antes y después del corte.
+    if (body.action === 'exportarEstado') {
+      var ex = leerEstadoYV_();
+      return json_({ ok: true, data: ex.data, v: ex.v });
     }
 
     if (body.action === 'load') {
@@ -244,28 +252,54 @@ function catalogoDesdeWorker_(url) {
   }
 }
 
+var PROP_D1_SNAPSHOT_V = 'd1:snapshotV';
+
+/** Versión del snapshot como número: entero >= 0, o texto de sólo dígitos.
+    Devuelve null si no sirve. */
+function versionSnapshot_(v) {
+  if (typeof v === 'number') return (isFinite(v) && v >= 0 && Math.floor(v) === v) ? v : null;
+  if (typeof v === 'string' && /^\d+$/.test(v)) return Number(v);
+  return null;
+}
+
 /** Copia de respaldo del estado en la celda, mandada por el Worker. Sólo se
     graba si cabe en la celda; no regraba las hojas espejo ni mueve fotos
-    (el Worker ya las subió con subirFotos). */
-function guardarSnapshot_(data) {
+    (el Worker ya las subió con subirFotos). `v` es la versión del estado en
+    D1: si no es más nueva que la última grabada (d1:snapshotV) se descarta,
+    así un snapshot que llega tarde no pisa a uno más reciente. */
+function guardarSnapshot_(data, v) {
   var copia = JSON.parse(JSON.stringify(data));
   if (copia.cfg) { copia.cfg.token = ''; copia.cfg.key = ''; }
   delete copia._v;
   var txt = JSON.stringify(copia);
-  if (txt.length >= CELDA_MAX) return { ok: true, guardado: false, motivo: 'excede' };
 
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
+    // el orden se decide adentro del lock, junto con la grabación
+    var ultima = props_().getProperty(PROP_D1_SNAPSHOT_V);
+    var ultimaN = (ultima === null || ultima === undefined || ultima === '') ? -1 : Number(ultima);
+    if (Number(v) <= ultimaN) return { ok: true, guardado: false, motivo: 'vieja' };
+
+    var med = medirEstado_(txt);
+    var medida = JSON.stringify({ chars: med.chars, pct: med.pct, cuando: new Date().toISOString() });
+    if (txt.length >= CELDA_MAX) {
+      // no se graba, pero el medidor ("Ver cuánto espacio queda") muestra el desborde
+      props_().setProperty('medida:estado', medida);
+      return { ok: true, guardado: false, motivo: 'excede' };
+    }
+
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var h = ss.getSheetByName(HOJA_DATOS) || hoja_(ss, HOJA_DATOS, ['clave', 'json', 'actualizado']);
     var filas = Math.max(h.getLastRow() - 1, 1);
-    var v = h.getRange(2, 1, filas, 1).getValues();
+    var vals = h.getRange(2, 1, filas, 1).getValues();
     var fila = 0;
-    v.forEach(function (row, i) { if (row[0] === CLAVE && !fila) fila = i + 2; });
+    vals.forEach(function (row, i) { if (row[0] === CLAVE && !fila) fila = i + 2; });
     if (!fila) fila = h.getLastRow() + 1;
     h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, new Date()]]);
     invalidarCatalogo_(); // restricción 10: justo después de grabar la celda
+    props_().setProperty(PROP_D1_SNAPSHOT_V, String(v));
+    props_().setProperty('medida:estado', medida);
     return { ok: true, guardado: true };
   } finally {
     lock.releaseLock();
