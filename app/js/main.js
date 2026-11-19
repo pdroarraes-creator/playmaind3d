@@ -1,39 +1,5 @@
 "use strict";
-const $ = (s) => document.querySelector(s);
-const el = (t, a = {}, ...k) => {
-  const e = document.createElement(t);
-  for (const p in a) {
-    if (p === "html") e.innerHTML = a[p];
-    else if (p.slice(0, 2) === "on") e.addEventListener(p.slice(2), a[p]);
-    else if (a[p] !== null && a[p] !== false) e.setAttribute(p, a[p]);
-  }
-  k.flat().forEach((c) => {
-    if (c === null || c === undefined || c === false) return;
-    e.appendChild(typeof c === "object" ? c : document.createTextNode(String(c)));
-  });
-  return e;
-};
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-/** Acepta 17,80 y 17.80 por igual: acá se escribe con coma. */
-const num = (v) => {
-  if (typeof v === "number") return isFinite(v) ? v : 0;
-  const n = parseFloat(String(v == null ? "" : v).replace(",", "."));
-  return isFinite(n) ? n : 0;
-};
-const money = (v) => "$" + Math.round(v).toLocaleString("es-AR");
-const pct = (v) => (v * 100).toFixed(0) + "%";
-const hhmm = (h) => {
-  const H = Math.floor(h),
-    M = Math.round((h - H) * 60);
-  return H + "h" + (M ? " " + M + "m" : "");
-};
-const ceilTo = (v, s) => (s > 1 ? Math.ceil(v / s) * s : Math.ceil(v));
-const hoy = () => new Date().toISOString().slice(0, 10);
-/** 2026-08-30 -> 30/08. En una lista de ventas el año casi siempre sobra. */
-const fechaCorta = (d) => {
-  const m = String(d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? m[3] + "/" + m[2] : String(d || "");
-};
+import { $, el, uid, num, money, pct, hhmm, ceilTo, hoy, fechaCorta } from "./util.js";
 
 /* ---------- almacenamiento ---------- */
 const LOGO_FULL = "/assets/logo-app-full.png";
