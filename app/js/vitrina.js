@@ -2,7 +2,7 @@ import { $, el, money } from "./util.js";
 import { D } from "./estado.js";
 import { toast } from "./ui.js";
 import { calc } from "./calculo.js";
-import { verPost } from "./main.js";
+import { verPost } from "./radar.js";
 
 /* ---------- vitrina ---------- */
 function agrupado() {
