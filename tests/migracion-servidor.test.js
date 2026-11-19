@@ -45,7 +45,10 @@ function cargar(o = {}) {
   vm.createContext(ctx);
   vm.runInContext(CODIGO, ctx);
   ctx.props_ = () => ({
-    getProperty: (k) => (k in props ? props[k] : null),
+    getProperty: (k) => {
+      if (o.migradoFalla && k === "d1:migrado") throw new Error("Service invoked too many times");
+      return k in props ? props[k] : null;
+    },
     setProperty: (k, v) => { props[k] = v; },
     deleteProperty: (k) => { delete props[k]; },
   });
@@ -66,7 +69,52 @@ test("chave desligada: load responde como antes", () => {
   const { ctx, esp } = cargar();
   const r = post(ctx, { action: "load", token: "bueno" });
   assert.equal(r.ok, true);
+  assert.deepEqual(r.data, {});
+  assert.equal(r.v, "");
   assert.ok(esp.hojaLeida > 0);
+});
+
+test("chave ligada: mundo no se bloquea", () => {
+  const { ctx } = cargar({ migrado: true });
+  ctx.leerMundo_ = () => ({ x: 1 });
+  assert.deepEqual(post(ctx, { action: "mundo", token: "bueno" }), { ok: true, mundo: { x: 1 } });
+});
+
+test("si no se puede leer la chave, save falla cerrado: no graba y responde ok:false", () => {
+  const { ctx, esp } = cargar({ migradoFalla: true });
+  const r = post(ctx, { action: "save", token: "bueno", data: { produtos: [] } });
+  assert.equal(r.ok, false);
+  assert.equal(esp.setValues.length, 0);
+  assert.equal(esp.hojaLeida, 0);
+});
+
+test("si no se puede leer la chave, validarSesion y foto no dependen de ella", () => {
+  const { ctx } = cargar({ migradoFalla: true });
+  assert.deepEqual(post(ctx, { action: "validarSesion", token: "bueno" }), { ok: true });
+  assert.equal(post(ctx, { action: "foto", token: "bueno", id: "z" }).foto, "x");
+});
+
+test("si no se puede leer la chave, doGet catálogo sirve el camino viejo", () => {
+  const { ctx } = cargar({ migradoFalla: true });
+  assert.deepEqual(get(ctx, { action: "catalogo" }), { ok: true, catalogo: { piezas: ["viejo"] } });
+});
+
+test("guardarSnapshot con la chave desligada: no migrado, sin grabar ni invalidar", () => {
+  const { ctx, esp } = cargar();
+  const r = post(ctx, { action: "guardarSnapshot", token: "bueno", data: { produtos: [] } });
+  assert.deepEqual(r, { ok: false, error: "no migrado" });
+  assert.equal(esp.setValues.length, 0);
+  assert.equal(esp.orden.includes("invalidar"), false);
+  assert.equal(esp.hojaLeida, 0);
+});
+
+test("guardarSnapshot_ no muta el data del llamador", () => {
+  const { ctx } = cargar({ migrado: true });
+  const data = { cfg: { token: "secreto", key: "k" }, produtos: [], _v: "9" };
+  ctx.guardarSnapshot_(data);
+  assert.equal(data.cfg.token, "secreto");
+  assert.equal(data.cfg.key, "k");
+  assert.equal(data._v, "9");
 });
 
 test("chave ligada: las seis acciones responden migrado sin tocar la planilla", () => {
@@ -132,7 +180,7 @@ test("guardarSnapshot: graba la celda, invalida el catálogo después y limpia t
 });
 
 test("guardarSnapshot: estado de 50.000 caracteres o más no se graba", () => {
-  const { ctx, esp } = cargar();
+  const { ctx, esp } = cargar({ migrado: true });
   const data = { produtos: [{ nome: "x".repeat(50000) }] };
   const r = post(ctx, { action: "guardarSnapshot", token: "bueno", data });
   assert.deepEqual(r, { ok: true, guardado: false, motivo: "excede" });
@@ -141,7 +189,7 @@ test("guardarSnapshot: estado de 50.000 caracteres o más no se graba", () => {
 });
 
 test("guardarSnapshot: sin sesión -> clave; data inválido -> datos invalidos", () => {
-  const { ctx, esp } = cargar();
+  const { ctx, esp } = cargar({ migrado: true });
   assert.equal(post(ctx, { action: "guardarSnapshot", token: "malo", data: {} }).error, "clave");
   assert.equal(post(ctx, { action: "guardarSnapshot", token: "bueno", data: [] }).error, "datos invalidos");
   assert.equal(esp.setValues.length, 0);

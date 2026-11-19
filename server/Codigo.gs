@@ -99,7 +99,10 @@ function doGet(e) {
     // lo que él entrega. Si falla NO se cae al cache ni a la celda, porque ahí
     // los datos quedaron viejos desde la migración. Sin dirección guardada no
     // hay a dónde reenviar, así que se mantiene el camino de siempre.
-    var urlCat = migrado_() ? props_().getProperty(PROP_D1_CATALOGO) : '';
+    // Si no se puede leer la chave se sirve el camino viejo: catálogo posiblemente
+    // viejo, pero nada se corrompe (es una lectura pública).
+    var urlCat = '';
+    try { if (migrado_()) urlCat = props_().getProperty(PROP_D1_CATALOGO) || ''; } catch (e) {}
     if (urlCat) return json_(catalogoDesdeWorker_(urlCat));
     return json_({ ok: true, catalogo: catalogoCacheado_() });
   }
@@ -137,16 +140,20 @@ function doPost(e) {
     // Con la migración a D1 activa el estado vive en el Worker: estas acciones
     // ya no leen ni escriben la planilla (así una copia vieja de la app no
     // pisa nada).
-    if (migrado_() && ACCIONES_BLOQUEADAS.indexOf(body.action) !== -1) {
+    if (ACCIONES_BLOQUEADAS.indexOf(body.action) !== -1 && migrado_()) {
       return json_({ ok: false, error: 'migrado' });
     }
 
     // Las llama el Worker de D1 con el token de quien está guardando.
+    // subirFotos es inocua (sólo sube a Drive): no depende de la chave.
     if (body.action === 'subirFotos') {
       if (!datosValidos_(body.data)) return json_({ ok: false, error: 'datos invalidos' });
       return json_({ ok: true, data: moverFotosADrive_(body.data) });
     }
     if (body.action === 'guardarSnapshot') {
+      // El snapshot sólo tiene sentido después del corte a D1: antes de eso
+      // pisaría la celda viva (sin versión, fusión ni fotos) con estado ajeno.
+      if (!migrado_()) return json_({ ok: false, error: 'no migrado' });
       if (!datosValidos_(body.data)) return json_({ ok: false, error: 'datos invalidos' });
       return json_(guardarSnapshot_(body.data));
     }
@@ -202,10 +209,10 @@ var PROP_D1_CATALOGO = 'd1:catalogoUrl';
 var ACCIONES_BLOQUEADAS = ['load', 'save', 'editarPieza', 'agregarPieza',
                            'agregarFilamento', 'resumenNegocio'];
 
-function migrado_() {
-  // si no se puede leer la propiedad se sigue como antes (modo no migrado)
-  try { return props_().getProperty(PROP_D1_MIGRADO) === '1'; } catch (err) { return false; }
-}
+/** Estricta a propósito: si la propiedad no se puede leer, tira el error. En
+    doPost el catch de afuera responde ok:false (falla cerrado), así una copia
+    vieja de la app no graba en la celda abandonada por un error de cuota. */
+function migrado_() { return props_().getProperty(PROP_D1_MIGRADO) === '1'; }
 
 function activarModoD1_(activo) {
   if (activo) props_().setProperty(PROP_D1_MIGRADO, '1');
@@ -414,7 +421,11 @@ function menuD1Activar() {
   var ui = SpreadsheetApp.getUi();
   var r = ui.alert('Activar modo migrado',
     'Atención: con el modo migrado activo, las copias viejas de la app dejan de guardar ' +
-    '(la planilla ya no recibe cambios) y el catálogo sale del Worker.\n\n¿Activar?',
+    '(la planilla ya no recibe cambios) y el catálogo sale del Worker.' +
+    (props_().getProperty(PROP_D1_CATALOGO) ? '' :
+      '\n\nOJO: todavía no cargaste la dirección del catálogo en el Worker; ' +
+      'el catálogo seguiría saliendo de la planilla.') +
+    '\n\n¿Activar?',
     ui.ButtonSet.YES_NO);
   if (r !== ui.Button.YES) return;
   activarModoD1_(true);
@@ -422,8 +433,14 @@ function menuD1Activar() {
 }
 
 function menuD1Desactivar() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.alert('Desactivar modo migrado',
+    'Atención: las copias viejas de la app vuelven a escribir en la planilla (la celda vieja) ' +
+    'y el catálogo vuelve al camino anterior.\n\n¿Desactivar?',
+    ui.ButtonSet.YES_NO);
+  if (r !== ui.Button.YES) return;
   activarModoD1_(false);
-  SpreadsheetApp.getUi().alert('Modo migrado desactivado.');
+  ui.alert('Modo migrado desactivado.');
 }
 
 function menuD1Url() {
