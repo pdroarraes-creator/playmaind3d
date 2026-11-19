@@ -29,12 +29,45 @@ test("OPTIONS con origen no permitido no lleva el encabezado CORS", async () => 
 
 test("ruta desconocida responde 404 JSON", async () => {
   const r = await worker.fetch(
-    new Request("https://api.test/nada", { method: "POST", body: "x", headers: { Origin: "https://www.playmind3d.com" } }),
+    new Request("https://api.test/nada", { method: "GET", headers: { Origin: "https://www.playmind3d.com" } }),
     {}
   );
   assert.equal(r.status, 404);
   assert.deepEqual(await r.json(), { ok: false, error: "no encontrado" });
   assert.equal(r.headers.get("access-control-allow-origin"), "https://www.playmind3d.com");
+});
+
+test("POST con cuerpo que no es JSON responde error JSON sin lanzar", async () => {
+  const r = await worker.fetch(
+    new Request("https://api.test/", { method: "POST", body: "no soy json", headers: { "Content-Type": "text/plain" } }),
+    {},
+    { waitUntil() {} }
+  );
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { ok: false, error: "cuerpo invalido" });
+});
+
+test("POST sin token responde clave", async () => {
+  const r = await worker.fetch(
+    new Request("https://api.test/", { method: "POST", body: JSON.stringify({ action: "load" }) }),
+    {},
+    { waitUntil() {} }
+  );
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { ok: false, error: "clave" });
+});
+
+test("Vary: Origin siempre; Access-Control-* sólo con origen permitido", async () => {
+  for (const headers of [{ Origin: "https://malo.example" }, {}]) {
+    const r = await worker.fetch(new Request("https://api.test/salud", { headers }), {});
+    assert.equal(r.headers.get("vary"), "Origin");
+    assert.equal(r.headers.get("access-control-allow-origin"), null);
+    assert.equal(r.headers.get("access-control-allow-methods"), null);
+  }
+  const ok = await worker.fetch(new Request("https://api.test/salud", { headers: { Origin: "https://playmind3d.com" } }), {});
+  assert.equal(ok.headers.get("vary"), "Origin");
+  assert.equal(ok.headers.get("access-control-allow-origin"), "https://playmind3d.com");
+  assert.equal(ok.headers.get("access-control-allow-methods"), "GET, POST, OPTIONS");
 });
 
 test("origenPermitido", () => {
