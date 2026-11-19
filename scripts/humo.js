@@ -192,6 +192,8 @@ async function main() {
         bs.filter((b) => !b.hidden && b.offsetParent !== null).map((b) => b.dataset.tab),
       );
       if (!tabs.length) throw new Error("no se encontró ninguna pestaña visible");
+      // "cat" viene seleccionada desde el HTML: se visita al final, así el clic prueba algo
+      tabs.sort((x, y) => (x === "cat") - (y === "cat"));
       const fallas = [];
       for (const t of tabs) {
         try {
@@ -199,6 +201,17 @@ async function main() {
           await page.waitForSelector(`[role=tab][data-tab="${t}"][aria-selected="true"]`, {
             timeout: 5000,
           });
+          await page.waitForFunction(
+            (nombre) => {
+              const paneles = [...document.querySelectorAll("[id^='tab-']")];
+              const mio = document.getElementById("tab-" + nombre);
+              if (!mio || mio.hidden || mio.offsetParent === null) return false;
+              if (!mio.children.length || !mio.innerText.trim()) return false;
+              return paneles.every((p) => p === mio || p.hidden);
+            },
+            t,
+            { timeout: 5000 },
+          );
         } catch (e) {
           fallas.push(t);
         }
