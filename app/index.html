@@ -28,7 +28,7 @@
         <a class="verCat" href="/?admin=1" title="Ver el catálogo como lo ve el cliente"
           >Ver catálogo ↗</a
         >
-        <button class="salirBtn" onclick="salir()" title="Cerrar sesión en este equipo">
+        <button class="salirBtn" onclick="PM.salir()" title="Cerrar sesión en este equipo">
           Salir
         </button>
         <div class="sync" id="syncBox"><i></i><span id="syncTxt">Solo este equipo</span></div>
@@ -103,8 +103,8 @@
           />
           <div id="catList"></div>
           <div class="acts" style="margin-top: 14px">
-            <button class="btn" onclick="nuevaPieza()">+ Pieza nueva</button>
-            <button class="btn ghost" onclick="pegarLink()">Desde un link</button>
+            <button class="btn" onclick="PM.nuevaPieza()">+ Pieza nueva</button>
+            <button class="btn ghost" onclick="PM.pegarLink()">Desde un link</button>
           </div>
         </div>
       </section>
@@ -236,7 +236,7 @@
 
           <label class="f" style="margin-top: 16px">Insumos que van con la pieza</label>
           <div id="insResumen" class="chips"></div>
-          <button class="btn ghost mini" style="margin-top: 8px" onclick="abrirInsumos()">
+          <button class="btn ghost mini" style="margin-top: 8px" onclick="PM.abrirInsumos()">
             Elegir insumos
           </button>
 
@@ -276,7 +276,7 @@
             </div>
           </div>
           <div class="acts" style="margin-top: 11px">
-            <button class="btn ghost mini" onclick="buscarMercado()">Ver a cuánto lo venden</button>
+            <button class="btn ghost mini" onclick="PM.buscarMercado()">Ver a cuánto lo venden</button>
             <span class="mut"
               >Anotá lo que cobran otros por algo parecido. Sirve para saber si estás cara o
               regalada.</span
@@ -311,11 +311,11 @@
           </div>
           <div class="acts" style="margin-top: 16px">
             <button class="btn" id="bSave">Guardar pieza</button>
-            <button class="btn ghost" onclick="addAlPedido()">Sumar al pedido</button>
+            <button class="btn ghost" onclick="PM.addAlPedido()">Sumar al pedido</button>
             <button class="btn danger mini" id="bDel" hidden>Borrar</button>
           </div>
           <div class="acts" style="margin-top: 10px">
-            <button class="btn ghost mini" onclick="gastoSinVenta()">
+            <button class="btn ghost mini" onclick="PM.gastoSinVenta()">
               La imprimí sin venderla
             </button>
             <span class="mut"
@@ -380,18 +380,18 @@
         </div>
         <div class="card">
           <div class="acts">
-            <button class="btn" onclick="enviarPresupuesto()">Enviar presupuesto (PDF)</button>
-            <button class="btn ghost" onclick="mandarWA()">Mandar por WhatsApp</button>
-            <button class="btn ghost" onclick="registrarVenta()">Registrar como venta</button>
-            <button class="btn danger mini" onclick="vaciarPedido()">Vaciar</button>
+            <button class="btn" onclick="PM.enviarPresupuesto()">Enviar presupuesto (PDF)</button>
+            <button class="btn ghost" onclick="PM.mandarWA()">Mandar por WhatsApp</button>
+            <button class="btn ghost" onclick="PM.registrarVenta()">Registrar como venta</button>
+            <button class="btn danger mini" onclick="PM.vaciarPedido()">Vaciar</button>
           </div>
         </div>
         <div class="card" id="presuListo" hidden>
           <h2 id="presuListoTit">PDF listo</h2>
           <p class="hint">Tocá Compartir y elegí el contacto en WhatsApp.</p>
           <div class="acts">
-            <button class="btn" onclick="compartirPresupuesto()">Compartir PDF</button>
-            <button class="btn ghost" onclick="descargarPresupuesto()">Descargar</button>
+            <button class="btn" onclick="PM.compartirPresupuesto()">Compartir PDF</button>
+            <button class="btn ghost" onclick="PM.descargarPresupuesto()">Descargar</button>
           </div>
         </div>
       </section>
@@ -412,10 +412,10 @@
         </div>
         <div class="card">
           <div class="acts">
-            <button class="btn" onclick="compartirVitrina()">
+            <button class="btn" onclick="PM.compartirVitrina()">
               Mandar el catálogo por WhatsApp
             </button>
-            <button class="btn ghost" onclick="bajarVitrina()">
+            <button class="btn ghost" onclick="PM.bajarVitrina()">
               Bajar catálogo para compartir
             </button>
           </div>
@@ -451,10 +451,10 @@
           </div>
           <div id="radList"></div>
           <div class="acts" style="margin-top: 14px">
-            <button class="btn" onclick="abrirPegar()">Pegar radar del mes</button>
-            <button class="btn ghost" onclick="pegarLink()">Pegar un link</button>
-            <button class="btn ghost" onclick="nuevaIdea()">+ Idea</button>
-            <button class="btn ghost" id="bSemilla" onclick="cargarRadarAgosto()">
+            <button class="btn" onclick="PM.abrirPegar()">Pegar radar del mes</button>
+            <button class="btn ghost" onclick="PM.pegarLink()">Pegar un link</button>
+            <button class="btn ghost" onclick="PM.nuevaIdea()">+ Idea</button>
+            <button class="btn ghost" id="bSemilla" onclick="PM.cargarRadarAgosto()">
               Cargar radar de agosto 2026
             </button>
           </div>
@@ -467,7 +467,7 @@
           </p>
           <div id="mundoList"></div>
           <div class="acts" style="margin-top: 12px">
-            <button class="btn ghost" onclick="traerMundo()">Traer lo último</button>
+            <button class="btn ghost" onclick="PM.traerMundo()">Traer lo último</button>
           </div>
         </div>
 
@@ -484,10 +484,10 @@
 
       <!-- ========= VENTAS ========= -->
       <section id="tab-ven" hidden>
-        <button class="btn wide vender" onclick="abrirPOS()">Vender ahora</button>
+        <button class="btn wide vender" onclick="PM.abrirPOS()">Vender ahora</button>
         <div class="acts salirventa" style="margin: -4px 0 13px">
-          <button class="btn ghost mini" onclick="salirModoVenta()">Ir al sistema completo</button>
-          <button class="btn danger mini" onclick="salir()">Cerrar sesión</button>
+          <button class="btn ghost mini" onclick="PM.salirModoVenta()">Ir al sistema completo</button>
+          <button class="btn danger mini" onclick="PM.salir()">Cerrar sesión</button>
         </div>
 
         <div class="result">
@@ -530,13 +530,13 @@
           </p>
           <p id="quienSoy" class="mut" style="margin: 0 0 12px"></p>
           <div class="acts">
-            <button class="btn ghost mini" onclick="traerDeLaNubeManual()">Traer de la nube</button>
-            <button class="btn ghost mini" onclick="subirAhora()">Subir ahora</button>
-            <button class="btn ghost mini" onclick="exportar()">Copia de seguridad</button>
+            <button class="btn ghost mini" onclick="PM.traerDeLaNubeManual()">Traer de la nube</button>
+            <button class="btn ghost mini" onclick="PM.subirAhora()">Subir ahora</button>
+            <button class="btn ghost mini" onclick="PM.exportar()">Copia de seguridad</button>
             <button class="btn ghost mini" onclick="document.getElementById('fImp').click()">
               Restaurar
             </button>
-            <button class="btn danger mini" onclick="salir()">Cerrar sesión</button>
+            <button class="btn danger mini" onclick="PM.salir()">Cerrar sesión</button>
             <input type="file" id="fImp" accept="application/json" hidden />
           </div>
         </div>
@@ -577,10 +577,10 @@
             <button
               class="btn danger mini"
               onclick="
-                D.cfg.logo = LOGO;
-                save();
-                pintarMarca();
-                toast('Volvió el logo original.');
+                PM.D.cfg.logo = PM.LOGO;
+                PM.save();
+                PM.pintarMarca();
+                PM.toast('Volvió el logo original.');
               "
             >
               Restaurar logo
@@ -614,10 +614,10 @@
               <button
                 class="btn danger mini"
                 onclick="
-                  D.cfg.leti.foto = '';
-                  save();
-                  pintarLeti();
-                  toast('Se sacó la foto. Vuelve el dibujo de siempre.');
+                  PM.D.cfg.leti.foto = '';
+                  PM.save();
+                  PM.pintarLeti();
+                  PM.toast('Se sacó la foto. Vuelve el dibujo de siempre.');
                 "
               >
                 Quitar foto
@@ -692,8 +692,8 @@
           />
           <div id="filList"></div>
           <div class="acts" style="margin-top: 11px">
-            <button class="btn ghost mini" onclick="addFil()">+ Filamento</button>
-            <button class="btn ghost mini" onclick="abrirChatCad()">💬 Com foto (Mind)</button>
+            <button class="btn ghost mini" onclick="PM.addFil()">+ Filamento</button>
+            <button class="btn ghost mini" onclick="PM.abrirChatCad()">💬 Com foto (Mind)</button>
           </div>
         </div>
 
@@ -701,7 +701,7 @@
           <h2><i class="dot" style="background: var(--sand)"></i> Impresoras</h2>
           <p class="hint">Se usa para calcular cuánto se gasta la máquina en cada impresión.</p>
           <div id="impList"></div>
-          <button class="btn ghost mini" style="margin-top: 11px" onclick="addImp()">
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="PM.addImp()">
             + Impresora
           </button>
         </div>
@@ -719,7 +719,7 @@
           </div>
           <input type="search" id="qIns" class="buscador" placeholder="Buscar insumo…" />
           <div id="insList"></div>
-          <button class="btn ghost mini" style="margin-top: 11px" onclick="addIns()">
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="PM.addIns()">
             + Insumo
           </button>
         </div>
@@ -731,7 +731,7 @@
             en la misma tanda. Aparecen arriba de todo en el catálogo.
           </p>
           <div id="packList"></div>
-          <button class="btn ghost mini" style="margin-top: 11px" onclick="addPack()">
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="PM.addPack()">
             + Pack
           </button>
         </div>
@@ -743,7 +743,7 @@
             el catálogo. Sacá el visto para esconderlo sin borrarlo.
           </p>
           <div id="opiList"></div>
-          <button class="btn ghost mini" style="margin-top: 11px" onclick="addOpi()">
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="PM.addOpi()">
             + Comentario
           </button>
         </div>
@@ -755,7 +755,7 @@
             sí.
           </p>
           <div id="canList"></div>
-          <button class="btn ghost mini" style="margin-top: 11px" onclick="addCanal()">
+          <button class="btn ghost mini" style="margin-top: 11px" onclick="PM.addCanal()">
             + Canal
           </button>
         </div>
@@ -783,7 +783,7 @@
             autocomplete="current-password"
             placeholder="Tu clave"
           />
-          <button type="button" class="verClave" id="bVerClave" tabindex="-1" onclick="alternarClave()">
+          <button type="button" class="verClave" id="bVerClave" tabindex="-1" onclick="PM.alternarClave()">
             Ver
           </button>
         </div>
@@ -799,7 +799,7 @@
     <div class="pos" id="pos" hidden>
       <header>
         <h2>Punto de venta</h2>
-        <button class="cerrarpos" onclick="cerrarPOS()" title="Cerrar">×</button>
+        <button class="cerrarpos" onclick="PM.cerrarPOS()" title="Cerrar">×</button>
       </header>
       <div class="posbuscar"><input id="posQ" type="search" placeholder="Buscar la pieza…" /></div>
       <div class="posgrid" id="posGrid"></div>
@@ -834,12 +834,12 @@
         <button
           class="expandirMind"
           id="mindExpandir"
-          onclick="alternarTamanoMind()"
+          onclick="PM.alternarTamanoMind()"
           title="Agrandar"
         >
           ⤢
         </button>
-        <button class="cerrarpos" onclick="cerrarChatCad()" title="Cerrar">×</button>
+        <button class="cerrarpos" onclick="PM.cerrarChatCad()" title="Cerrar">×</button>
       </header>
       <div class="chatDica" id="chatDica">
         <p>
@@ -858,7 +858,7 @@
           class="btn wide vender"
           id="chatConfirmar"
           hidden
-          onclick="confirmarChatCad()"
+          onclick="PM.confirmarChatCad()"
           style="margin-bottom: 10px"
         >
           Confirmar cadastro
@@ -888,21 +888,21 @@
             type="text"
             id="chatInput"
             placeholder="Escribí, pegá una foto o el link…"
-            onkeydown="if(event.key==='Enter') enviarChatCad();"
+            onkeydown="if(event.key==='Enter') PM.enviarChatCad();"
           />
-          <button class="btn mini" id="chatEnviarBtn" onclick="enviarChatCad()">Enviar</button>
+          <button class="btn mini" id="chatEnviarBtn" onclick="PM.enviarChatCad()">Enviar</button>
         </div>
         <div class="chatFoto" id="chatFoto" hidden>
           <img id="chatFotoPrev" alt="" />
           <span>Foto lista para mandar</span>
-          <button type="button" onclick="quitarFotoChat()" title="Sacar la foto">×</button>
+          <button type="button" onclick="PM.quitarFotoChat()" title="Sacar la foto">×</button>
         </div>
       </div>
     </div>
 
     <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 
-    <button class="mindFab" id="mindFab" onclick="abrirChatCad()" aria-label="Hablá con la Mind">
+    <button class="mindFab" id="mindFab" onclick="PM.abrirChatCad()" aria-label="Hablá con la Mind">
       <i>🧠</i><span>Hablá con la Mind</span>
     </button>
 
@@ -913,6 +913,6 @@
     <script src="calculo.js"></script>
     <script src="presupuesto.js"></script>
     <script src="presupuesto-pdf.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>

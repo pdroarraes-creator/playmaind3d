@@ -242,6 +242,24 @@ async function main() {
       chequeo("(c) save con el valor nuevo", false, e.message.split("\n")[0]);
     }
 
+    // (c2) todo handler inline del HTML existe como función en window.PM
+    try {
+      const html = fs.readFileSync(path.join(RAIZ, "app/index.html"), "utf8");
+      const nombres = new Set();
+      for (const m of html.matchAll(/\bon[a-z]+\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+        const js = (m[1] !== undefined ? m[1] : m[2]).replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, "''");
+        for (const c of js.matchAll(/(?<![\w$.])PM\.([A-Za-z_$][\w$]*)\s*\(/g)) nombres.add(c[1]);
+      }
+      if (!nombres.size) throw new Error("no se encontró ningún PM.x() en el HTML");
+      const faltan = await page.evaluate(
+        (ns) => ns.filter((n) => !window.PM || typeof window.PM[n] !== "function"),
+        [...nombres],
+      );
+      chequeo("(c2) window.PM tiene los " + nombres.size + " handlers del HTML", !faltan.length, faltan.length ? "faltan: " + faltan.join(",") : "");
+    } catch (e) {
+      chequeo("(c2) window.PM tiene los handlers del HTML", false, e.message.split("\n")[0]);
+    }
+
     // (d) cero errores durante todo el recorrido
     chequeo("(d) cero errores de página/consola", !errores.length, errores.join(" | "));
   } catch (e) {

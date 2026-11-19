@@ -4620,3 +4620,55 @@ if ("serviceWorker" in navigator) {
   }
   ideaCompartida();
 })();
+
+/* ---------- PM: puente para los handlers inline del HTML ---------- */
+/* Este archivo es un módulo: sus funciones no son globales. Los on*="..." de
+ * index.html llaman PM.nombre(). D se reasigna al sincronizar, por eso va como getter. */
+window.PM = {
+  get D() {
+    return D;
+  },
+  LOGO,
+  salir,
+  alternarClave,
+  nuevaPieza,
+  abrirInsumos,
+  buscarMercado,
+  addAlPedido,
+  gastoSinVenta,
+  pegarLink,
+  abrirPegar,
+  nuevaIdea,
+  cargarRadarAgosto,
+  traerMundo,
+  enviarPresupuesto,
+  mandarWA,
+  registrarVenta,
+  vaciarPedido,
+  compartirPresupuesto,
+  descargarPresupuesto,
+  compartirVitrina,
+  bajarVitrina,
+  abrirPOS,
+  salirModoVenta,
+  cerrarPOS,
+  traerDeLaNubeManual,
+  subirAhora,
+  exportar,
+  addFil,
+  addImp,
+  addIns,
+  addPack,
+  addOpi,
+  addCanal,
+  abrirChatCad,
+  alternarTamanoMind,
+  cerrarChatCad,
+  confirmarChatCad,
+  enviarChatCad,
+  quitarFotoChat,
+  save,
+  pintarMarca,
+  pintarLeti,
+  toast,
+};
