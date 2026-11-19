@@ -270,3 +270,4 @@ cutover se decide depois, com o staging ensaiado.
   deslogaria a família inteira por uma indisponibilidade.
 - **Etapa 1 em dois planos:** 1a (API do Worker, ações novas do Apps Script, staging) e 1b
   (cutover, app, página da raiz, rollback ensaiado). Só o 1b muda o que a família usa.
+- **Clientes antigos:** um cliente antigo não tem o código para mostrar "Actualizá la app"; o que ele faz com `migrado` é mostrar uma mensagem enganosa e continuar tentando; a saída é a atualização do service worker (ver docs/migracion-d1.md).
