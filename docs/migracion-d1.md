@@ -35,3 +35,66 @@ Ensaio feito com o estado real do Pedro, carregado só em `playmind-staging` (`p
 - Dados reais ficam só em `datos-privados/` (ignorado pelo git).
 - Etapa 1a: `api-worker/src/fusionar.js` porta `fusionar_` do Apps Script (cliente vence, o que só o servidor tem é preservado, vendas da mais nova para a mais velha); não muta as entradas.
 - `api-worker/test/fusionar.test.js` carrega `server/Codigo.gs` num `vm` e compara as duas versões em 100 pares gerados (semente fixa): mexeu em uma, mexa na outra.
+
+## Etapa 1a: Worker de staging com a API completa (2026-11-19)
+
+**O que a 1a entrega:** o Worker `playmind3d-api` (staging, banco `playmind-staging`) com `GET /salud`, catálogo público (`GET /catalogo` e `GET /?action=catalogo`, calculado na leitura com `Calculo`), e `POST` com as ações `load`, `save`, `editarPieza`, `agregarPieza`, `agregarFilamento` e `resumenNegocio`. A sessão é verificada contra o `validarSesion` do Apps Script: sem token válido nada de dados sai (sem atalho, nem em staging). O app **não** foi ligado: continua falando só com o Apps Script. A produção (`playmind-prod`, `[env.prod]`) não foi publicada.
+
+- URL de staging: https://playmind3d-api.pdroarraes.workers.dev
+- Publicado com `npx wrangler deploy --env=""` a partir de `api-worker/`. Versão: `ceafb32a-79c5-42a2-95db-bf1364f1acf8`. Pacote: 25,50 KiB (gzip 7,96 KiB), contém o código de preço; muito abaixo de 1 MiB. Início do Worker: 2 ms.
+
+### Verificação feita (curl)
+
+- `GET /salud` -> 200 `{"ok":true}`.
+- `POST {"action":"load"}` sem token -> 200 `{"ok":false,"error":"clave"}`.
+- `POST` com corpo que não é JSON -> 200 `{"ok":false,"error":"cuerpo invalido"}`.
+- `OPTIONS` com `Origin: https://playmind3d.com` -> 204, `access-control-allow-origin: https://playmind3d.com`, `vary: Origin`.
+- `GET /catalogo` -> 200 `{"ok":true,"catalogo":{...}}` com `access-control-allow-origin: *`.
+
+### Catálogo comparado (só contagens)
+
+Staging `/catalogo` contra `?action=catalogo` do Apps Script de produção (mesmo `GET`), peça a peça por `nome`:
+
+| Item | Staging | Apps Script |
+|---|---|---|
+| Peças | 43 | 43 |
+| Só de um lado | 0 | 0 |
+| Preço diferente | 0 | |
+| Outros campos diferentes | 0 | |
+
+`opiniones`, `marca`, `wa`, `colores`, `packs` e `leti` também idênticos. Era esperado poder haver diferenças de preço vindas das divergências do `calcular_` antigo (o Apps Script de produção ainda não foi republicado); com o estado de hoje nenhuma peça cai nesses casos, então o resultado não prova nada sobre eles (isso fica coberto por `tests/calculo-paridad.test.js`).
+
+Tempos (do sandbox, via proxy): staging 0,26 s na 1a chamada e 0,22 s na 2a; Apps Script 4,26 s. A resposta de staging não traz `cf-cache-status`, então **não deu para confirmar** que a 2a veio de cache (a diferença de tempo é pequena demais para concluir; o Worker calcula em ~0,03 ms de qualquer forma).
+
+### Fumaça com o Pedro (Passo 4: **ainda não feito**, precisa do token dele)
+
+Colar no console do navegador **em `https://playmind3d.com/app/`** (origem permitida). O token é lido do `localStorage` e nunca é impresso; os dados também não. O Pedro cola de volta só as duas linhas impressas.
+
+```js
+(async () => {
+  const URL_API = "https://playmind3d-api.pdroarraes.workers.dev/";
+  const token = JSON.parse(localStorage.getItem("playmind3d:v2")).cfg.token;
+  const post = async (cuerpo) => (await fetch(URL_API, { method: "POST", body: JSON.stringify(cuerpo) })).json();
+  const l = await post({ action: "load", token });
+  const d = l.data || {};
+  console.log({ ok: l.ok, error: l.error, v: l.v, produtos: (d.produtos || []).length, vendas: (d.vendas || []).length });
+  if (!l.ok) return;
+  const s = await post({ action: "save", token, v: l.v, data: l.data });
+  console.log({ ok: s.ok, error: s.error, fusionado: s.fusionado, v: s.v });
+})().catch((e) => console.log({ ok: false, error: String(e && e.message || e) }));
+```
+
+Como ler a saída:
+1. Primeira linha: `{ ok: true, error: undefined, v: "1", produtos: 43, vendas: 9 }`. As contagens têm que ser as do estado de staging (43 peças, 9 vendas); `v` vem como texto. Se vier `ok: false, error: "clave"`, o token da sessão não foi aceito (sessão vencida: entrar de novo no app).
+2. Segunda linha: `{ ok: true, error: undefined, fusionado: false, v: "2" }`: o `save` deu certo sem fusão e a versão subiu uma.
+
+O `save` regrava no staging o mesmo estado que veio do `load` (só sobe `v`). Verificado só o que dá sem token: a sintaxe (`node --check`) e uma rodada em Node contra a URL real com token falso e `localStorage` simulado, que imprimiu `{ ok: false, error: 'clave', v: undefined, produtos: 0, vendas: 0 }` e parou sem lançar erro.
+
+### O que o 1b precisa saber
+
+- O Worker **não** faz login, logout, foto nem "mundo": o app terá que falar com dois servidores (Worker para estado e catálogo, Apps Script para o resto).
+- `SNAPSHOT` está `"off"`; a ação `guardarSnapshot` do Apps Script só grava quando o dono ligar `d1:migrado`.
+- O Apps Script precisa ser republicado (Implementar > Administrar implementaciones > lápis > Versão: NUEVA) com as ações novas `subirFotos` e `guardarSnapshot` antes de `subirFotos` funcionar; não foram exercitadas aqui.
+- CORS: a rota do catálogo responde `*` (pública); o `POST` só aceita a lista de origens (`playmind3d.com`, `www`, mais `ORIGENES_EXTRA`).
+- `v` volta como texto (`"1"`), e o app deve devolvê-lo como veio no `save`.
+- O staging guarda o estado real do dono: o `save` do teste de fumaça muda `v` lá. Quem decide limpar a linha é o dono.
