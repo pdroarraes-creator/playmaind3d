@@ -2,6 +2,7 @@
 // objeto { ok: true, ... } o { ok: false, error }; el HTTP lo arma index.js.
 import { leerEstado, guardarConFusion } from "./estado.js";
 import { contieneFotosNuevas, subirFotos } from "./fotos.js";
+import { snapshotTrasGrabar } from "./snapshot.js";
 import { editarPieza, agregarPieza, agregarFilamento, resumenNegocio } from "./acciones.js";
 
 // La versión llega del cliente como cualquier cosa ("", un sello de hora del
@@ -19,18 +20,8 @@ function esObjeto(x) {
   return x !== null && typeof x === "object" && !Array.isArray(x);
 }
 
-// Copia de seguridad de mejor esfuerzo en el Apps Script; nunca rechaza.
-function enviarSnapshot(ctx, data) {
-  try {
-    const p = ctx.fetchFn(ctx.env.APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "guardarSnapshot", token: ctx.token, data }),
-    });
-    ctx.esperar(Promise.resolve(p).catch(() => {}));
-  } catch {
-    // el snapshot nunca cambia la respuesta
-  }
-}
+// Acciones que modifican el estado: con MODO "solo-lectura" se rechazan.
+export const ESCRIBEN = ["save", "editarPieza", "agregarPieza", "agregarFilamento"];
 
 export const ACCIONES = {
   async load(_body, ctx) {
@@ -45,7 +36,7 @@ export const ACCIONES = {
     if (contieneFotosNuevas(data)) data = await subirFotos(ctx.env, ctx.token, data, ctx.fetchFn);
     const r = await guardarConFusion(ctx.db, data, baseV);
     if (!r.ok) return { ok: false, error: r.error };
-    if (ctx.env.SNAPSHOT === "on") enviarSnapshot(ctx, r.data);
+    snapshotTrasGrabar(ctx, r);
     return {
       ok: true,
       actualizado: new Date(ctx.ahora()).toISOString(),
@@ -69,6 +60,9 @@ export async function manejarPost(body, ctx) {
     if (!sesion.ok) return sesion;
     if (typeof body.action !== "string" || !Object.hasOwn(ACCIONES, body.action)) {
       return { ok: false, error: "accion desconocida" };
+    }
+    if (ctx.env.MODO === "solo-lectura" && ESCRIBEN.includes(body.action)) {
+      return { ok: false, error: "revertido" };
     }
     return await ACCIONES[body.action](body, { ...ctx, token });
   } catch (err) {

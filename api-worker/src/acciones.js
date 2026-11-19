@@ -3,6 +3,7 @@
 // mismas respuestas. Cada una lee { data, v }, modifica y guarda con fusión.
 import { leerEstado, guardarConFusion } from "./estado.js";
 import { contieneFotosNuevas, subirFotos } from "./fotos.js";
+import { snapshotTrasGrabar } from "./snapshot.js";
 import Calculo from "./calculo.js";
 
 const CAMPOS_EDITABLES = ["desc", "detalle", "medida", "tags", "cat"];
@@ -25,7 +26,9 @@ const n = (x) => {
 // Guarda y devuelve la respuesta de éxito, o el conflicto tal cual.
 async function guardar(ctx, data, v, exito) {
   const r = await guardarConFusion(ctx.db, data, v);
-  return r.ok ? exito : r;
+  if (!r.ok) return r;
+  snapshotTrasGrabar(ctx, r);
+  return exito;
 }
 
 export async function editarPieza(body, ctx) {

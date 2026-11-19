@@ -2,6 +2,7 @@ import { encabezadosCors } from "./cors.js";
 import { manejarPost } from "./rutas.js";
 import { verificarSesion } from "./sesion.js";
 import { manejarCatalogo } from "./catalogo.js";
+import { leerUltimoSnapshot } from "./snapshot.js";
 
 function json(datos, status, cors) {
   return new Response(JSON.stringify(datos), {
@@ -16,7 +17,16 @@ export default {
     const { pathname } = new URL(request.url);
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-    if (request.method === "GET" && pathname === "/salud") return json({ ok: true }, 200, cors);
+    if (request.method === "GET" && pathname === "/salud") {
+      const modo = env.MODO === "solo-lectura" ? "solo-lectura" : "escritura";
+      let snapshot = null;
+      try {
+        snapshot = await leerUltimoSnapshot(env.DB);
+      } catch {
+        // la salud nunca falla por el registro
+      }
+      return json({ ok: true, modo, snapshot }, 200, cors);
+    }
 
     // Catálogo público: sin sesión y con CORS abierto (lo ve cualquiera, a propósito).
     const { searchParams } = new URL(request.url);
