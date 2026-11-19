@@ -111,6 +111,10 @@ const TTL_POR_DEFECTO = 900;
 // cache se invalida solo y nunca se sirve un precio más viejo que la última
 // grabación. Se lee `v` ANTES que el estado: si una grabación llega en medio, el
 // catálogo calculado es más nuevo que la clave (inofensivo), nunca más viejo.
+// Nota (verificada el 2026-11-19, ver docs/migracion-d1-limites.md, "Cache API em workers.dev"):
+// la documentación de Cloudflare sólo garantiza operaciones de `cache` funcionales en Workers con
+// dominio propio; no menciona `*.workers.dev`. Este cache es inofensivo, pero puede ser un no-op
+// mientras el Worker viva en workers.dev (hasta tener dominio propio).
 export async function catalogoCacheado(db, cache, { ttl = TTL_POR_DEFECTO } = {}) {
   const v = await leerVersion(db);
   const req = new Request(`https://cache.playmind3d.invalid/catalogo?v=${v}`);
