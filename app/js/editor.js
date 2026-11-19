@@ -5,7 +5,8 @@ import { calc, prod, gramosCon, unitario } from "./calculo.js";
 import { consumoDe, aplicarConsumo, alertasStock } from "./stock.js";
 import { fotosTmp, setFotosTmp, pintarFoto } from "./fotos.js";
 import { renderCat, filName } from "./catalogo.js";
-import { save, cerrarSheet } from "./main.js";
+import { save } from "./main.js";
+import { cerrarSheet } from "./ventas.js";
 
 export let editId = null;
 export let insumosSel = {};

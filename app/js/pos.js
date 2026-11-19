@@ -2,7 +2,8 @@ import { $, el, uid, num, money, pct, hoy } from "./util.js";
 import { D } from "./estado.js";
 import { toast, showTab, renderAll } from "./ui.js";
 import { calc, prod } from "./calculo.js";
-import { save, MODO_VENTA, aplicarVenta } from "./main.js";
+import { save, MODO_VENTA } from "./main.js";
+import { aplicarVenta } from "./ventas.js";
 
 /* ---------- punto de venta ---------- */
 var POS = {},

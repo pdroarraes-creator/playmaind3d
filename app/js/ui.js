@@ -1,12 +1,12 @@
 import { D } from "./estado.js";
 import { $ } from "./util.js";
 import {
-  renderVen,
   renderRad,
   renderAccesos,
   renderCfgLists,
 } from "./main.js";
 import { renderPed } from "./pedido.js";
+import { renderVen } from "./ventas.js";
 import { renderVit } from "./vitrina.js";
 import { renderCat, filName } from "./catalogo.js";
 import { renderCalc, fillSel, insumosInputs, insumosSel } from "./editor.js";
