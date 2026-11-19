@@ -881,9 +881,10 @@ function calcular_(p, data) {
     return isFinite(v) ? v : 0;
   };
   var buscar = function (lista, id) {
-    var out = null;
-    (lista || []).forEach(function (x) { if (x.id === id) out = x; });
-    return out;
+    // Gana el PRIMERO con ese id: mismo criterio que find en app/calculo.js.
+    var l = lista || [];
+    for (var i = 0; i < l.length; i++) { if (l[i].id === id) return l[i]; }
+    return null;
   };
   // Si la pieza apunta a un filamento/impresora que ya no existe (se borró y
   // la pieza quedó apuntando al vacío), se cae al primero de la lista, IGUAL
