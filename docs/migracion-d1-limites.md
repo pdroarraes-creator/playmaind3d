@@ -49,17 +49,56 @@ contam. Um índice soma uma linha escrita por escrita.
 O tempo de CPU não conta a espera por rede nem por consultas ao D1, só a
 execução do código (inclui serializar JSON e calcular preços).
 
+## Verificação do bundle (2026-11-19)
+
+O `wrangler deploy --dry-run` da fase A não provava nada sobre o cálculo, porque
+`src/index.js` ainda não importa `src/calculo.js`. Verificação direta:
+`npx esbuild src/calculo.js --bundle --format=esm --outfile=/tmp/calculo-bundle.mjs`
+(de `api-worker/`) gerou 4,6 kB sem erro. O export padrão do bundle tem
+`calcular` como função e devolve o mesmo resultado que `app/calculo.js`: os 217
+casos de `tests/fixtures/calculo-dorados.json` batem com o esperado. O bundle
+não foi commitado e `src/index.js` não foi alterado.
+
+## Medição com o estado real (2026-11-19)
+
+Estado real: 34.447 caracteres, 43 peças. Medido em Node 22 com
+`Calculo.calcular(pieza, D)` sobre todas as peças por "passada de catálogo":
+50 passadas de aquecimento e 300 medidas.
+
+| Catálogo | Peças | Mediana | p95 |
+|---|---|---|---|
+| Real | 43 | 0,029 ms | 0,073 ms |
+| 10x maior | 430 | 0,077 ms | 0,168 ms |
+
+Além disso, `JSON.parse` do estado inteiro: mediana 0,073 ms, p95 0,144 ms.
+
+Comparação:
+- Limite de CPU do plano gratuito: 10 ms por requisição. Calcular o catálogo
+  inteiro na leitura usa menos de 1% disso (mesmo com 10x peças e o parse,
+  fica abaixo de 0,5 ms em Node).
+- Limite de linha do D1: 2.000.000 bytes. O estado ocupa 1,72% (34.447 caracteres).
+- Os 34.447 caracteres já são 69% da célula de 50.000 do Sheets (gatilho de
+  70% próximo); no D1 esse teto deixa de existir.
+
+Aviso: os tempos são de Node, só uma **estimativa** da CPU num Worker (outro
+motor de execução, outro hardware, e sem o custo de inicialização do isolate
+nem de montar a resposta HTTP).
+
+### Conclusão sobre o catálogo pré-calculado no save
+
+Com estes números, **calcular na leitura cabe com folga larga** (duas ordens de
+grandeza abaixo de 10 ms). O pré-cálculo no save, como otimização de CPU, **não
+é necessário** para este volume. Ele continua tendo um argumento que não é de
+CPU: guardar o preço calculado no momento do save evita divergência se a fórmula
+mudar entre a gravação e a leitura, e permite cachear a resposta pública. A
+decisão pode ser revista na Etapa 1: o mais simples é calcular na leitura (uma
+única fonte da fórmula, `app/calculo.js`) e só pré-calcular se uma medição no
+Worker real mostrar CPU perto do limite.
+
 ## Não confirmado
 
-- Tamanho do estado real do Pedro (`chars`) e tempo real de `Calculo.calcular`
-  sobre as peças dele: depende do estado exportado, ainda não entregue
-  (Passos 4 e 5 da Task 6). Os números do plano gratuito acima são o contexto
-  para comparar.
+- Tempo real de CPU num Worker (só há estimativa em Node); medir com o Worker
+  de staging quando houver endpoint de catálogo.
 - Se a conta do Pedro está mesmo no plano Workers Free: não verificado aqui.
 - A página de limites do D1 não diz qual é o limite de linhas escritas por
   *transação/lote*; só valem as cotas diárias acima.
-
-## Decisão "catálogo pré-calculado no save"
-
-Ainda **sem conclusão**: depende da medição do Passo 5 com o estado real. O
-limite de 10 ms de CPU por requisição do plano gratuito é o número a vencer.
