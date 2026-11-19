@@ -9,6 +9,7 @@ ORIGENES_EXTRA = ""
 # Apps Script (URL pública, no es un secreto): verifica sesiones y recibe el snapshot
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec"
 # "on" manda una copia de seguridad al Apps Script después de cada save
+# En staging SNAPSHOT queda siempre en off: este Worker apunta al Apps Script de producción y, con la chave d1:migrado encendida, un snapshot de staging pisaría la celda de rollback real.
 SNAPSHOT = "off"
 
 # Configuración de arriba = staging

@@ -33,7 +33,10 @@ export async function subirFotos(env, token, data, fetchFn) {
     const res = await f(env.APPS_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({ action: "subirFotos", token, data }),
-      signal: AbortSignal.timeout(20000),
+      // 45 s: un save con varias fotos al Apps Script, con arranque en frío, puede pasar de 20 s.
+      // Si se aborta, el Apps Script sigue corriendo: los archivos de Drive quedan huérfanos y el
+      // reintento del cliente sube duplicados (aceptado: es raro con 3 usuarios).
+      signal: AbortSignal.timeout(45000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     datos = JSON.parse(await res.text());
