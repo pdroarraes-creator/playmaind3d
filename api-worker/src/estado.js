@@ -10,6 +10,8 @@ export async function leerEstado(db) {
 }
 
 export async function guardarEstado(db, data, baseV) {
+  // baseV viene de JSON no confiable: se valida antes de tocar la base
+  if (!Number.isInteger(baseV) || baseV < 0) throw new TypeError("baseV inválido");
   // copia: no se muta lo que pasó quien llama
   const limpio = structuredClone(data);
   // el token de sesión es del navegador, no del negocio: no se archiva

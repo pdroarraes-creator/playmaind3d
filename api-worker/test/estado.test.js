@@ -67,3 +67,12 @@ test("crearD1 devuelve un banco nuevo y aislado", async () => {
   await guardarEstado(a, { a: 1 }, 0);
   assert.deepEqual(await leerEstado(b), { data: null, v: 0 });
 });
+
+test("baseV inválido lanza TypeError y no toca la fila guardada", async () => {
+  for (const malo of ["1", undefined, null, -1, 1.5, NaN]) {
+    const db = crearD1();
+    await guardarEstado(db, { a: 1 }, 0);
+    await assert.rejects(() => guardarEstado(db, { a: 2 }, malo), TypeError);
+    assert.deepEqual(await leerEstado(db), { data: { a: 1 }, v: 1 }, `baseV=${String(malo)}`);
+  }
+});

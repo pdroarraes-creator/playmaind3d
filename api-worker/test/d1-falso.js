@@ -10,8 +10,12 @@ process.emitWarning = (w, ...resto) => {
   if (msg && msg.includes("SQLite")) return;
   return emitOriginal.call(process, w, ...resto);
 };
-const { DatabaseSync } = await import("node:sqlite");
-process.emitWarning = emitOriginal;
+let DatabaseSync;
+try {
+  ({ DatabaseSync } = await import("node:sqlite"));
+} finally {
+  process.emitWarning = emitOriginal;
+}
 
 const MIGRACION = readFileSync(new URL("../migrations/0001_estado.sql", import.meta.url), "utf8");
 
