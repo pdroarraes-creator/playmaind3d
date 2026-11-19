@@ -1,7 +1,8 @@
 import { $, el } from "./util.js";
 import { D } from "./estado.js";
 import { toast } from "./ui.js";
-import { save, renderCalc } from "./main.js";
+import { save } from "./main.js";
+import { renderCalc } from "./editor.js";
 
 export let fotosTmp = [];
 export function setFotosTmp(v) {

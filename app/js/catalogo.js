@@ -4,7 +4,8 @@ import { toast, showTab, renderAll } from "./ui.js";
 import { calc, gramosCon } from "./calculo.js";
 import { consumoDe, aplicarConsumo, alertasStock } from "./stock.js";
 import { thumb } from "./fotos.js";
-import { save, renderPed, cargarPieza } from "./main.js";
+import { save, renderPed } from "./main.js";
+import { cargarPieza } from "./editor.js";
 
 /* ---------- catálogo ---------- */
 function renderAvisos() {

@@ -5,14 +5,11 @@ import {
   renderVen,
   renderVit,
   renderRad,
-  renderCalc,
-  fillSel,
-  insumosInputs,
   renderAccesos,
   renderCfgLists,
-  insumosSel,
 } from "./main.js";
 import { renderCat, filName } from "./catalogo.js";
+import { renderCalc, fillSel, insumosInputs, insumosSel } from "./editor.js";
 
 export function renderLight() {
   renderCat();
