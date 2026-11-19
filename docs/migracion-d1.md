@@ -68,12 +68,14 @@ Tempos (do sandbox, via proxy): staging 0,26 s na 1a chamada e 0,22 s na 2a; App
 
 ### Fumaça com o Pedro (Passo 4: **ainda não feito**, precisa do token dele)
 
-Colar no console do navegador **em `https://playmind3d.com/app/`** (origem permitida). O token é lido do `localStorage` e nunca é impresso; os dados também não. O Pedro cola de volta só as duas linhas impressas.
+Colar no console do navegador **em `https://playmind3d.com/app/`** (origem permitida). O token é lido do `localStorage` e nunca é impresso; os dados também não. Se não houver sessão, o código imprime `sin sesión: ...` e para. O Pedro cola de volta só as duas linhas impressas.
 
 ```js
 (async () => {
   const URL_API = "https://playmind3d-api.pdroarraes.workers.dev/";
-  const token = JSON.parse(localStorage.getItem("playmind3d:v2")).cfg.token;
+  let token = null;
+  try { token = JSON.parse(localStorage.getItem("playmind3d:v2")).cfg.token; } catch (e) { token = null; }
+  if (!token) { console.log("sin sesión: abrí https://playmind3d.com/app/, entrá con tu usuario y volvé a pegar esto"); return; }
   const post = async (cuerpo) => (await fetch(URL_API, { method: "POST", body: JSON.stringify(cuerpo) })).json();
   const l = await post({ action: "load", token });
   const d = l.data || {};
@@ -81,14 +83,14 @@ Colar no console do navegador **em `https://playmind3d.com/app/`** (origem permi
   if (!l.ok) return;
   const s = await post({ action: "save", token, v: l.v, data: l.data });
   console.log({ ok: s.ok, error: s.error, fusionado: s.fusionado, v: s.v });
-})().catch((e) => console.log({ ok: false, error: String(e && e.message || e) }));
+})().catch(() => console.log({ ok: false, error: "fallo de red o respuesta que no es JSON" }));
 ```
 
 Como ler a saída:
 1. Primeira linha: `{ ok: true, error: undefined, v: "1", produtos: 43, vendas: 9 }`. As contagens têm que ser as do estado de staging (43 peças, 9 vendas); `v` vem como texto. Se vier `ok: false, error: "clave"`, o token da sessão não foi aceito (sessão vencida: entrar de novo no app).
 2. Segunda linha: `{ ok: true, error: undefined, fusionado: false, v: "2" }`: o `save` deu certo sem fusão e a versão subiu uma.
 
-O `save` regrava no staging o mesmo estado que veio do `load` (só sobe `v`). Verificado só o que dá sem token: a sintaxe (`node --check`) e uma rodada em Node contra a URL real com token falso e `localStorage` simulado, que imprimiu `{ ok: false, error: 'clave', v: undefined, produtos: 0, vendas: 0 }` e parou sem lançar erro.
+O `save` regrava no staging o estado que veio do `load`; o servidor devolve o estado saneado, praticamente o mesmo estado, e `v` sobe uma unidade. Rodar o código duas vezes faz `v` ir de `"2"` para `"3"` e é inofensivo. `error: undefined` é só o jeito de o navegador imprimir um campo ausente (não é erro). Verificado só o que dá sem token: a sintaxe (`node --check`) e uma rodada em Node contra a URL real com token falso e `localStorage` simulado, que imprimiu `{ ok: false, error: 'clave', v: undefined, produtos: 0, vendas: 0 }` e parou sem lançar erro.
 
 ### O que o 1b precisa saber
 
