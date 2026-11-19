@@ -5,5 +5,9 @@ compatibility_date = "2026-08-20"
 
 [vars]
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec"
+# Worker del estado (reemplaza al Apps Script cuando éste responde 'migrado').
+# "apps" = se prueba primero el Apps Script; "worker" = directo al Worker.
+API_WORKER_URL = "https://playmind3d-api-prod.pdroarraes.workers.dev/"
+MODO_SERVIDOR = "apps"
 
 # GEMINI_API_KEY se agrega como secret: wrangler secret put GEMINI_API_KEY

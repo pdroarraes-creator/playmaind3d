@@ -85,9 +85,16 @@ async function correr(browser, base, cfg, fn) {
     },
     [semilla, cfg.modo || "apps", CLAVE_MODO],
   );
-  await page.goto(base + "/app/");
-  await page.waitForFunction(() => typeof D !== "undefined" && document.readyState === "complete");
-  await dormir(700); // deja terminar el load inicial
+  if (cfg.raiz) {
+    // página pública de la raíz (catálogo): no tiene el estado D de la app
+    await page.goto(base + "/");
+    await page.waitForFunction(() => typeof enviarEdicionPieza === "function" && document.readyState === "complete");
+    await dormir(300);
+  } else {
+    await page.goto(base + "/app/");
+    await page.waitForFunction(() => typeof D !== "undefined" && document.readyState === "complete");
+    await dormir(700); // deja terminar el load inicial
+  }
   const ayuda = {
     page,
     llamadas,
@@ -278,6 +285,46 @@ const escenarios = [
       return [
         [/No había datos guardados/.test(await t.sync()), "sync=" + (await t.sync())],
         [e.listo === true, "listoParaSubir=" + e.listo],
+      ];
+    },
+  ],
+  [
+    "11. Página de la raíz: editarPieza",
+    {
+      raiz: true,
+      apps: porAccion({ editarPieza: () => ({ ok: false, error: "migrado" }) }),
+      worker: porAccion({ editarPieza: () => ({ ok: true, desde: "worker" }) }),
+    },
+    async (t) => {
+      const llamar = () =>
+        t.page.evaluate(() => enviarEdicionPieza("peça x", { desc: "a" }, "tok-ensayo"));
+      const r1 = await llamar();
+      const ap = t.llamadas.filter((c) => c.servidor === "apps" && c.action === "editarPieza");
+      const wk = t.llamadas.filter((c) => c.servidor === "worker" && c.action === "editarPieza");
+      const m = await t.modo();
+      const r2 = await llamar();
+      return [
+        [ap.length === 1 && wk.length >= 1, `apps=${ap.length} worker=${wk.length}`],
+        [ap[0] && wk[0] && ap[0].raw === wk[0].raw, "el Worker debe recibir el mismo cuerpo"],
+        [r1 && r1.ok === true && r1.desde === "worker", "retorno=" + JSON.stringify(r1)],
+        [m === "worker", "modo=" + m],
+        [t.cuenta("apps", "editarPieza") === 1 && t.cuenta("worker", "editarPieza") === 2, "la 2da llamada debe ir directo al Worker"],
+        [r2 && r2.desde === "worker", "retorno2=" + JSON.stringify(r2)],
+      ];
+    },
+  ],
+  [
+    "11b. Página de la raíz: modo worker persistido",
+    {
+      raiz: true,
+      modo: "worker",
+      worker: porAccion({ editarPieza: () => ({ ok: true, desde: "worker" }) }),
+    },
+    async (t) => {
+      const r = await t.page.evaluate(() => enviarEdicionPieza("peça x", { desc: "a" }, "tok-ensayo"));
+      return [
+        [t.cuenta("apps", "editarPieza") === 0 && t.cuenta("worker", "editarPieza") === 1, "debe ir solo al Worker"],
+        [r && r.desde === "worker", "retorno=" + JSON.stringify(r)],
       ];
     },
   ],
