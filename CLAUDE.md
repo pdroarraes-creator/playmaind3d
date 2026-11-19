@@ -25,7 +25,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `app/index.html` | Shell da app: markup das abas. Sem CSS e sem JS inline. |
 | `app/app.css` | Todo o estilo. Design tokens em `:root`. |
 | `app/app.js` | Toda a lógica (4.663 linhas, dividida em seções comentadas). |
-| `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy.** Atual: `playmind3d-v27`. |
+| `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy.** Atual: `playmind3d-v28`. |
 | `app/manifest.json` | PWA. `scope` e `start_url` = `/app/`. |
 | `index.html` (raiz) | Catálogo público. Consome `?action=catalogo`, não faz login. |
 | `vender/index.html` | Página curta de venda. |
@@ -35,7 +35,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
 | `app/calculo.js` | Cálculo de custo e preço como módulo puro (Node e navegador); base do Worker novo. |
 | `app/protocolo.js` | Protocolo de dois servidores como módulo puro (sem DOM nem rede; Node e navegador): decide se cada ação vai ao Apps Script ou ao Worker e como reagir a `migrado`, `revertido`, `clave` e `auth_no_disponible`. Testado em `tests/protocolo.test.js`; o `cadastro-worker` também o usa. |
-| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), migração do Sheets em andamento: implementa a API POST completa do estado (load/save com merge e versão otimista, editarPieza/agregarPieza/agregarFilamento/resumenNegocio), o catálogo público e a validação de sessão via Apps Script. Publicado só em staging (o D1 de staging guarda o estado real do dono); `[env.prod]` (`playmind3d-api-prod`, banco `playmind-prod`) está configurado mas o Worker de produção ainda não foi publicado e o banco de produção está vazio. O código do app (`app/app.js` com `SERVIDOR_ESTADO`, e `app/protocolo.js`) já sabe trocar para o Worker de produção quando o Apps Script responde `migrado`; enquanto a chave `d1:migrado` estiver desligada o app só fala com o Apps Script. `wrangler` e npm só aqui e em `cadastro-worker/`. |
+| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), migração do Sheets em andamento: implementa a API POST completa do estado (load/save com merge e versão otimista, editarPieza/agregarPieza/agregarFilamento/resumenNegocio), o catálogo público e a validação de sessão via Apps Script. Publicado em staging (o D1 de staging guarda o estado real do dono) e em produção: `playmind3d-api-prod` (banco `playmind-prod`, vazio), no ar em `MODO=solo-lectura`, com a migração 0002 aplicada nos dois bancos; em `solo-lectura` o Worker recusa com `revertido` toda ação de estado (`load` incluído), só o catálogo e `/salud` respondem. O código do app (`app/app.js` com `SERVIDOR_ESTADO`, e `app/protocolo.js`) já sabe trocar para o Worker de produção quando o Apps Script responde `migrado`; enquanto a chave `d1:migrado` estiver desligada o app só fala com o Apps Script. `wrangler` e npm só aqui e em `cadastro-worker/`. |
 | `scripts/migracion-d1.js` | Gera o SQL de carga do estado no D1 e compara contagens e hash. Usa só arquivos de `datos-privados/` (ignorada pelo git: estado real nunca vai para o repositório). |
 | `docs/migracion-d1*.md` | Estado da migração, limites medidos do D1 e o que a próxima etapa precisa saber. |
 | `cadastro-worker/` | Worker da Cloudflare com Gemini para cadastro por chat; chama o Apps Script. |
