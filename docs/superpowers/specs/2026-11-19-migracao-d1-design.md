@@ -107,9 +107,9 @@ concordar. Comentários e textos novos em espanhol.
   script clássico no app **e** como módulo no Worker, e **apagar `calcular_()` do
   `Codigo.gs` quando o catálogo passar para o Worker** (de duas cópias vira uma). Antes de
   mexer: testes de paridade com os casos dourados (filamento apagado, `merma` vazia,
-  gramas a uma casa, preço manual zero). Se isso se mostrar arriscado, a alternativa é
-  manter três cópias temporárias e fechar a divergência com os mesmos testes; decisão do
-  construtor, com o Pedro avisado.
+  gramas a uma casa, preço manual zero). O `calculo.js` **entra no app já na etapa 0,
+  no lugar do `calc()` atual**, provado por esses testes; assim nunca existem três
+  cópias: até o cutover são duas (`calculo.js` e `calcular_()`), depois uma.
 - Nada disso muda o que a família usa.
 
 ### Etapa 1 — Cutover do A (depois do Natal, janela fechada antes da viagem)
@@ -119,7 +119,21 @@ concordar. Comentários e textos novos em espanhol.
   (mesma regra, mesmos testes dourados que existem no servidor).
 - **Autenticação:** o Worker valida o token chamando `validarSesion` no Apps Script e
   guarda o resultado positivo em cache por poucos minutos (mesmo padrão do
-  `cadastro-worker`). Usuários e hashes **não migram** nesta etapa.
+  `cadastro-worker`). Usuários e hashes **não migram** nesta etapa. Se o Apps Script
+  estiver fora ou sem cota, sessões já validadas seguem valendo até o cache expirar
+  (~10 min) e depois o save falha com o aviso e o reintento que o app já tem; login novo
+  e foto nova esperam. É uma dependência aceita na etapa 1; se virar problema na
+  prática, a autenticação migra para o D1 numa etapa própria.
+- **Clientes antigos e páginas públicas (o endereço está fixo no código):** `app.js`
+  tem `SERVIDOR` constante (linha 42) e reescreve `D.cfg.api = SERVIDOR` a cada
+  abertura; `index.html` da raiz também fixa o seu e chama `?action=catalogo` e
+  `editarPieza` direto. Portanto o cutover é um **lançamento de app**, não só uma troca
+  de configuração: novo `SERVIDOR` no app e na raiz, `CACHE` do `sw.js` novo. Para o
+  celular que ainda roda a versão velha, o Apps Script ganha uma **chave de migração**
+  (Script Properties): ligada, `save`, `load` e `editarPieza` respondem `migrado` (o app
+  mostra "Actualizá la app") em vez de gravar numa célula morta, e `?action=catalogo`
+  passa a repassar a resposta do Worker. Desligar a chave é parte do rollback.
+  `vender/index.html` não usa o Apps Script (conferido).
 - **Fotos:** continuam no Drive. Quando um save traz `data:image`, o Worker chama uma
   ação nova do Apps Script (`subirFotos`, protegida por segredo compartilhado) que
   devolve o estado com os links. Só acontece em save com foto nova.
@@ -131,7 +145,11 @@ concordar. Comentários e textos novos em espanhol.
   tenta gravar um instantâneo na célula antiga por uma ação do Apps Script (melhor
   esforço: se passar de 50.000 caracteres, só registra e segue). Voltar atrás = apontar
   `D.cfg.api` e o catálogo de volta ao Apps Script. O espelho é desligado quando a
-  janela terminar.
+  janela terminar. **Limite honesto:** a volta ao Apps Script só é prometida enquanto o
+  estado couber na célula (< ~45.000 caracteres). Passando disso, a saída é corrigir
+  para a frente no Worker, com exportação diária do D1 (e o Time Travel do D1, a
+  confirmar na documentação) como rede de segurança; durante a janela o app avisa o
+  Pedro se o estado passar de 45.000.
 - **Rotas que hoje gravam a célula** e precisam ir para o Worker: `editarPieza`,
   `agregarPieza`, `agregarFilamento`, `resumenNegocio`. O `cadastro-worker` passa a
   chamar o Worker novo.
@@ -186,9 +204,28 @@ virar gargalo ou for desligado; não é prerrequisito.
 Nome do Worker e dos bancos; formato exato da resposta de `save` (manter o contrato atual
 é o ponto de partida); mecanismo de cache do catálogo no Worker; formato do script de
 migração; esquema detalhado da etapa 2; como o `calculo.js` carrega no app e no Worker
-sem build; revisão do que o radar grava (ele vive no Apps Script e usa `D.radar`).
+sem build.
+
+## Radar (conferido no código)
+
+`correrRadar` (gatilho semanal, segundas 7h) e `radarMundo_` escrevem só nas abas de
+tendência e histórico da planilha; **não gravam a célula `estado`**. Ficam no Apps Script
+sem mudança e sem risco de bifurcar a verdade. `radar` em `LISTAS_CON_ID` é uma lista do
+estado mantida pelo cliente e migra junto com o blob.
+
+## Plano da Cloudflare
+
+Premissa: plano gratuito do Workers/D1 (o cartão cadastrado não diz qual plano é). O
+catálogo é **pré-calculado no save e guardado pronto** (KV ou linha no D1), em vez de
+rodar `calc()` em todas as peças a cada cache miss, para não depender do limite de CPU.
+Os limites reais (tamanho de linha, escritas/dia, CPU) são conferidos na etapa 0.
 
 ## Decisões tomadas pelo redator (conferir)
+
+Chave de migração no Apps Script e catálogo repassado ao Worker; `calculo.js` já na etapa
+0 (nunca três cópias); dependência do Apps Script aceita na etapa 1 com comportamento
+definido quando cair; rollback ao Apps Script só enquanto < 45.000 caracteres; catálogo
+pré-calculado no save; plano gratuito como premissa. As demais:
 
 Fotos ficam no Drive; auth fica no Apps Script na etapa 1; catálogo sem fallback para o
 Apps Script; espelho de segurança temporário na célula; abas espelho viram exportação sob
