@@ -112,7 +112,7 @@ concordar. Comentários e textos novos em espanhol.
   cópias: até o cutover são duas (`calculo.js` e `calcular_()`), depois uma.
 - Nada disso muda o que a família usa.
 
-### Etapa 1 — Cutover do A (depois do Natal, janela fechada antes da viagem)
+### Etapa 1 — Cutover do A (depois do pico do Natal)
 
 - O Worker implementa o mesmo contrato do Apps Script para `load` e `save`: o cliente
   só troca `D.cfg.api` e entende o novo `v` numérico. `fusionar_` é portado para JS
@@ -153,12 +153,14 @@ concordar. Comentários e textos novos em espanhol.
 - **Rotas que hoje gravam a célula** e precisam ir para o Worker: `editarPieza`,
   `agregarPieza`, `agregarFilamento`, `resumenNegocio`. O `cadastro-worker` passa a
   chamar o Worker novo.
-- **Abas espelho** (Ventas, Piezas, Stock): **proposta (a confirmar com o Pedro):**
-  deixam de ser regravadas a cada save e viram exportação sob demanda no menu da
-  planilha. Se a família lê essas abas no dia a dia, isso muda.
-- **Janela:** o Pedro viaja de 27/01 a 10/02/2027 (Painel de 08/11; confirmar). O cutover
-  tem que estar feito e estável (≥ 2 semanas de observação) **antes de 27/01**, senão só
-  depois de 10/02. Fora do horário de pico, com a versão atual do Apps Script anotada.
+- **Abas espelho** (Ventas, Piezas, Stock): **decidido pelo Pedro (19/11/2026): a
+  família só usa o app, nunca a planilha.** Deixam de ser regravadas a cada save e
+  viram uma exportação sob demanda no menu da planilha (opcional, baixa prioridade).
+- **Janela:** **decidido pelo Pedro (19/11/2026): a data não importa; ele estará de
+  férias mas online** (viagem de 27/01 a 10/02/2027 não restringe o cutover). Segue a
+  regra do Natal: só depois do pico. Observação de ≥ 2 semanas com o Pedro disponível
+  para testar e desligar a chave de migração. Fora do horário de pico, com a versão
+  atual do Apps Script anotada.
 - **Pré-Natal, rede de segurança:** se antes do cutover o estado passar de ~42.000
   caracteres (84%), o Pedro decide se aplica a poda barata (vendas antigas para aba
   própria) só para chegar ao cutover.
@@ -228,5 +230,6 @@ definido quando cair; rollback ao Apps Script só enquanto < 45.000 caracteres; 
 pré-calculado no save; plano gratuito como premissa. As demais:
 
 Fotos ficam no Drive; auth fica no Apps Script na etapa 1; catálogo sem fallback para o
-Apps Script; espelho de segurança temporário na célula; abas espelho viram exportação sob
-demanda; prazo de 4 semanas para a etapa 2; cutover entre o Natal e a viagem de janeiro.
+Apps Script; espelho de segurança temporário na célula; prazo de 4 semanas para a etapa 2;
+cutover logo depois do pico do Natal. (Abas espelho e janela do cutover já são decisões do
+Pedro, acima.)
