@@ -1,15 +1,15 @@
 // Prueba consumoDe y aplicarConsumo (app/js/stock.js). alertasStock no se prueba:
-// depende de filName, que vive en main.js (toca document y no carga en Node).
+// depende de filName, que vive en catalogo.js (arrastra main.js, que toca document y no carga en Node).
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { register } = require("node:module");
 
 globalThis.Calculo = require("../app/calculo.js");
-// stock.js importa filName de ./main.js, que no carga en Node: se lo cambia por un stub.
+// stock.js importa filName de ./catalogo.js, que arrastra main.js y no carga en Node: se lo cambia por un stub.
 register(
   "data:text/javascript," +
     encodeURIComponent(`export async function resolve(s, c, n) {
-  if (s.endsWith("/main.js") && c.parentURL && c.parentURL.endsWith("/js/stock.js"))
+  if (s.endsWith("/catalogo.js") && c.parentURL && c.parentURL.endsWith("/js/stock.js"))
     return { url: "data:text/javascript,export const filName = (id) => id;", shortCircuit: true };
   return n(s, c);
 }`),

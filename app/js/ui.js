@@ -1,19 +1,18 @@
 import { D } from "./estado.js";
 import { $ } from "./util.js";
 import {
-  renderCat,
   renderPed,
   renderVen,
   renderVit,
   renderRad,
   renderCalc,
   fillSel,
-  filName,
   insumosInputs,
   renderAccesos,
   renderCfgLists,
   insumosSel,
 } from "./main.js";
+import { renderCat, filName } from "./catalogo.js";
 
 export function renderLight() {
   renderCat();

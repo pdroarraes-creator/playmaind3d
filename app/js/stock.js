@@ -1,7 +1,7 @@
 import { D } from "./estado.js";
 import { num } from "./util.js";
 import { gramosCon } from "./calculo.js";
-import { filName } from "./main.js";
+import { filName } from "./catalogo.js";
 
 /* ---------- stock ---------- */
 /** Cuánto se consume al hacer estas piezas: gramos por filamento y unidades por insumo. */
