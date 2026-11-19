@@ -86,14 +86,21 @@ nem de montar a resposta HTTP).
 
 ### Conclusão sobre o catálogo pré-calculado no save
 
-Com estes números, **calcular na leitura cabe com folga larga** (duas ordens de
-grandeza abaixo de 10 ms). O pré-cálculo no save, como otimização de CPU, **não
-é necessário** para este volume. Ele continua tendo um argumento que não é de
-CPU: guardar o preço calculado no momento do save evita divergência se a fórmula
-mudar entre a gravação e a leitura, e permite cachear a resposta pública. A
-decisão pode ser revista na Etapa 1: o mais simples é calcular na leitura (uma
-única fonte da fórmula, `app/calculo.js`) e só pré-calcular se uma medição no
-Worker real mostrar CPU perto do limite.
+**Escopo medido:** apenas `calcular` sobre todas as peças mais um `JSON.parse`
+do estado, com o código já aquecido (50 passadas de aquecimento, depois
+medianas), em Node. **Não está incluído:** serializar a resposta, reescrever as
+URLs das fotos (`fotoChica_`, `=w800`), ler o D1 ou o KV, nem um isolate a frio
+(onde a primeira chamada roda sem otimização do JIT, mais lenta que a mediana).
+
+Nesse escopo, o cálculo na leitura cabe **com folga larga** (duas ordens de
+grandeza abaixo de 10 ms), e o pré-cálculo no save não seria necessário por CPU.
+Como o escopo é parcial, a conclusão é provisória: **medir o endpoint real na
+Etapa 1 antes de dispensar o pré-cálculo.** O pré-cálculo tem ainda um
+argumento que não é de CPU: guardar o preço calculado no momento do save evita
+divergência se a fórmula mudar entre a gravação e a leitura, e permite cachear
+a resposta pública. O mais simples é calcular na leitura (uma única fonte da
+fórmula, `app/calculo.js`) e só pré-calcular se a medição no Worker real
+mostrar CPU perto do limite.
 
 ## Não confirmado
 
