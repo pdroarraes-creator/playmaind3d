@@ -257,8 +257,13 @@ var PROP_D1_SNAPSHOT_V = 'd1:snapshotV';
 /** Versión del snapshot como número: entero >= 0, o texto de sólo dígitos.
     Devuelve null si no sirve. */
 function versionSnapshot_(v) {
-  if (typeof v === 'number') return (isFinite(v) && v >= 0 && Math.floor(v) === v) ? v : null;
-  if (typeof v === 'string' && /^\d+$/.test(v)) return Number(v);
+  // sólo enteros seguros: más allá de 2^53 se pierde precisión y un valor
+  // enorme bloquearía todos los snapshots siguientes
+  if (typeof v === 'number') return (Number.isSafeInteger(v) && v >= 0) ? v : null;
+  if (typeof v === 'string' && /^\d+$/.test(v)) {
+    var n = Number(v);
+    return Number.isSafeInteger(n) ? n : null;
+  }
   return null;
 }
 
@@ -285,7 +290,7 @@ function guardarSnapshot_(data, v) {
     var medida = JSON.stringify({ chars: med.chars, pct: med.pct, cuando: new Date().toISOString() });
     if (txt.length >= CELDA_MAX) {
       // no se graba, pero el medidor ("Ver cuánto espacio queda") muestra el desborde
-      props_().setProperty('medida:estado', medida);
+      try { props_().setProperty('medida:estado', medida); } catch (e) {}
       return { ok: true, guardado: false, motivo: 'excede' };
     }
 
@@ -296,10 +301,24 @@ function guardarSnapshot_(data, v) {
     var fila = 0;
     vals.forEach(function (row, i) { if (row[0] === CLAVE && !fila) fila = i + 2; });
     if (!fila) fila = h.getLastRow() + 1;
-    h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, new Date()]]);
-    invalidarCatalogo_(); // restricción 10: justo después de grabar la celda
+    // Invariante: d1:snapshotV >= versión de la celda, siempre. Por eso la
+    // versión se anota ANTES de grabar; si grabar falla se restaura. Una celda
+    // atrasada es inofensiva (el próximo snapshot más nuevo la repara); una
+    // celda adelantada de d1:snapshotV dejaría pasar un snapshot viejo.
+    // Si esta línea falla, la celda no se tocó y se responde ok:false.
     props_().setProperty(PROP_D1_SNAPSHOT_V, String(v));
-    props_().setProperty('medida:estado', medida);
+    try {
+      h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, new Date()]]);
+    } catch (err) {
+      try {
+        if (ultima === null || ultima === undefined) props_().deleteProperty(PROP_D1_SNAPSHOT_V);
+        else props_().setProperty(PROP_D1_SNAPSHOT_V, String(ultima));
+      } catch (e) {}
+      throw err;
+    }
+    invalidarCatalogo_(); // restricción 10: justo después de grabar la celda
+    // guardar el estado importa más que el medidor
+    try { props_().setProperty('medida:estado', medida); } catch (e) {}
     return { ok: true, guardado: true };
   } finally {
     lock.releaseLock();

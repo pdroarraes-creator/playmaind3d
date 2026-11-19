@@ -28,7 +28,10 @@ function cargar(o = {}) {
             getLastRow: () => 2,
             getRange: () => ({
               getValues: () => [[ctx.CLAVE, "{}", ""]],
-              setValues: (v) => { esp.setValues.push(v); esp.orden.push("setValues"); },
+              setValues: (v) => {
+                if (o.setValuesFalla) throw new Error("setValues fallo");
+                esp.setValues.push(v); esp.orden.push("setValues");
+              },
             }),
           }),
         };
@@ -49,7 +52,11 @@ function cargar(o = {}) {
       if (o.migradoFalla && k === "d1:migrado") throw new Error("Service invoked too many times");
       return k in props ? props[k] : null;
     },
-    setProperty: (k, v) => { props[k] = v; },
+    setProperty: (k, v) => {
+      if (o.propFalla && o.propFalla(k)) throw new Error("quota " + k);
+      if (k === "d1:snapshotV") esp.orden.push("snapshotV");
+      props[k] = v;
+    },
     deleteProperty: (k) => { delete props[k]; },
   });
   ctx.porSesion_ = (t) => (t === "bueno" ? { email: "a@b.c" } : null);
@@ -174,7 +181,7 @@ test("guardarSnapshot: graba la celda, invalida el catálogo después y limpia t
   assert.equal(guardado.cfg.marca, "M");
   assert.equal("_v" in guardado, false);
   assert.ok(!fila[1].includes("secreto"));
-  assert.deepEqual(esp.orden, ["setValues", "invalidar", "unlock"]);
+  assert.deepEqual(esp.orden, ["snapshotV", "setValues", "invalidar", "unlock"]);
   assert.equal(esp.volcado, 0);
   assert.equal(esp.fotos, 0);
 });
@@ -318,7 +325,7 @@ test("guardarSnapshot válido: actualiza medida:estado con chars, pct y cuando; 
   assert.equal(med.chars, txt.length);
   assert.equal(med.pct, Math.round(txt.length / 50000 * 1000) / 10);
   assert.ok(!isNaN(Date.parse(med.cuando)));
-  assert.deepEqual(esp.orden, ["setValues", "invalidar", "unlock"]);
+  assert.deepEqual(esp.orden, ["snapshotV", "setValues", "invalidar", "unlock"]);
 });
 
 test("guardarSnapshot: vieja y excede liberan el lock", () => {
@@ -358,4 +365,53 @@ test("exportarEstado: no lee la chave, así que un fallo de lectura no la impide
   const r = post(ctx, { action: "exportarEstado", token: "bueno" });
   assert.equal(r.ok, true);
   assert.deepEqual(r.data, {});
+});
+
+test("guardarSnapshot: v inseguras o raras -> falta v; '007' y 5 valen", () => {
+  const { ctx, props } = cargar({ migrado: true });
+  for (const v of [1e300, "99999999999999999999", 9007199254740993, "1e3"]) {
+    assert.deepEqual(snap(ctx, { produtos: [] }, v), { ok: false, error: "falta v" }, String(v));
+  }
+  assert.equal(props["d1:snapshotV"], undefined);
+  assert.equal(snap(ctx, { produtos: [] }, "007").guardado, true);
+  assert.equal(props["d1:snapshotV"], "7");
+  assert.equal(snap(ctx, { produtos: [] }, 9).guardado, true);
+});
+
+test("guardarSnapshot: si falla grabar d1:snapshotV no se toca la celda y nada retrocede", () => {
+  let n = 0;
+  const { ctx, esp, props } = cargar({ migrado: true, propFalla: (k) => k === "d1:snapshotV" && ++n === 2 });
+  assert.equal(snap(ctx, { produtos: [{ nome: "cinco" }] }, 5).guardado, true);
+  const r = snap(ctx, { produtos: [{ nome: "ocho" }] }, 8);
+  assert.equal(r.ok, false);
+  assert.equal(esp.setValues.length, 1);
+  assert.equal(props["d1:snapshotV"], "5");
+  assert.equal(snap(ctx, { produtos: [] }, 4).motivo, "vieja");
+  assert.equal(esp.setValues.length, 1);
+});
+
+test("guardarSnapshot: si setValues falla se restaura d1:snapshotV y responde ok:false", () => {
+  const { ctx, props, esp } = cargar({ migrado: true });
+  snap(ctx, { produtos: [] }, 5);
+  const c2 = cargar({ migrado: true, setValuesFalla: true });
+  c2.props["d1:snapshotV"] = "5";
+  const r = snap(c2.ctx, { produtos: [] }, 8);
+  assert.equal(r.ok, false);
+  assert.equal(c2.props["d1:snapshotV"], "5");
+  assert.equal(c2.esp.orden.includes("invalidar"), false);
+  assert.deepEqual(c2.esp.orden.slice(-1), ["unlock"]);
+  // sin valor previo: la propiedad se borra
+  const c3 = cargar({ migrado: true, setValuesFalla: true });
+  assert.equal(snap(c3.ctx, { produtos: [] }, 8).ok, false);
+  assert.equal("d1:snapshotV" in c3.props, false);
+});
+
+test("guardarSnapshot: medida:estado que falla no cambia la respuesta (grabado y excede)", () => {
+  const f = { migrado: true, propFalla: (k) => k === "medida:estado" };
+  const a = cargar(f);
+  assert.deepEqual(snap(a.ctx, { produtos: [] }, 1), { ok: true, guardado: true });
+  assert.equal(a.props["d1:snapshotV"], "1");
+  const b = cargar(f);
+  assert.deepEqual(snap(b.ctx, { produtos: [{ nome: "x".repeat(50000) }] }, 1),
+    { ok: true, guardado: false, motivo: "excede" });
 });
