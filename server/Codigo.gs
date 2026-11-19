@@ -94,7 +94,15 @@ function doGet(e) {
 
   // El catálogo es público a propósito: lo lee la página de ventas.
   // Sale sólo nombre, foto, descripción y precio. Nunca costos ni ventas.
-  if (p.action === 'catalogo') return json_({ ok: true, catalogo: catalogoCacheado_() });
+  if (p.action === 'catalogo') {
+    // Con la migración a D1 activa, el catálogo lo arma el Worker: se reenvía
+    // lo que él entrega. Si falla NO se cae al cache ni a la celda, porque ahí
+    // los datos quedaron viejos desde la migración. Sin dirección guardada no
+    // hay a dónde reenviar, así que se mantiene el camino de siempre.
+    var urlCat = migrado_() ? props_().getProperty(PROP_D1_CATALOGO) : '';
+    if (urlCat) return json_(catalogoDesdeWorker_(urlCat));
+    return json_({ ok: true, catalogo: catalogoCacheado_() });
+  }
 
   // Todo lo demás es privado y viaja por POST, para que ni la clave ni el
   // token queden escritos en la URL (las URLs se guardan en los registros).
@@ -125,6 +133,23 @@ function doPost(e) {
     // De acá para abajo hace falta un token de sesión válido.
     var u = porSesion_(body.token);
     if (!u) return json_({ ok: false, error: 'clave' });
+
+    // Con la migración a D1 activa el estado vive en el Worker: estas acciones
+    // ya no leen ni escriben la planilla (así una copia vieja de la app no
+    // pisa nada).
+    if (migrado_() && ACCIONES_BLOQUEADAS.indexOf(body.action) !== -1) {
+      return json_({ ok: false, error: 'migrado' });
+    }
+
+    // Las llama el Worker de D1 con el token de quien está guardando.
+    if (body.action === 'subirFotos') {
+      if (!datosValidos_(body.data)) return json_({ ok: false, error: 'datos invalidos' });
+      return json_({ ok: true, data: moverFotosADrive_(body.data) });
+    }
+    if (body.action === 'guardarSnapshot') {
+      if (!datosValidos_(body.data)) return json_({ ok: false, error: 'datos invalidos' });
+      return json_(guardarSnapshot_(body.data));
+    }
 
     if (body.action === 'load') {
       var l = leerEstadoYV_();
@@ -168,6 +193,77 @@ function doPost(e) {
    ===================================================================== */
 
 function props_() { return PropertiesService.getScriptProperties(); }
+
+/* ============ MIGRACIÓN A D1 ============
+   Mientras 'd1:migrado' no valga '1' nada de esto cambia el comportamiento. */
+
+var PROP_D1_MIGRADO  = 'd1:migrado';
+var PROP_D1_CATALOGO = 'd1:catalogoUrl';
+var ACCIONES_BLOQUEADAS = ['load', 'save', 'editarPieza', 'agregarPieza',
+                           'agregarFilamento', 'resumenNegocio'];
+
+function migrado_() {
+  // si no se puede leer la propiedad se sigue como antes (modo no migrado)
+  try { return props_().getProperty(PROP_D1_MIGRADO) === '1'; } catch (err) { return false; }
+}
+
+function activarModoD1_(activo) {
+  if (activo) props_().setProperty(PROP_D1_MIGRADO, '1');
+  else props_().deleteProperty(PROP_D1_MIGRADO);
+}
+
+/** Dirección del catálogo en el Worker. Tiene que ser https. */
+function guardarUrlWorker_(url) {
+  var u = typeof url === 'string' ? url.trim() : '';
+  if (u.indexOf('https://') !== 0) throw new Error('La dirección tiene que empezar con https://');
+  props_().setProperty(PROP_D1_CATALOGO, u);
+}
+
+function datosValidos_(data) {
+  return !!data && typeof data === 'object' && !Array.isArray(data);
+}
+
+/** Pide el catálogo al Worker. Devuelve lo recibido si vino ok:true; en
+    cualquier otro caso un error, nunca datos viejos. */
+function catalogoDesdeWorker_(url) {
+  var falla = { ok: false, error: 'catalogo no disponible' };
+  try {
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) return falla;
+    var parsed = JSON.parse(resp.getContentText());
+    return parsed && parsed.ok === true ? parsed : falla;
+  } catch (err) {
+    return falla;
+  }
+}
+
+/** Copia de respaldo del estado en la celda, mandada por el Worker. Sólo se
+    graba si cabe en la celda; no regraba las hojas espejo ni mueve fotos
+    (el Worker ya las subió con subirFotos). */
+function guardarSnapshot_(data) {
+  var copia = JSON.parse(JSON.stringify(data));
+  if (copia.cfg) { copia.cfg.token = ''; copia.cfg.key = ''; }
+  delete copia._v;
+  var txt = JSON.stringify(copia);
+  if (txt.length >= CELDA_MAX) return { ok: true, guardado: false, motivo: 'excede' };
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var h = ss.getSheetByName(HOJA_DATOS) || hoja_(ss, HOJA_DATOS, ['clave', 'json', 'actualizado']);
+    var filas = Math.max(h.getLastRow() - 1, 1);
+    var v = h.getRange(2, 1, filas, 1).getValues();
+    var fila = 0;
+    v.forEach(function (row, i) { if (row[0] === CLAVE && !fila) fila = i + 2; });
+    if (!fila) fila = h.getLastRow() + 1;
+    h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, new Date()]]);
+    invalidarCatalogo_(); // restricción 10: justo después de grabar la celda
+    return { ok: true, guardado: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
 
 function normMail_(x) { return String(x || '').trim().toLowerCase(); }
 
@@ -254,6 +350,10 @@ function onOpen() {
     .addSeparator()
     .addItem('Cerrar todas las sesiones', 'menuCerrarSesiones')
     .addItem('Ver cuánto espacio queda', 'menuVerEspacio')
+    .addSeparator()
+    .addItem('D1: activar modo migrado', 'menuD1Activar')
+    .addItem('D1: desactivar modo migrado', 'menuD1Desactivar')
+    .addItem('D1: dirección del catálogo en el Worker', 'menuD1Url')
     .addToUi();
 }
 
@@ -308,6 +408,30 @@ function menuCerrarSesiones() {
     if (k.indexOf(PROP_SESION) === 0) { props_().deleteProperty(k); n++; }
   });
   SpreadsheetApp.getUi().alert('Cerré ' + n + ' sesión(es). Todos tienen que entrar de nuevo.');
+}
+
+function menuD1Activar() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.alert('Activar modo migrado',
+    'Atención: con el modo migrado activo, las copias viejas de la app dejan de guardar ' +
+    '(la planilla ya no recibe cambios) y el catálogo sale del Worker.\n\n¿Activar?',
+    ui.ButtonSet.YES_NO);
+  if (r !== ui.Button.YES) return;
+  activarModoD1_(true);
+  ui.alert('Modo migrado activado.');
+}
+
+function menuD1Desactivar() {
+  activarModoD1_(false);
+  SpreadsheetApp.getUi().alert('Modo migrado desactivado.');
+}
+
+function menuD1Url() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt('Dirección del catálogo en el Worker (https://...)', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  try { guardarUrlWorker_(r.getResponseText()); ui.alert('Dirección guardada.'); }
+  catch (err) { ui.alert(String(err.message || err)); }
 }
 
 function json_(obj) {
