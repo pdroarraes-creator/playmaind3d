@@ -6,6 +6,7 @@ const NO_DISPONIBLE = { ok: false, error: "auth_no_disponible" };
 const CLAVE = { ok: false, error: "clave" };
 
 export function crearVerificador({ fetchFn, ahora = Date.now, ttlMs = 600000 } = {}) {
+  // Acotado por las sesiones vivas; una entrada vencida se descarta al volver a consultar el mismo token.
   const validos = new Map(); // token -> instante en que vence la validación
 
   return async function verificar(token, env) {
@@ -36,7 +37,12 @@ export function crearVerificador({ fetchFn, ahora = Date.now, ttlMs = 600000 } =
       validos.set(token, ahora() + ttlMs);
       return { ok: true };
     }
-    return CLAVE;
+    // Solo la respuesta exacta del Apps Script para un token inválido es "clave":
+    // la app desloguea a todos al recibirla. Cualquier otra forma (acción
+    // desconocida de un despliegue viejo, excepción interna, "migrado") no
+    // prueba que la sesión sea inválida, así que cuenta como caída.
+    if (datos.ok === false && datos.error === "clave") return CLAVE;
+    return NO_DISPONIBLE;
   };
 }
 

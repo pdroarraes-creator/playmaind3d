@@ -102,3 +102,26 @@ test("cada verificador tiene su propia caché", async () => {
   await crearVerificador({ fetchFn })("tok-1", env);
   assert.equal(fetchFn.llamadas.length, 2);
 });
+
+for (const cuerpo of [
+  '{"ok":false,"error":"accion desconocida"}',
+  '{"ok":false}',
+  '{"ok":false,"error":"migrado"}',
+  '{"ok":false,"error":"cualquier otra cosa"}',
+]) {
+  test(`respuesta ${cuerpo} es auth_no_disponible, no clave`, async () => {
+    const verificar = crearVerificador({ fetchFn: fetchContando(cuerpo) });
+    assert.deepEqual(await verificar("tok-1", env), { ok: false, error: "auth_no_disponible" });
+  });
+}
+
+test("clave exacta expulsa el token de la caché", async () => {
+  const respuestas = ['{"ok":true}', '{"ok":false,"error":"clave"}'];
+  const fetchFn = async () => respuesta(respuestas.shift());
+  let t = 0;
+  const verificar = crearVerificador({ fetchFn, ahora: () => t, ttlMs: 10 });
+  await verificar("tok-1", env);
+  t = 10;
+  assert.deepEqual(await verificar("tok-1", env), { ok: false, error: "clave" });
+  assert.equal(respuestas.length, 0);
+});
