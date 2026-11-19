@@ -14,6 +14,12 @@ function cargarServidor() {
 
 const clon = (x) => structuredClone(x);
 
+test("las listas fusionables del servidor y del Worker son las mismas (nombres y orden)", () => {
+  const ctx = cargarServidor();
+  // el vm tiene su propio Array: se copia a uno local antes de comparar
+  assert.deepEqual([...ctx.LISTAS_CON_ID], [...LISTAS_CON_ID]);
+});
+
 test("item que solo el servidor tiene es preservado", () => {
   const s = { produtos: [{ id: "a", n: 1 }, { id: "b", n: 2 }] };
   const c = { produtos: [{ id: "a", n: 1 }] };
