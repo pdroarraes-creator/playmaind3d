@@ -116,8 +116,8 @@ Publicado na Cloudflare com o aval do Pedro. **O app e o Apps Script continuam c
 
 | Worker | URL | Versão | O que está publicado |
 |---|---|---|---|
-| `playmind3d-api` (staging) | https://playmind3d-api.pdroarraes.workers.dev | `f8b35d9e-c6e4-423b-b4d8-c5ff69543396` | Código da 1b (`MODO`, `/salud`, snapshots, tabela `meta`). `MODO=escritura`, `SNAPSHOT=off`. Banco `playmind-staging` (estado real do dono). |
-| `playmind3d-api-prod` | https://playmind3d-api-prod.pdroarraes.workers.dev | `4630dfd9-7b9a-4a13-9654-6e9153df3a6c` | Mesmo código, banco `playmind-prod` **vazio**. Publicado com `--var MODO:solo-lectura` (só leitura) até o passo 4 do roteiro. `SNAPSHOT=off`. |
+| `playmind3d-api` (staging) | https://playmind3d-api.pdroarraes.workers.dev | `9b2f72c5-3091-4cf6-873e-fd3adfad4f25` (redeploy com a correção da revisão final) | Código da 1b (`MODO`, `/salud`, snapshots, tabela `meta`). `MODO=escritura`, `SNAPSHOT=off`. Banco `playmind-staging` (estado real do dono). |
+| `playmind3d-api-prod` | https://playmind3d-api-prod.pdroarraes.workers.dev | `32886520-2695-46a7-b4e2-ab5a9c0d2bf6` (redeploy com a correção: em `solo-lectura` recusa também o `load`) | Mesmo código, banco `playmind-prod` **vazio**. Publicado com `--var MODO:solo-lectura` (só leitura) até o passo 4 do roteiro. `SNAPSHOT=off`. |
 | `playmind3d-cadastro` | https://playmind3d-cadastro.pdroarraes.workers.dev | `12772422-4324-402d-ad33-651ab2096fb6` | Chat de cadastro com o protocolo de dois servidores. `API_WORKER_URL` aponta para o Worker de produção, `MODO_SERVIDOR=apps` (mesmo comportamento de antes). Segredo `GEMINI_API_KEY` preservado. |
 
 - Migração `0002_meta.sql` aplicada nos dois bancos (só criou a tabela `meta`); `estado` e `meta` existem nos dois.
