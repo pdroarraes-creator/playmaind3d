@@ -260,6 +260,51 @@ async function main() {
       chequeo("(c2) window.PM tiene los handlers del HTML", false, e.message.split("\n")[0]);
     }
 
+    // (e) la pieza sembrada aparece en el catálogo
+    try {
+      await page.click('[role=tab][data-tab="cat"]');
+      await page.waitForFunction(
+        () => /Pieza humo/.test(document.querySelector("#tab-cat #catList")?.innerText || ""),
+        null,
+        { timeout: 5000 },
+      );
+      chequeo("(e) catálogo muestra 'Pieza humo'", true);
+    } catch (e) {
+      chequeo("(e) catálogo muestra 'Pieza humo'", false, e.message.split("\n")[0]);
+    }
+
+    // (f) editar la pieza en la pestaña Calcular y guardar llega al servidor
+    try {
+      const nombre = "Pieza humo editada " + Date.now();
+      await page.click("#tab-cat #catList .item .info");
+      await page.waitForFunction(
+        () =>
+          !document.querySelector("#tab-calc").hidden &&
+          document.querySelector("#c_nome").value === "Pieza humo",
+        null,
+        { timeout: 5000 },
+      );
+      await page.fill("#tab-calc #c_nome", nombre);
+      await page.fill("#tab-calc #c_peso", "37");
+      await page.click("#tab-calc #bSave");
+      const t0 = Date.now();
+      let bueno;
+      while (!bueno && Date.now() - t0 < 8000) {
+        bueno = saves.find(
+          (s) =>
+            s.data &&
+            (s.data.produtos || []).some((p) => p.nome === nombre && Number(p.peso) === 37),
+        );
+        if (!bueno) await page.waitForTimeout(100);
+      }
+      if (!bueno) throw new Error("ningún save trae la pieza editada (saves: " + saves.length + ")");
+      const largo = JSON.stringify(bueno.data).length;
+      if (largo >= 50000) throw new Error("el estado mide " + largo + " (>= 50000)");
+      chequeo("(f) editar pieza guarda en el servidor", true, "estado de " + largo + " chars");
+    } catch (e) {
+      chequeo("(f) editar pieza guarda en el servidor", false, e.message.split("\n")[0]);
+    }
+
     // (d) cero errores durante todo el recorrido
     chequeo("(d) cero errores de página/consola", !errores.length, errores.join(" | "));
   } catch (e) {
