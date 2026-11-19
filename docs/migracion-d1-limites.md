@@ -84,7 +84,7 @@ Aviso: os tempos são de Node, só uma **estimativa** da CPU num Worker (outro
 motor de execução, outro hardware, e sem o custo de inicialização do isolate
 nem de montar a resposta HTTP).
 
-### Conclusão sobre o catálogo pré-calculado no save
+### Recomendação sobre o catálogo pré-calculado no save
 
 **Escopo medido:** apenas `calcular` sobre todas as peças mais um `JSON.parse`
 do estado, com o código já aquecido (50 passadas de aquecimento, depois
@@ -96,11 +96,13 @@ Nesse escopo, o cálculo na leitura cabe **com folga larga** (duas ordens de
 grandeza abaixo de 10 ms), e o pré-cálculo no save não seria necessário por CPU.
 Como o escopo é parcial, a conclusão é provisória: **medir o endpoint real na
 Etapa 1 antes de dispensar o pré-cálculo.** O pré-cálculo tem ainda um
-argumento que não é de CPU: guardar o preço calculado no momento do save evita
-divergência se a fórmula mudar entre a gravação e a leitura, e permite cachear
-a resposta pública. O mais simples é calcular na leitura (uma única fonte da
-fórmula, `app/calculo.js`) e só pré-calcular se a medição no Worker real
-mostrar CPU perto do limite.
+argumento que não é de CPU: permite cachear a resposta pública. Mas guardar o
+preço calculado no momento do save **não evita** divergência: se a fórmula
+mudar, o catálogo serve preços velhos até o próximo save de cada peça. Por isso
+a **recomendação** é calcular na leitura (uma única fonte da fórmula,
+`app/calculo.js`) e só pré-calcular se a medição no Worker real mostrar CPU
+perto do limite. É uma recomendação, não uma decisão: a decisão é do dono, e até
+ele decidir vale o que diz a spec (catálogo pré-calculado no save).
 
 ## Staging raiz e .assetsignore
 

@@ -21,9 +21,15 @@ Ensaio feito com o estado real do Pedro, carregado só em `playmind-staging` (`p
 
 - Bancos: `playmind-staging` = `3e5bd45b-1830-4633-8600-2b5baba6e2af`; `playmind-prod` = `8a0a4cf3-9642-4311-a0ca-763ffbe2f96a` (vazio, sem Worker publicado).
 - Staging: https://playmind3d-api.pdroarraes.workers.dev (só `/salud` e 404; o Worker `prod` não foi publicado). `playmind-staging` guarda o estado real (ensaio feito); `playmind-prod` está vazio. Os `database_id` já estão em `api-worker/wrangler.toml`.
-- Comandos do wrangler em `api-worker/` precisam de `--env=""` para o staging (há `[env.prod]`).
+- Migrations: os comandos de prod precisam de `--env prod`; os de staging, de `--env=""` (há `[env.prod]`).
 - O CLI `scripts/migracion-d1.js comparar` sai com código 1 tanto para "diferentes" quanto para arquivo ilegível; ler a saída impressa.
 - O estado exportado vinha com `_sucio: true`: o navegador tinha mudanças ainda não sincronizadas; a Etapa 1 deve decidir como tratar isso no primeiro corte.
-- No escopo medido (só `calcular` sobre as peças mais um `JSON.parse`, a quente, em Node), calcular na leitura cabe com folga larga. **Não confirmado:** a CPU real num Worker (inclui serializar a resposta, reescrever URLs de fotos, ler o D1 e isolate a frio) e o plano real da conta. Medir o endpoint real na Etapa 1 antes de dispensar o pré-cálculo no save.
+- Staging `playmind-staging` guarda o estado REAL do dono: todo endpoint de dados que se acrescente ao Worker de staging precisa de autenticação antes do deploy. Alguém tem que ser dono de limpar ou renovar essa linha (sugestão: `DELETE FROM estado` depois dos testes da Etapa 1; decide o dono).
+- `sqlCarga` usa `INSERT OR REPLACE ... v=1`: no corte real sobrescreveria uma linha existente e zeraria `v`; a Etapa 1 deve recusar rodar se já existir linha (ou usar `INSERT` simples). Também emite um único statement com o JSON inteiro; o D1 limita um statement a ~100 KB (ver o doc de limites): sobra folga com 34 KB, mas fica o aviso.
+- Fonte da verdade da migração real: a spec diz que o script lê o estado "via `action=load`" (célula do servidor). O ensaio usou uma exportação do navegador, com `_sucio: true` (mudanças locais sem sincronizar), que NÃO é necessariamente o que o servidor guarda. No corte, a fonte deve ser o `load` do servidor, e o plano precisa dizer o que fazer com mudanças não sincronizadas do navegador.
+- Margem do rollback: a spec só promete voltar ao Apps Script abaixo de ~45.000 caracteres e o estado já tem 34.447 (~69%): os ~10.500 caracteres restantes são um prazo, não nota de rodapé.
+- Pendente de decisão do dono: a spec lista "catálogo pré-calculado no save" como decisão do redator a confirmar; o doc de limites **recomenda** calcular na leitura (a CPU cabe no escopo medido). É só uma recomendação: até o dono decidir, vale a decisão da spec.
+- Testes: `node:sqlite` sem flags exige Node 22.13+ (o projeto usou 22.23).
+- No escopo medido (só `calcular` sobre as peças mais um `JSON.parse`, a quente, em Node), calcular na leitura cabe com folga larga. **Não confirmado:** a CPU real num Worker (inclui serializar a resposta, reescrever URLs de fotos, ler o D1 e isolate a frio) e o plano real da conta. Medir o endpoint real na Etapa 1 antes de adotar a recomendação de calcular na leitura.
 - O bundle de `src/calculo.js` empacota e coincide com `app/calculo.js` (217 casos).
 - Dados reais ficam só em `datos-privados/` (ignorado pelo git).
