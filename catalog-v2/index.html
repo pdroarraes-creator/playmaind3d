@@ -1,17 +1,18 @@
 <!doctype html>
-<html lang="es-AR">
+<html lang="es-AR" data-color-mode="light" data-light-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#FBF8F2">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Descubrí juguetes sensoriales y piezas de decoración impresas en 3D en Pilar. Armá tu bolsa y mandá todo tu pedido por WhatsApp.">
+  <meta name="description" content="Descubrí juguetes sensoriales, piezas de decoración y kits impresos en 3D en Pilar. Armá tu bolsa y mandá tu pedido por WhatsApp.">
   <title>PlayMind 3D · Catálogo de piezas</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23D9ECEC'/%3E%3Cpath d='m12 4 8 4.5-8 4.5-8-4.5 8-4.5ZM4 12l8 4.5 8-4.5M4 15.5l8 4.5 8-4.5' fill='none' stroke='%231F5758' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23D9ECEC'/%3E%3Cpath d='m12 4 8 4.5-8 4.5-8-4.5ZM4 12l8 4.5 8-4.5M4 15.5l8 4.5 8-4.5' fill='none' stroke='%231F5758' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://lh3.googleusercontent.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@800..900&amp;family=Plus+Jakarta+Sans:wght@400..800&amp;display=swap">
+  <link rel="stylesheet" href="./primer-tokens.css">
   <link rel="stylesheet" href="./styles.css">
   <script type="module" src="./catalog.mjs"></script>
 </head>
@@ -35,6 +36,13 @@
     <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
     <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
     <symbol id="icon-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+    <symbol id="octicon-location" viewBox="0 0 24 24"><path d="M12 13.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/><path d="M19.071 3.429h.001c3.905 3.905 3.905 10.237 0 14.142l-5.403 5.403a2.36 2.36 0 0 1-3.336 0l-5.375-5.375-.028-.028c-3.905-3.905-3.905-10.237 0-14.142 3.904-3.905 10.236-3.905 14.141 0ZM5.99 4.489v.001a8.5 8.5 0 0 0 0 12.02l.023.024.002.002 5.378 5.378a.859.859 0 0 0 1.214 0l5.403-5.404a8.5 8.5 0 0 0-.043-11.977A8.5 8.5 0 0 0 5.99 4.489Z"/></symbol>
+    <symbol id="octicon-stack" viewBox="0 0 24 24"><path d="M11.063 1.456a1.749 1.749 0 0 1 1.874 0l8.383 5.316a1.751 1.751 0 0 1 0 2.956l-8.383 5.316a1.749 1.749 0 0 1-1.874 0L2.68 9.728a1.751 1.751 0 0 1 0-2.956Zm1.071 1.267a.25.25 0 0 0-.268 0L3.483 8.039a.25.25 0 0 0 0 .422l8.383 5.316a.25.25 0 0 0 .268 0l8.383-5.316a.25.25 0 0 0 0-.422Z"/><path d="M1.867 12.324a.75.75 0 0 1 1.035-.232l8.964 5.685a.25.25 0 0 0 .268 0l8.964-5.685a.75.75 0 0 1 .804 1.267l-8.964 5.685a1.749 1.749 0 0 1-1.875 0l-8.964-5.685a.75.75 0 0 1-.232-1.035Z"/><path d="M1.867 16.324a.75.75 0 0 1 1.035-.232l8.964 5.685a.25.25 0 0 0 .268 0l8.964-5.685a.75.75 0 0 1 .804 1.267l-8.964 5.685a1.749 1.749 0 0 1-1.875 0l-8.964-5.685a.75.75 0 0 1-.232-1.035Z"/></symbol>
+    <symbol id="octicon-image" viewBox="0 0 24 24"><path d="M4.75 3h14.5c.966 0 1.75.784 1.75 1.75v14.5A1.75 1.75 0 0 1 19.25 21H4.75A1.75 1.75 0 0 1 3 19.25V4.75A1.75 1.75 0 0 1 4.75 3Zm14.5 1.5H4.75a.25.25 0 0 0-.25.25v14.5c0 .138.112.25.25.25h.19l9.823-9.823a1.75 1.75 0 0 1 2.475 0l2.262 2.262V4.75a.25.25 0 0 0-.25-.25Zm.25 9.56-3.323-3.323a.25.25 0 0 0-.354 0L7.061 19.5H19.25a.25.25 0 0 0 .25-.25ZM8.5 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Zm0-1.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></symbol>
+    <symbol id="octicon-comment-discussion" viewBox="0 0 24 24"><path d="M1.75 1h12.5c.966 0 1.75.784 1.75 1.75v9.5A1.75 1.75 0 0 1 14.25 14H8.061l-2.574 2.573A1.458 1.458 0 0 1 3 15.543V14H1.75A1.75 1.75 0 0 1 0 12.25v-9.5C0 1.784.784 1 1.75 1ZM1.5 2.75v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25Z"/><path d="M22.5 8.75a.25.25 0 0 0-.25-.25h-3.5a.75.75 0 0 1 0-1.5h3.5c.966 0 1.75.784 1.75 1.75v9.5A1.75 1.75 0 0 1 22.25 20H21v1.543a1.457 1.457 0 0 1-2.487 1.03L15.939 20H10.75A1.75 1.75 0 0 1 9 18.25v-1.465a.75.75 0 0 1 1.5 0v1.465c0 .138.112.25.25.25h5.5a.75.75 0 0 1 .53.22l2.72 2.72v-2.19a.75.75 0 0 1 .75-.75h2a.25.25 0 0 0 .25-.25Z"/></symbol>
+    <symbol id="octicon-arrow-right" viewBox="0 0 16 16"><path d="M8.22 2.97a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l2.97-2.97H3.75a.75.75 0 0 1 0-1.5h7.44L8.22 4.03a.75.75 0 0 1 0-1.06Z"/></symbol>
+    <symbol id="octicon-arrow-up" viewBox="0 0 16 16"><path d="M3.47 7.78a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0l4.25 4.25a.751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018L9 4.81v7.44a.75.75 0 0 1-1.5 0V4.81L4.53 7.78a.75.75 0 0 1-1.06 0Z"/></symbol>
+    <symbol id="shape-wave" viewBox="0 0 400 32" preserveAspectRatio="none"><path d="M0 24C56 7 115 0 177 7S305 36 400 19V32H0Z"/></symbol>
   </svg>
   <a class="skip-link" href="#contenido">Ir al contenido</a>
   <div class="page" id="inicio">
@@ -58,17 +66,51 @@
       <section class="hero inset" aria-labelledby="hero-title">
         <p class="chip curation-chip"><svg class="icon" aria-hidden="true"><use href="#icon-spark"/></svg>Curado por Leti (10 años)</p>
         <h1 id="hero-title">Objetos que <span>calman</span> y <span class="hero-deco">decoran.</span></h1>
-        <p class="hero-intro">Fidgets, deco y regalos en PLA vegetal. Elegí tus piezas y armá un solo pedido por WhatsApp.</p>
-        <div class="hero-collections">
-          <a class="collection-tile" href="#sensartias" data-shelf-link>
-            <img src="https://lh3.googleusercontent.com/d/1idi0xvDXIrKt7aGMLHKC8aI0_V0U51NG=w320" width="320" height="176" alt="" decoding="async">
-            <span>Juguetes <svg class="icon" aria-hidden="true"><use href="#icon-arrow-up-right"/></svg></span>
-          </a>
-          <a class="collection-tile" href="#line-3corn" data-shelf-link>
-            <img src="https://lh3.googleusercontent.com/d/1F2ehHYBGqWCWkkW7PAPyJ666TcneDC_u=w320" width="320" height="180" alt="" decoding="async">
-            <span>Deco <svg class="icon" aria-hidden="true"><use href="#icon-arrow-up-right"/></svg></span>
-          </a>
+        <p class="hero-intro">Fidgets, deco y regalos en PLA vegetal. Piezas para jugar, regalar y sorprender sin pantallas.</p>
+      </section>
+
+      <section class="collections" aria-labelledby="collections-title">
+        <svg class="section-wave collections-wave-in" viewBox="0 0 400 32" preserveAspectRatio="none" aria-hidden="true" focusable="false"><use href="#shape-wave"/></svg>
+        <div class="collections-content inset">
+          <header class="section-intro">
+            <p class="eyebrow">Explorá el catálogo</p>
+            <h2 id="collections-title">Encontrá tu pieza</h2>
+          </header>
+          <ul class="collection-grid" role="list">
+            <li>
+              <a class="collection-tile" href="#sensartias" data-shelf-link aria-labelledby="collection-toys-title collection-toys-action">
+                <span class="collection-media"><img src="https://lh3.googleusercontent.com/d/1idi0xvDXIrKt7aGMLHKC8aI0_V0U51NG=w400" width="400" height="220" alt="" decoding="async"></span>
+                <h3 id="collection-toys-title">Juguetes &amp; Sensartias</h3>
+                <span class="button button-catalog collection-action" id="collection-toys-action">Ver piezas <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg></span>
+              </a>
+            </li>
+            <li>
+              <a class="collection-tile" href="#line-3corn" data-shelf-link aria-labelledby="collection-deco-title collection-deco-action">
+                <span class="collection-media"><img src="https://lh3.googleusercontent.com/d/1F2ehHYBGqWCWkkW7PAPyJ666TcneDC_u=w400" width="400" height="225" alt="" decoding="async"></span>
+                <h3 id="collection-deco-title">3corn &amp; Deco</h3>
+                <span class="button button-catalog collection-action" id="collection-deco-action">Ver deco <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg></span>
+              </a>
+            </li>
+            <li>
+              <a class="collection-tile" href="#navidad" data-shelf-link aria-labelledby="collection-holiday-title collection-holiday-action">
+                <span class="collection-media"><img src="./assets/christmas-editorial.webp" width="480" height="360" alt="" loading="lazy" decoding="async"></span>
+                <h3 id="collection-holiday-title">Especial Navidad</h3>
+                <span class="button button-catalog collection-action" id="collection-holiday-action">Ver anticipo <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg></span>
+              </a>
+            </li>
+            <li>
+              <a class="collection-tile" href="#kits" data-shelf-link aria-labelledby="collection-kits-title collection-kits-action">
+                <span class="collection-media collection-media-pair">
+                  <img src="https://lh3.googleusercontent.com/d/1kOQ1tAyireheFg6xSTe8zeqWmMQE-8M9=w240" width="240" height="426" alt="" loading="lazy" decoding="async">
+                  <img src="https://lh3.googleusercontent.com/d/1RcPOVJRa1jmbQRZHAYuN1t5Q23n2p_cE=w240" width="240" height="316" alt="" loading="lazy" decoding="async">
+                </span>
+                <h3 id="collection-kits-title">Kits para regalar</h3>
+                <span class="button button-catalog collection-action" id="collection-kits-action">Ver kits <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg></span>
+              </a>
+            </li>
+          </ul>
         </div>
+        <svg class="section-wave collections-wave-out" viewBox="0 0 400 32" preserveAspectRatio="none" aria-hidden="true" focusable="false"><use href="#shape-wave"/></svg>
       </section>
 
       <nav class="line-nav inset" id="line-nav" aria-label="Líneas del catálogo">
@@ -144,13 +186,73 @@
           <div class="shelf-list" id="kit-list"></div>
         </section>
       </div>
+
+      <section class="purchase-guide inset" id="como-pedir" aria-labelledby="purchase-guide-title">
+        <header class="section-intro">
+          <p class="eyebrow">De Pilar a tus manos</p>
+          <h2 id="purchase-guide-title">Elegí sin vueltas</h2>
+        </header>
+        <ul class="benefit-grid" role="list">
+          <li id="entrega">
+            <span class="benefit-icon" aria-hidden="true"><svg class="icon octicon"><use href="#octicon-location"/></svg></span>
+            <h3>Hecho en Pilar</h3>
+            <p>Coordinamos el retiro o la entrega en Pilar.</p>
+          </li>
+          <li>
+            <span class="benefit-icon" aria-hidden="true"><svg class="icon octicon"><use href="#octicon-stack"/></svg></span>
+            <h3>PLA vegetal</h3>
+            <p>Piezas impresas en 3D con bioplástico.</p>
+          </li>
+          <li>
+            <span class="benefit-icon" aria-hidden="true"><svg class="icon octicon"><use href="#octicon-image"/></svg></span>
+            <h3>Fotos y medidas</h3>
+            <p>Mirá las vistas y medidas que figuran en cada ficha.</p>
+          </li>
+          <li>
+            <span class="benefit-icon" aria-hidden="true"><svg class="icon octicon"><use href="#octicon-comment-discussion"/></svg></span>
+            <h3>Un solo pedido</h3>
+            <p>Armá tu bolsa y mandá todo junto por WhatsApp.</p>
+          </li>
+        </ul>
+      </section>
     </main>
 
-    <footer class="site-footer inset">
-      <p class="brand"><span>PlayMind <b>3D</b></span></p>
-      <p>Curado por Leti (10 años) · Diseñado en Pilar</p>
-      <p>Entregas coordinadas por WhatsApp en Pilar.</p>
-      <button class="button button-outline footer-contact" id="contact-button" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-chat"/></svg>Consultanos</button>
+    <footer class="site-footer">
+      <svg class="section-wave footer-wave" viewBox="0 0 400 32" preserveAspectRatio="none" aria-hidden="true" focusable="false"><use href="#shape-wave"/></svg>
+      <div class="footer-content inset">
+        <div class="footer-lead">
+          <p class="eyebrow">Hablemos</p>
+          <h2>¿Tenés alguna duda?</h2>
+          <p>Consultanos por colores, disponibilidad o entregas en Pilar.</p>
+          <button class="button footer-contact" id="contact-button" type="button" aria-haspopup="dialog" aria-controls="message-sheet">
+            Escribinos por WhatsApp
+            <span aria-hidden="true"><svg class="icon octicon"><use href="#octicon-arrow-right"/></svg></span>
+          </button>
+        </div>
+        <nav class="footer-nav" aria-label="Enlaces del pie de página">
+          <div>
+            <h3>Explorá</h3>
+            <ul role="list">
+              <li><a href="#sensartias" data-shelf-link>Juguetes &amp; Sensartias</a></li>
+              <li><a href="#line-3corn" data-shelf-link>3corn &amp; Deco</a></li>
+              <li><a href="#navidad" data-shelf-link>Especial Navidad</a></li>
+              <li><a href="#kits" data-shelf-link>Kits con 15% OFF</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Te ayudamos</h3>
+            <ul role="list">
+              <li><a href="#como-pedir">Cómo hacer un pedido</a></li>
+              <li><a href="#entrega">Entrega y retiro</a></li>
+            </ul>
+          </div>
+        </nav>
+        <div class="footer-signoff">
+          <p class="footer-wordmark">PlayMind <b>3D</b></p>
+          <p>Diseñado e impreso en Pilar, Argentina</p>
+          <a class="back-to-top" href="#inicio">Volver arriba <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-up"/></svg></a>
+        </div>
+      </div>
     </footer>
   </div>
 
@@ -245,7 +347,7 @@
       <div class="card-body">
         <header class="product-heading"><h3 data-title></h3><p class="price" data-price></p></header>
         <dl class="product-facts"></dl>
-        <button class="button button-primary order-button" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg>Sumar al pedido<span class="added-quantity" data-added-quantity aria-hidden="true" hidden></span></button>
+        <button class="button button-catalog order-button" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg>Sumar al pedido<span class="added-quantity" data-added-quantity aria-hidden="true" hidden></span></button>
       </div>
     </article>
   </template>
@@ -262,7 +364,7 @@
         </div>
         <span class="chip chip-gold" data-kit-saving></span>
       </div>
-      <button class="button button-primary order-button" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg>Sumar al pedido<span class="added-quantity" data-added-quantity aria-hidden="true" hidden></span></button>
+      <button class="button button-catalog order-button" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg>Sumar al pedido<span class="added-quantity" data-added-quantity aria-hidden="true" hidden></span></button>
     </article>
   </template>
 </body>
