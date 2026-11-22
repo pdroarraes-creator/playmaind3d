@@ -286,7 +286,7 @@ function renderMercado(p, r) {
     el(
       "div",
       { class: "mkt " + clase },
-      el("b", { style: "font:600 13px Fredoka,sans-serif" }, "Tu precio contra el mercado"),
+      el("b", { style: "font:700 13px var(--font)" }, "Tu precio contra el mercado"),
       el(
         "div",
         { class: "bar" },

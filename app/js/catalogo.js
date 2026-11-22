@@ -18,7 +18,7 @@ function renderAvisos() {
     el(
       "div",
       { class: "warn" + (al.some((a) => a.grave) ? " grave" : "") },
-      el("b", { style: "font:600 13px Fredoka,sans-serif" }, "Hay que reponer"),
+      el("b", { style: "font:700 13px var(--font)" }, "Hay que reponer"),
       el("div", { style: "margin-top:4px" }, al.map((a) => a.txt).join(" · ")),
     ),
   );
@@ -46,7 +46,7 @@ export function renderCat() {
           }),
           el(
             "p",
-            { style: "margin:0;font:600 15px Fredoka,sans-serif;color:var(--deep)" },
+            { style: "margin:0;font:700 15px var(--font);color:var(--deep)" },
             "Empezá cargando tu primera pieza",
           ),
           el(

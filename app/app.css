@@ -1,18 +1,19 @@
 :root {
-  --ink: #3a3a38;
-  --soft: #6e6e6a;
-  --line: #e4dccb;
-  --bg: #faf6ee;
+  --ink: #181a1b;
+  --soft: #5a6065;
+  --line: #dfddd6;
+  --bg: #faf9f6;
   --surface: #fff;
-  --deep: #2c7a7b;
-  --deep-soft: #e3efec;
-  --teal: #7fb8d3;
-  --leaf: #8fbf7f;
-  --clay: #e8895a;
-  --clay-soft: #f4a97f;
+  --deep: #0f4c45;
+  --deep-soft: #e4eeec;
+  --teal: #3e7f77;
+  --leaf: #4f8a5b;
+  --clay: #c86d51;
+  --clay-soft: #e39a82;
   --sand: #c9a227;
-  --r: 18px;
-  --shadow: 0 2px 0 rgba(58, 58, 56, 0.04), 0 12px 30px rgba(58, 58, 56, 0.1);
+  --r: 12px;
+  --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --shadow: 0 2px 0 rgba(24, 26, 27, 0.04), 0 12px 30px rgba(24, 26, 27, 0.1);
   --safe: env(safe-area-inset-bottom, 0px);
 
   /* Escala de tamaños. Antes había 18 medidas sueltas (9,5 · 10,5 · 11 · 11,5 …):
@@ -43,11 +44,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font:
-    var(--t-md)/1.55 Nunito,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
+    var(--t-md)/1.55 var(--font);
   -webkit-text-size-adjust: 100%;
 }
 .wrap {
@@ -63,12 +60,12 @@ body {
 h1,
 h2,
 h3 {
-  font-family: Fredoka, Nunito, sans-serif;
+  font-family: var(--font);
   font-weight: 600;
   margin: 0;
 }
 .num {
-  font-family: Nunito, sans-serif;
+  font-family: var(--font);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -111,11 +108,11 @@ header.top > div:not(.logo):not(.sync) {
   object-fit: cover;
 }
 header.top h1 {
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-weight: 600;
   font-size: var(--t-xl);
   letter-spacing: -0.005em;
-  color: #1f5758;
+  color: #0a3833;
 }
 header.top h1 i {
   font-style: normal;
@@ -129,7 +126,7 @@ header.top p {
 }
 .verCat {
   margin-left: auto;
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-weight: 600;
   font-size: var(--t-sm);
   color: var(--deep);
@@ -141,7 +138,7 @@ header.top p {
 }
 .salirBtn {
   margin-left: 8px;
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-weight: 600;
   font-size: var(--t-sm);
   color: var(--soft);
@@ -220,7 +217,7 @@ nav.tabs button {
   cursor: pointer;
   padding: 7px 1px;
   border-radius: 10px;
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-xs);
   font-weight: 500;
   color: var(--soft);
@@ -281,10 +278,10 @@ nav.tabs button[data-tab="rad"] {
   margin-bottom: 15px;
 }
 .card > h2 {
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-weight: 600;
   font-size: var(--t-xl);
-  color: #1f5758;
+  color: #0a3833;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -367,8 +364,7 @@ nav.tabs button[data-tab="rad"] {
   background: var(--deep);
   color: #fff;
   font:
-    800 var(--t-micro) Nunito,
-    sans-serif;
+    800 var(--t-micro) var(--font);
   text-align: center;
   padding: 2px 0;
   letter-spacing: 0.04em;
@@ -382,7 +378,7 @@ nav.tabs button[data-tab="rad"] {
   height: 19px;
   border-radius: 50%;
   border: 0;
-  background: rgba(32, 64, 78, 0.82);
+  background: rgba(10, 56, 51, 0.82);
   color: #fff;
   font-size: var(--t-sm);
   line-height: 1;
@@ -452,10 +448,9 @@ select,
 textarea {
   width: 100%;
   font:
-    var(--t-input)/1.4 Nunito,
-    sans-serif;
+    var(--t-input)/1.4 var(--font);
   color: var(--ink);
-  background: #fdfbf6;
+  background: #fdfcfa;
   border: 1.5px solid var(--line);
   border-radius: 10px;
   padding: 10px 11px;
@@ -464,7 +459,7 @@ select,
 textarea,
 input[type="text"],
 input[type="date"] {
-  font-family: Nunito, sans-serif;
+  font-family: var(--font);
 }
 input:focus,
 select:focus,
@@ -500,14 +495,14 @@ textarea:focus {
   border: 0;
   background: transparent;
   color: var(--deep);
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-xs);
   font-weight: 600;
   cursor: pointer;
 }
 
 button.btn {
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-md);
   font-weight: 600;
   cursor: pointer;
@@ -596,7 +591,7 @@ button.btn.vender {
   margin-bottom: 13px;
   background: var(--leaf);
   border-color: var(--leaf);
-  box-shadow: 0 6px 16px rgba(143, 191, 127, 0.35);
+  box-shadow: 0 6px 16px rgba(79, 138, 91, 0.35);
 }
 /* ---- punto de venta ---- */
 .pos {
@@ -618,9 +613,9 @@ button.btn.vender {
   border-bottom: 1px solid var(--line);
 }
 .pos header h2 {
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-xl);
-  color: #1f5758;
+  color: #0a3833;
   flex: 1;
 }
 .pos .cerrarpos {
@@ -647,7 +642,7 @@ button.btn.vender {
   border: 1.5px solid var(--line);
   border-radius: 14px;
   background: #fff;
-  font-family: Nunito, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-input);
 }
 .posgrid {
@@ -800,11 +795,11 @@ button.btn.vender {
   border-radius: 999px;
   background: var(--deep);
   color: #fff;
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-sm);
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(31, 87, 88, 0.38);
+  box-shadow: 0 4px 16px rgba(10, 56, 51, 0.38);
   transition: transform 0.12s;
 }
 .mindFab i {
@@ -829,7 +824,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   height: 76vh;
   height: 76dvh;
   border-radius: 20px 20px 0 0;
-  box-shadow: 0 -6px 30px rgba(58, 58, 56, 0.24);
+  box-shadow: 0 -6px 30px rgba(24, 26, 27, 0.24);
   overflow: hidden;
 }
 .mindWin.grande {
@@ -928,8 +923,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   display: block;
   padding: 9px 10px 0;
   font:
-    600 var(--t-sm)/1.3 Fredoka,
-    sans-serif;
+    600 var(--t-sm)/1.3 var(--font);
   color: var(--ink);
   word-break: break-word;
 }
@@ -971,7 +965,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   font-size: var(--t-sm);
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 6px rgba(58, 58, 56, 0.25);
+  box-shadow: 0 2px 6px rgba(24, 26, 27, 0.25);
 }
 .postile .menos {
   position: absolute;
@@ -980,7 +974,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(58, 58, 56, 0.6);
+  background: rgba(24, 26, 27, 0.6);
   color: #fff;
   font-weight: 800;
   font-size: var(--t-lg);
@@ -1004,10 +998,10 @@ body:has(#chatCad:not([hidden])) .mindFab {
   color: var(--soft);
 }
 .postotal b {
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-weight: 700;
   font-size: var(--t-3xl);
-  color: #1f5758;
+  color: #0a3833;
 }
 .formas {
   display: flex;
@@ -1020,7 +1014,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   border-radius: 14px;
   border: 1.5px solid var(--line);
   background: #fff;
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-weight: 600;
   font-size: var(--t-md);
   color: var(--soft);
@@ -1054,7 +1048,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   color: var(--clay);
 }
 .result {
-  background: linear-gradient(160deg, #20404e, #2c6480);
+  background: linear-gradient(160deg, #0a3833, #0f4c45);
   color: #fff;
   border-radius: var(--r);
   padding: 17px;
@@ -1062,13 +1056,13 @@ body:has(#chatCad:not([hidden])) .mindFab {
   margin-bottom: 12px;
 }
 .result h2 {
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-md);
-  color: #bfd8e2;
+  color: #bfd9d4;
   font-weight: 500;
 }
 .price {
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-weight: 700;
   font-size: var(--t-4xl);
   font-weight: 600;
@@ -1078,7 +1072,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
 }
 .result .sub {
   font-size: var(--t-sm);
-  color: #a8c4cf;
+  color: #a5c9c2;
 }
 .kpis {
   display: grid;
@@ -1095,11 +1089,11 @@ body:has(#chatCad:not([hidden])) .mindFab {
   display: block;
   text-decoration: none;
   font-size: var(--t-xs);
-  color: #a8c4cf;
+  color: #a5c9c2;
   margin-bottom: 2px;
 }
 .kpi b {
-  font-family: Nunito, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-md);
   font-weight: 700;
 }
@@ -1110,7 +1104,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   gap: 11px;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid #f0eadd;
+  border-bottom: 1px solid #efeae1;
 }
 .item .info {
   min-width: 0;
@@ -1170,7 +1164,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   flex: none;
 }
 .item .val b {
-  font-family: Nunito, sans-serif;
+  font-family: var(--font);
   font-size: var(--t-md);
   display: block;
 }
@@ -1194,7 +1188,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   line-height: 1;
   color: var(--deep);
   cursor: pointer;
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
 }
 .stockcol {
   display: flex;
@@ -1312,10 +1306,10 @@ body:has(#chatCad:not([hidden])) .mindFab {
   object-fit: contain;
 }
 .entrada h1 {
-  font-family: Fredoka, sans-serif;
+  font-family: var(--font);
   font-weight: 600;
   font-size: var(--t-2xl);
-  color: #1f5758;
+  color: #0a3833;
 }
 .entrada h1 i {
   font-style: normal;
@@ -1374,7 +1368,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
 .sheet {
   position: fixed;
   inset: 0;
-  background: rgba(32, 64, 78, 0.45);
+  background: rgba(10, 56, 51, 0.45);
   z-index: 50;
   display: none;
   align-items: flex-end;
@@ -1413,7 +1407,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   overflow: hidden;
 }
 .ficha[open] {
-  background: #fdfbf6;
+  background: #fdfcfa;
   border-color: var(--deep);
 }
 .ficha > summary {
@@ -1449,8 +1443,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
 }
 .ficha > summary .det {
   font:
-    400 var(--t-sm)/1.2 Nunito,
-    sans-serif;
+    400 var(--t-sm)/1.2 var(--font);
   color: var(--soft);
   white-space: nowrap;
   flex: none;
@@ -1471,7 +1464,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   width: 19px;
   height: 19px;
   border-radius: 6px;
-  border: 1.5px solid rgba(32, 64, 78, 0.18);
+  border: 1.5px solid rgba(10, 56, 51, 0.18);
   flex: none;
 }
 .bajo {
@@ -1497,8 +1490,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
 }
 .vitcat {
   font:
-    600 var(--t-sm) Fredoka,
-    sans-serif;
+    600 var(--t-sm) var(--font);
   color: var(--clay);
   margin: 20px 0 10px;
   display: flex;
@@ -1523,7 +1515,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   border: 1.5px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
-  background: #fdfbf6;
+  background: #fdfcfa;
 }
 .vitem .ph {
   position: relative;
@@ -1571,11 +1563,10 @@ body:has(#chatCad:not([hidden])) .mindFab {
   position: absolute;
   top: 6px;
   left: 6px;
-  background: rgba(58, 58, 56, 0.6);
+  background: rgba(24, 26, 27, 0.6);
   color: #fff;
   font:
-    800 var(--t-micro) Nunito,
-    sans-serif;
+    800 var(--t-micro) var(--font);
   padding: 2px 7px;
   border-radius: 999px;
   z-index: 2;
@@ -1588,7 +1579,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
   height: 34px;
   border-radius: 50%;
   border: 0;
-  background: rgba(31, 87, 88, 0.88);
+  background: rgba(10, 56, 51, 0.88);
   color: #fff;
   font-size: var(--t-sm);
   cursor: pointer;
@@ -1606,8 +1597,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
 .vitem .txt b {
   display: block;
   font:
-    600 var(--t-sm) Fredoka,
-    sans-serif;
+    600 var(--t-sm) var(--font);
   color: var(--ink);
 }
 .vitem .txt p {
@@ -1620,15 +1610,14 @@ body:has(#chatCad:not([hidden])) .mindFab {
 .vitem .txt u {
   text-decoration: none;
   font:
-    700 var(--t-md) Nunito,
-    sans-serif;
+    700 var(--t-md) var(--font);
   color: var(--deep);
 }
 .mkt {
   margin-top: 14px;
   padding: 13px;
   border-radius: 13px;
-  background: #fdfbf6;
+  background: #fdfcfa;
   border: 1.5px solid var(--line);
 }
 .mkt .bar {
@@ -1670,8 +1659,7 @@ body:has(#chatCad:not([hidden])) .mindFab {
 .mkt .mk b,
 .mkt .yo b {
   font:
-    700 var(--t-xs) Nunito,
-    sans-serif;
+    700 var(--t-xs) var(--font);
   display: block;
   margin-top: 3px;
 }

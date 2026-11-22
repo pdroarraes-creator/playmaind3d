@@ -23,7 +23,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | Caminho | O que é |
 |---|---|
 | `app/index.html` | Shell da app: markup das abas. Sem CSS e sem JS inline. |
-| `app/app.css` | Todo o estilo. Design tokens em `:root`. |
+| `app/app.css` | Todo o estilo. Design tokens em `:root`, alinhados à paleta do site (petróleo `#0F4C45`, terracota `#C86D51`, creme `#FAF9F6`, tinta `#181A1B`) e à fonte Plus Jakarta Sans (`--font`). Cor nova entra como token, não solta. O PDF do orçamento (`app/presupuesto-pdf.js`) ainda embute a Fredoka. |
 | `app/js/*.js` | Toda a lógica da app, em módulos ES (`<script type="module" src="js/main.js">`). Ver a tabela de módulos abaixo. |
 | `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy** e a linha "Versión de la app" em `app/index.html` (Ajustes) junto. O número atual está na 2ª linha do arquivo (não repita aqui: fica velho a cada deploy). |
 | `app/manifest.json` | PWA. `scope` e `start_url` = `/app/`. |

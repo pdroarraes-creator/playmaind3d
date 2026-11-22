@@ -132,7 +132,7 @@ async function main() {
   let browser;
   try {
     browser = await chromium.launch();
-    const ctx = await browser.newContext({ serviceWorkers: "block" });
+    const ctx = await browser.newContext({ serviceWorkers: "block", viewport: process.env.CAPTURAS ? { width: 390, height: 844 } : undefined });
     const page = await ctx.newPage();
 
     const errores = [];
@@ -234,6 +234,8 @@ async function main() {
             t,
             { timeout: 5000 },
           );
+          // CAPTURAS=<carpeta>: una imagen por pestaña (para comparar cambios de diseño)
+          if (process.env.CAPTURAS) await page.screenshot({ path: process.env.CAPTURAS + "/" + t + ".png", fullPage: false });
         } catch (e) {
           fallas.push(t);
         }
