@@ -9,7 +9,9 @@
   --teal-ink: #125F56;
   --teal-tint: #DDF0E9;
   --coral: #FF8C73;
-  --coral-ink: #A93D28;
+  --coral-tint: color-mix(in srgb, var(--paper) 78%, var(--coral));
+  --coral-ink: color-mix(in srgb, var(--ink) 58%, var(--coral));
+  --coral-border: color-mix(in srgb, var(--coral-ink) 72%, var(--coral-tint));
   --gold: #AB813D;
   --gold-tint: #F6E8C9;
   --title-font: Nunito, ui-rounded, system-ui, sans-serif;
@@ -81,7 +83,7 @@ img { display: block; max-inline-size: 100%; }
 }
 .brand { display: inline-flex; align-items: center; gap: 8px; font: 900 1.48rem/1 var(--title-font); letter-spacing: -.04em; white-space: nowrap; }
 .brand b { color: var(--coral-ink); font-weight: 900; }
-.brand-mark { display: grid; flex: none; place-items: center; inline-size: 38px; block-size: 38px; border-radius: 13px; background: var(--coral); color: var(--ink); }
+.brand-mark { display: grid; flex: none; place-items: center; inline-size: 38px; block-size: 38px; border-radius: 13px; background: var(--coral-tint); color: var(--coral-ink); }
 .brand-mark .icon { inline-size: 22px; block-size: 22px; }
 .brand-lockup { display: grid; gap: 4px; }
 .brand-caption { color: var(--soft-ink); font: 700 .67rem/1.22 var(--body-font); letter-spacing: .015em; }
@@ -129,7 +131,7 @@ img { display: block; max-inline-size: 100%; }
   line-height: 1.24;
 }
 .button .icon { inline-size: 17px; block-size: 17px; }
-.button-primary { min-block-size: 48px; background: var(--coral); color: var(--ink); }
+.button-primary { min-block-size: 48px; border-color: var(--coral-border); background: var(--coral-tint); color: var(--coral-ink); }
 .button-outline { border-color: var(--teal-ink); background: transparent; color: var(--teal-ink); }
 
 .line-nav {
@@ -276,7 +278,7 @@ img { display: block; max-inline-size: 100%; }
 .bag-footer .demo-note { margin-block-end: 0; text-align: center; }
 
 @media (hover: hover) {
-  .button-primary:not(:disabled):hover { background: color-mix(in srgb, var(--coral) 87%, var(--gold-tint)); }
+  .button-primary:not(:disabled):hover { background: color-mix(in srgb, var(--coral-tint) 90%, var(--coral-ink)); }
   .button-outline:hover, .line-link:not([aria-current]):hover, .search-clear:hover, .sheet-close:hover, .motion-toggle:hover, .quantity-control button:not(:disabled):hover, .bag-remove:hover { background: var(--teal-tint); }
   .bag-button:not(:disabled):hover, .collection-tile:hover { border-color: var(--teal); }
   .store-note a:hover { text-decoration: underline; }
