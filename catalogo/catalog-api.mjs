@@ -19,7 +19,7 @@ const numero = (valor) => {
   return Number.isFinite(n) ? n : 0;
 };
 const texto = (valor) => (typeof valor === "string" ? valor.trim() : "");
-const slug = (valor) =>
+export const slug = (valor) =>
   String(valor ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export function lineaDe({ cat, nome }) {

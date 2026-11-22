@@ -1,1216 +1,278 @@
-<!DOCTYPE html>
-<html lang="es-AR">
+<!doctype html>
+<html lang="es-AR" data-color-mode="light" data-light-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PlayMind 3d — Juguetes sensoriales impresos en 3D</title>
-<meta name="description" content="Fidgets y juguetes sensoriales articulados, diseñados e impresos en 3D a pedido. Elegís el color.">
-<link rel="icon" type="image/png" href="assets/logo-180.png">
-<link rel="apple-touch-icon" href="assets/logo-180.png">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --teal:#2C7A7B; --teal-dark:#1F5758; --sky:#7FB8D3;
-    --coral:#F4A97F; --coral-deep:#E8895A; --gold:#C9A227;
-    --bg:#FAF6EE; --ink:#3A3A38; --ink-soft:#6E6E6A; --line:#E4DCCB;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{background:var(--bg);font-family:'Nunito',sans-serif;color:var(--ink);overflow-x:hidden;}
-  h1,h2,h3{font-family:'Fredoka',sans-serif;color:var(--teal-dark);}
-  .wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
-
-  nav{position:sticky;top:0;z-index:50;background:rgba(250,246,238,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
-  .nav-in{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;max-width:1180px;margin:0 auto;}
-  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;}
-  .brand img{height:46px;width:46px;object-fit:cover;border-radius:50%;display:block;}
-  .brand b{font-family:'Fredoka',sans-serif;font-weight:600;font-size:19px;color:var(--teal-dark);}
-  .brand b em{font-style:normal;color:var(--coral-deep);}
-  .nav-links a.admin[hidden]{display:none!important;}
-  .nav-links a.admin{font-size:12px;color:var(--ink-soft);opacity:.55;font-weight:700;}
-  .nav-links a.admin:hover{opacity:1;}
-  @media (max-width:760px){ .nav-links a.admin{display:inline!important;} }
-  .nav-links{display:flex;gap:26px;align-items:center;}
-  .nav-links a{text-decoration:none;color:var(--ink-soft);font-weight:800;font-size:14.5px;}
-  .nav-links a:hover{color:var(--teal);}
-  .btn{font-family:'Fredoka',sans-serif;font-weight:600;border-radius:999px;text-decoration:none;display:inline-block;transition:transform .15s ease;}
-  .btn:hover{transform:translateY(-2px);}
-  .btn-wsp{background:var(--coral);color:#fff;font-size:15px;padding:11px 22px;box-shadow:0 6px 16px rgba(232,137,90,.35);}
-  @media (max-width:760px){.nav-links a:not(.btn-wsp){display:none;} .brand b{font-size:17px;}}
-
-  .hero{display:grid;grid-template-columns:1fr 1.1fr;align-items:center;max-width:1180px;margin:0 auto;padding:56px 24px 30px;gap:24px;min-height:82vh;}
-  .eyebrow{display:inline-block;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);border:1.5px solid var(--teal);padding:7px 16px;border-radius:999px;background:#fff;margin-bottom:20px;}
-  .hero h1{font-weight:700;font-size:clamp(38px,5vw,58px);line-height:1.04;}
-  .hero h1 em{font-style:normal;color:var(--coral-deep);}
-  .hero .sub{margin-top:18px;font-size:18px;line-height:1.6;color:var(--ink-soft);max-width:430px;}
-  .hero .sub b{color:var(--ink);}
-  .cta-row{margin-top:28px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
-  .btn-primary{background:var(--coral);color:#fff;font-size:17px;padding:14px 28px;box-shadow:0 8px 20px rgba(232,137,90,.35);}
-  .btn-ghost{color:var(--teal);border:2px solid var(--teal);font-size:17px;padding:12px 26px;}
-  .made{margin-top:24px;font-size:13px;font-weight:800;color:var(--ink-soft);}
-  .made span{color:var(--gold);}
-  .stage{position:relative;height:min(72vh,600px);}
-  #c{width:100%;height:100%;display:block;}
-  .stage-caption{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);opacity:.7;white-space:nowrap;}
-  .hero-fallback{display:none;width:100%;height:100%;align-items:center;justify-content:center;}
-  .hero-fallback img{max-width:88%;max-height:96%;object-fit:contain;filter:drop-shadow(0 14px 30px rgba(58,58,56,.18));}
-  .stage.static #c{display:none;}
-  .stage.static .hero-fallback{display:flex;}
-  @media (max-width:900px){
-    .hero{grid-template-columns:1fr;text-align:center;padding-top:44px;min-height:auto;}
-    .hero .sub{margin-left:auto;margin-right:auto;}
-    .cta-row{justify-content:center;}
-    .stage{height:46vh;min-height:300px;}
-  }
-
-  section{padding:74px 0;}
-  .sec-head{text-align:center;max-width:560px;margin:0 auto 44px;}
-  .sec-head h2{font-size:clamp(28px,3.6vw,40px);font-weight:700;}
-  .sec-head p{margin-top:10px;color:var(--ink-soft);font-size:16.5px;line-height:1.6;}
-
-  #piezas{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:26px;}
-  .p-card{background:var(--bg);border-radius:22px;overflow:hidden;position:relative;border:1px solid var(--line);transition:transform .18s ease, box-shadow .18s ease;display:flex;flex-direction:column;}
-  .p-card:hover{transform:translateY(-5px);box-shadow:0 16px 36px rgba(58,58,56,.12);}
-  .p-photo{position:relative;aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#EFE8D8 0 14px,#EAE2CF 14px 28px);display:flex;align-items:center;justify-content:center;position:relative;}
-  .p-photo img{width:100%;height:100%;object-fit:cover;display:block;}
-  .p-photo .ph{font-size:13px;font-weight:800;color:var(--ink-soft);text-align:center;line-height:1.5;padding:0 30px;}
-  .p-price{position:absolute;top:16px;right:16px;background:var(--coral);color:#fff;font-family:'Fredoka',sans-serif;font-weight:700;padding:9px 14px 7px;border-radius:14px;text-align:center;transform:rotate(3deg);box-shadow:0 5px 14px rgba(232,137,90,.4);}
-  .p-price .amount{font-size:20px;display:block;}
-  .p-price .per{font-family:'Nunito',sans-serif;font-weight:800;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.92;}
-  .p-body{padding:20px 22px 22px;display:flex;flex-direction:column;flex:1;}
-  .p-body .cat{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--coral-deep);}
-  .p-body h3{font-size:23px;font-weight:600;margin-top:3px;}
-  .p-benefits{margin:14px 0 18px;display:flex;flex-direction:column;gap:9px;}
-  .p-benefit{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;line-height:1.4;}
-  .p-benefit svg{flex-shrink:0;margin-top:1px;}
-  .p-benefit b{color:var(--teal-dark);}
-  .p-benefit span{color:var(--ink-soft);}
-  .p-cta{margin-top:auto;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15.5px;color:var(--coral-deep);text-decoration:none;}
-  .p-cta:hover{text-decoration:underline;}
-
-  #leti .leti-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center;}
-  .leti-photo{aspect-ratio:4/5;border-radius:24px;overflow:hidden;position:relative;background:repeating-linear-gradient(45deg,#EFE8D8 0 14px,#EAE2CF 14px 28px);display:flex;align-items:center;justify-content:center;border:2px dashed var(--line);}
-  .leti-photo .ph{font-size:13px;font-weight:800;color:var(--ink-soft);text-align:center;line-height:1.6;padding:0 36px;}
-  .leti-photo img{width:100%;height:100%;object-fit:cover;}
-  .leti-badge{position:absolute;bottom:18px;left:18px;background:#fff;border-radius:14px;padding:10px 16px;font-size:12.5px;font-weight:800;color:var(--teal);box-shadow:0 6px 18px rgba(58,58,56,.14);}
-  #leti h2{font-size:clamp(28px,3.4vw,38px);}
-  #leti .quote{margin-top:18px;font-size:19px;line-height:1.65;color:var(--ink);}
-  #leti .quote em{color:var(--coral-deep);font-style:normal;font-weight:700;}
-  #leti .story{margin-top:16px;font-size:16px;line-height:1.7;color:var(--ink-soft);}
-  .orbit-deco{position:absolute;pointer-events:none;opacity:.5;}
-  @media (max-width:860px){
-    #leti .leti-grid{grid-template-columns:1fr;gap:28px;}
-    .leti-photo{max-width:380px;margin:0 auto;}
-  }
-
-  .seals{background:var(--teal-dark);}
-  .seals .wrap{display:flex;justify-content:center;gap:clamp(24px,6vw,70px);flex-wrap:wrap;padding-top:38px;padding-bottom:38px;}
-  .seal{display:flex;align-items:center;gap:11px;color:#fff;}
-  .seal svg{flex-shrink:0;}
-  .seal b{font-size:15px;font-weight:800;display:block;line-height:1.2;}
-  .seal small{font-size:12.5px;opacity:.75;font-weight:600;}
-
-  #contacto{text-align:center;}
-  #contacto h2{font-size:clamp(28px,3.6vw,40px);}
-  #contacto p{margin:14px auto 0;max-width:480px;color:var(--ink-soft);font-size:17px;line-height:1.65;}
-  .wsp-big{margin-top:30px;background:var(--coral);color:#fff;font-size:19px;padding:17px 36px;box-shadow:0 10px 26px rgba(232,137,90,.4);display:inline-flex;align-items:center;gap:11px;}
-  .ig-link{display:block;margin-top:18px;font-weight:800;color:var(--teal);text-decoration:none;font-size:15px;}
-  .ig-link:hover{text-decoration:underline;}
-
-  footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;font-size:13px;font-weight:700;color:var(--ink-soft);}
-  footer span{color:var(--gold);}
-
-  /* ---- carrito, packs y galería ---- */
-  .cargando{grid-column:1/-1;text-align:center;color:var(--ink-soft);font-size:14px;padding:40px 16px;
-    border:1px dashed var(--line);border-radius:20px;background:var(--bg);}
-  .p-card.elegido{border-color:var(--teal);box-shadow:0 0 0 2px rgba(44,122,123,.16);}
-  .p-photo img{opacity:0;transition:opacity .3s;position:absolute;inset:0;}
-  .p-photo img.on{opacity:1;}
-  .p-photo .flecha{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:38px;height:38px;
-    border-radius:50%;border:0;cursor:pointer;background:rgba(255,255,255,.92);color:var(--teal-dark);
-    font-size:22px;line-height:1;box-shadow:0 3px 10px rgba(58,58,56,.2);}
-  .p-photo .flecha.prev{left:10px;} .p-photo .flecha.next{right:10px;}
-  .p-photo .contador{position:absolute;top:14px;left:14px;z-index:3;background:rgba(58,58,56,.6);
-    color:#fff;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;}
-  .p-photo .play{position:absolute;left:14px;bottom:14px;z-index:3;border:0;cursor:pointer;
-    background:rgba(31,87,88,.9);color:#fff;font-family:'Fredoka',sans-serif;font-weight:600;font-size:14px;
-    padding:9px 16px;border-radius:999px;backdrop-filter:blur(4px);}
-  .p-photo .vid{position:absolute;inset:0;width:100%;height:100%;border:0;}
-  .minis{display:flex;gap:6px;padding:8px 10px 0;overflow-x:auto;}
-  .minis button{flex:none;width:46px;height:46px;border-radius:10px;overflow:hidden;padding:0;cursor:pointer;
-    border:2px solid transparent;background:none;}
-  .minis button.on{border-color:var(--teal);}
-  .minis img{width:100%;height:100%;object-fit:cover;display:block;}
-  .p-ficha{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0;}
-  .p-ficha span{background:var(--bg-soft);border:1px solid var(--line);border-radius:9px;
-    padding:4px 9px;font-size:11.5px;font-weight:800;color:var(--ink-soft);}
-  .selector{display:flex;align-items:center;gap:9px;margin-top:16px;flex-wrap:wrap;}
-  .stepper{display:flex;align-items:center;gap:6px;background:var(--bg-soft);border:1px solid var(--line);
-    border-radius:13px;padding:4px;}
-  .stepper button{width:34px;height:34px;border:1px solid var(--line);background:#fff;border-radius:10px;
-    color:var(--teal);font-family:'Fredoka',sans-serif;font-size:19px;line-height:1;cursor:pointer;}
-  .stepper i{min-width:24px;text-align:center;font-style:normal;font-weight:800;font-size:15px;}
-  .selector select{flex:1;min-width:132px;font-family:'Nunito',sans-serif;font-size:13.5px;font-weight:700;
-    padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:var(--bg-soft);color:var(--ink);}
-
-  .packs-tit{font-family:'Fredoka',sans-serif;font-weight:600;font-size:17px;color:var(--teal-deep);
-    margin:0 0 14px;display:flex;align-items:center;gap:10px;}
-  .packs-tit:after{content:"";flex:1;height:1px;background:var(--line);}
-  .regla{background:linear-gradient(160deg,#FBEEE3,var(--bg));border:1.5px dashed var(--coral-deep);
-    border-radius:18px;padding:15px 18px;margin-bottom:14px;}
-  .regla b{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:17px;color:var(--coral-deep);}
-  .regla span{font-size:14px;color:var(--ink);}
-  .linea.desc .n b{color:var(--coral-deep);}
-  .linea.desc .v{color:var(--coral-deep);}
-  .empuje{background:#FBEEE3;border-radius:12px;padding:11px 13px;font-size:13.5px;
-    font-weight:700;color:var(--coral-deep);margin:12px 0 0;}
-  .packs-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-bottom:34px;}
-  .pack{position:relative;background:linear-gradient(160deg,#EAF3EE,var(--bg));border:1px solid var(--line);
-    border-radius:22px;padding:22px 20px 20px;}
-  .pack.elegido{border-color:var(--teal);box-shadow:0 0 0 2px rgba(44,122,123,.16);}
-  .pack b{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:20px;}
-  .pack p{margin:7px 0 0;font-size:14px;line-height:1.55;}
-  .pack .inc{display:block;margin-top:9px;font-size:12.5px;color:var(--ink-soft);}
-  .pack .precios{display:flex;align-items:baseline;gap:10px;margin-top:14px;}
-  .pack u{text-decoration:none;font-family:'Fredoka',sans-serif;font-weight:700;font-size:25px;color:var(--teal-deep);}
-  .pack s{font-size:15px;color:var(--ink-soft);}
-  .cinta{position:absolute;top:-11px;right:16px;background:var(--coral);color:#fff;
-    font-family:'Fredoka',sans-serif;font-weight:600;font-size:12px;padding:5px 12px;border-radius:20px;
-    box-shadow:0 4px 12px rgba(232,137,90,.4);}
-
-  .barra{position:fixed;left:0;right:0;bottom:0;z-index:60;background:rgba(250,246,238,.96);backdrop-filter:blur(8px);
-    border-top:1px solid var(--line);padding:11px 0 calc(11px + env(safe-area-inset-bottom,0px));}
-  .barra-in{max-width:1120px;margin:0 auto;padding:0 22px;display:flex;align-items:center;
-    justify-content:space-between;gap:14px;}
-  .res{font-size:13.5px;font-weight:700;line-height:1.3;}
-  .res b{display:block;font-family:'Fredoka',sans-serif;font-size:17px;color:var(--teal-deep);}
-  .wsp-big.chico{font-size:15px;padding:11px 20px;white-space:nowrap;}
-
-  .hoja{position:fixed;inset:0;background:rgba(58,58,56,.5);z-index:80;display:none;align-items:flex-end;}
-  .hoja.on{display:flex;}
-  .hoja>div{background:var(--bg);width:100%;max-height:88vh;overflow:auto;border-radius:24px 24px 0 0;
-    padding:24px 20px calc(24px + env(safe-area-inset-bottom,0px));max-width:620px;margin:0 auto;}
-  @media(min-width:700px){.hoja{align-items:center;}.hoja>div{border-radius:22px;}}
-  .hoja h3{font-family:'Fredoka',sans-serif;font-weight:600;font-size:22px;color:var(--teal-deep);margin:0;}
-  .sub-hoja{font-size:13px;color:var(--ink-soft);margin:5px 0 10px;}
-  .vacio{font-size:14px;color:var(--ink-soft);padding:14px 0;}
-  .linea{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line);}
-  .linea .n{flex:1;min-width:0;}
-  .linea .n b{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15.5px;}
-  .linea .n span{font-size:12.5px;color:var(--ink-soft);}
-  .linea .v{font-weight:800;white-space:nowrap;}
-  .total{display:flex;justify-content:space-between;align-items:baseline;margin:18px 0 2px;}
-  .total b{font-family:'Fredoka',sans-serif;font-weight:700;font-size:25px;color:var(--teal-deep);}
-  .hoja label{display:block;font-size:12.5px;color:var(--ink-soft);margin:15px 0 5px;font-weight:800;}
-  .hoja input,.hoja textarea{width:100%;font-family:'Nunito',sans-serif;font-size:15px;padding:12px;
-    border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink);}
-  .detfoto{border-radius:16px;overflow:hidden;margin-bottom:14px;aspect-ratio:16/10;background:var(--bg);}
-  .detfoto img{width:100%;height:100%;object-fit:cover;}
-  /* la galería del detalle: mismas piezas que la de las tarjetas (.p-photo,
-     .flecha, .contador, .minis) pero apaisada y con las esquinas redondeadas */
-  .detgal{aspect-ratio:16/10;border-radius:16px;overflow:hidden;}
-  .detmin{margin-bottom:14px;}
-  .detlead{font-size:16px;font-weight:700;color:var(--teal-dark);margin:6px 0 0;}
-  .tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;}
-  .tags button{background:var(--bg-soft,#EFE8D8);border:1px solid var(--line);border-radius:999px;
-    padding:4px 11px;font-size:12px;font-weight:800;color:var(--ink-soft);cursor:pointer;
-    font-family:'Nunito',sans-serif;}
-  .tags button:hover{border-color:var(--teal);color:var(--teal-deep);}
-  /* ---- botón flotante de WhatsApp ----
-     Va por encima de la barra de abajo, que es fija y siempre está: si no,
-     le quedaría encima al "Ver pedido". */
-  .wspFab{position:fixed;right:18px;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:70;
-    width:54px;height:54px;border-radius:50%;background:#25D366;color:#fff;
-    display:grid;place-items:center;box-shadow:0 8px 22px rgba(37,211,102,.42);
-    transition:transform .15s;}
-  .wspFab[hidden]{display:none;}
-  .wspFab:hover{transform:scale(1.07);}
-  .wspFab:active{transform:scale(.95);}
-  .wspFab svg{width:30px;height:30px;display:block;}
-  @media (max-width:760px){
-    .wspFab{width:50px;height:50px;right:14px;}
-    .wspFab svg{width:27px;height:27px;}
-  }
-
-  /* ---- muestrario que gira solo ----
-     La tira lleva la lista DUPLICADA y se corre hasta -50%: cuando termina la
-     primera copia, la segunda está exactamente donde arrancó la primera, así
-     el salto del reinicio no se ve y parece que gira sin fin. */
-  .vitrina{overflow:hidden;padding:6px 0 4px;}
-  .vitrina[hidden]{display:none;}
-  /* la separación va como margen del item y NO como gap de la tira: con gap,
-     la mitad del ancho total no cae justo en el borde de la segunda copia
-     (sobra medio espacio) y cada vuelta daba un saltito */
-  .vitrina .tira{display:flex;width:max-content;animation:girar 60s linear infinite;}
-  .vitrina:hover .tira{animation-play-state:paused;}
-  @keyframes girar{from{transform:translateX(0);} to{transform:translateX(-50%);}}
-  .vitrina .item{flex:none;margin-right:16px;width:62vw;max-width:260px;cursor:pointer;background:var(--card,#fff);
-    border:1px solid var(--line);border-radius:18px;overflow:hidden;
-    box-shadow:0 6px 18px rgba(58,58,56,.07);}
-  .vitrina .item .f{aspect-ratio:1/1;background:var(--bg);}
-  .vitrina .item img{width:100%;height:100%;object-fit:cover;display:block;}
-  .vitrina .item .t{padding:10px 13px 13px;}
-  .vitrina .item b{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15px;
-    line-height:1.25;color:var(--ink);
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .vitrina .item span{display:block;margin-top:3px;font-size:14px;font-weight:800;color:var(--teal-deep,#1F5758);}
-  .vitrina .item i{font-style:normal;font-size:11.5px;font-weight:800;color:var(--leaf,#8FBF7F);}
-  @media (min-width:900px){
-    .vitrina{padding:10px 0 6px;}
-    .vitrina .item{width:30vw;max-width:340px;} /* tres a la vez en pantalla grande */
-  }
-  /* a quien pidió menos movimiento se le muestra quieto, sin animación */
-  @media (prefers-reduced-motion: reduce){
-    .vitrina .tira{animation:none;}
-    .vitrina{overflow-x:auto;}
-  }
-
-  /* ---- filtros del catálogo ---- */
-  .filtros{margin:0 0 22px;}
-  .filtros #buscar{width:100%;max-width:420px;font-family:'Nunito',sans-serif;font-size:15px;
-    padding:12px 15px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
-  .chips button{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:7px 15px;
-    font-family:'Fredoka',sans-serif;font-size:13.5px;font-weight:500;color:var(--ink-soft);
-    cursor:pointer;white-space:nowrap;}
-  .chips button.on{background:var(--teal-deep,#1F5758);border-color:var(--teal-deep,#1F5758);color:#fff;}
-  .chips button.stock.on{background:var(--leaf,#8FBF7F);border-color:var(--leaf,#8FBF7F);}
-  .nada{grid-column:1/-1;text-align:center;padding:34px 20px;color:var(--ink-soft);font-size:15px;}
-  .nada button{margin-top:12px;background:none;border:0;color:var(--teal-deep,#1F5758);
-    font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;text-decoration:underline;}
-  .compartir{width:100%;margin-top:10px;background:none;border:1.5px solid var(--line);border-radius:999px;
-    padding:11px;font-family:'Fredoka',sans-serif;font-size:14.5px;font-weight:500;color:var(--ink-soft);
-    cursor:pointer;}
-  .datos{margin:16px 0 0;border-top:1px solid var(--line);}
-  .dato{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);}
-  .dato u{text-decoration:none;font-size:13px;color:var(--ink-soft);font-weight:700;}
-  .dato b{font-size:13.5px;text-align:right;}
-  .err{color:#A8483A;font-weight:800;font-size:13.5px;margin:10px 0 0;}
-  .detalle{font-size:15px;line-height:1.65;margin:10px 0 4px;}
-  .editar{display:inline-block;margin-top:10px;font-family:'Fredoka',sans-serif;font-weight:600;
-    font-size:13.5px;color:var(--teal);text-decoration:none;border:1.5px dashed var(--teal);
-    padding:6px 13px;border-radius:999px;}
-  .vermas{margin-top:12px;background:none;border:0;padding:0;cursor:pointer;
-    font-family:'Fredoka',sans-serif;font-weight:600;font-size:14.5px;color:var(--coral-deep);}
-  .top{position:absolute;top:14px;left:14px;z-index:3;background:var(--gold);color:#fff;
-    font-family:'Fredoka',sans-serif;font-weight:600;font-size:12px;padding:5px 12px;border-radius:999px;
-    box-shadow:0 3px 10px rgba(201,162,39,.4);}
-  .opis{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
-  .opi{margin:0;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:20px 18px;}
-  .opi blockquote{margin:0;font-size:15.5px;line-height:1.6;color:var(--ink);}
-  .opi figcaption{margin-top:11px;font-size:13px;font-weight:800;color:var(--teal-dark);}
-  .opi figcaption span{color:var(--ink-soft);font-weight:700;}
-  .cerrar{width:100%;margin-top:10px;background:none;border:1px solid var(--line);border-radius:14px;
-    padding:12px;font-family:'Fredoka',sans-serif;font-size:15px;color:var(--ink-soft);cursor:pointer;}
-  body{padding-bottom:86px;}
-  .marca-txt{display:inline-block!important;font-family:'Fredoka',sans-serif;font-weight:600;font-size:18px;color:var(--teal-deep);
-    letter-spacing:-.01em;line-height:1;margin-left:9px;}
-  .marca-txt i{font-style:normal;font-weight:700;color:var(--coral-deep);}
-  nav a.brand,header .brand{display:flex;align-items:center;}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#FAF9F6">
+  <meta name="description" content="Fidgets y juguetes sensoriales articulados, deco y regalos personalizados, diseñados e impresos en 3D a pedido en Pilar, con PLA vegetal.">
+  <link rel="canonical" href="https://playmind3d.com/">
+  <title>PlayMind 3d — Juguetes sensoriales impresos en 3D</title>
+  <link rel="icon" href="./catalogo/assets/logo-mark.webp" type="image/webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&amp;display=swap">
+  <link rel="stylesheet" href="./catalogo/primer-tokens.css">
+  <link rel="stylesheet" href="./catalogo/styles.css">
+  <link rel="stylesheet" href="./catalogo/motion-showcase.css">
+  <link rel="preload" href="./catalogo/assets/logo-intro.webp" as="image" type="image/webp">
+  <script type="module" src="./catalogo/catalog.mjs"></script>
 </head>
 <body>
-
-<nav>
-  <div class="nav-in">
-    <a class="brand" href="#">
-      <img src="assets/logo-marca.png" alt="Play Mind 3d">
-      <b>Play Mind <em>3d</em></b>
-    </a>
-    <div class="nav-links">
-      <a href="#piezas">Piezas</a>
-      <a href="#leti">La historia</a>
-      <a href="/vender" class="admin" id="lnkVender" hidden>Vender</a>
-      <a href="/app/" class="admin" id="lnkAdmin" hidden>Admin</a>
-      <a class="btn btn-wsp" href="https://wa.me/5491100000000?text=%C2%A1Hola!%20Quiero%20pedir%20una%20pieza%20de%20Playmind%203D" target="_blank" rel="noopener">Escribime →</a>
-    </div>
-  </div>
-</nav>
-
-<header class="hero">
-  <div>
-    <div class="eyebrow">Arte 3D · Impreso a pedido</div>
-    <h1>De una impresora,<br><em>un mundo</em>.</h1>
-    <p class="sub">Cada pieza nace capa por capa en nuestro taller: fidgets, arte y juguetes sensoriales diseñados e impresos a mano.</p>
-    <div class="cta-row">
-      <a class="btn btn-primary" href="#piezas">Descubrí las piezas →</a>
-      <a class="btn btn-ghost" href="#leti">La historia</a>
-    </div>
-    <div class="made">Impreso en PLA · Elegís el color · <span>Playmind 3d</span></div>
-  </div>
-  <div class="stage static" id="stage">
-    <div class="hero-fallback"><img src="assets/logo.png" alt="Play Mind 3d"></div>
-    <div class="stage-caption">Imprimiendo tu próximo mundo…</div>
-  </div>
-</header>
-
-<!-- muestrario que gira solo, de derecha a izquierda -->
-<section class="vitrina" id="vitrina" hidden aria-label="Piezas destacadas">
-  <div class="tira" id="vitrinaTira"></div>
-</section>
-
-<section id="piezas">
-  <div class="wrap">
-    <div class="sec-head">
-      <h2>Las piezas</h2>
-      <p>Fidgets divertidos y sensoriales, impresos capa por capa. Elegí la tuya y escribime por WhatsApp para pedirla.</p>
-    </div>
-    <div id="packs"></div>
-    <div class="filtros" id="filtros" hidden>
-      <input type="search" id="buscar" placeholder="Buscar por nombre o etiqueta…" aria-label="Buscar">
-      <div class="chips" id="chips"></div>
-    </div>
-    <div class="grid" id="catalogo">
-      <div class="cargando">Trayendo las piezas…</div>
-    </div>
-    </div>
-  </div>
-</section>
-
-<div id="opiniones" class="w" style="max-width:1120px;margin:0 auto;padding:0 22px 30px"></div>
-
-<section id="leti" style="position:relative;">
-  <svg class="orbit-deco" style="top:-30px;right:-60px;" width="240" height="240" viewBox="0 0 260 260" fill="none">
-    <ellipse cx="130" cy="130" rx="120" ry="86" stroke="#7FB8D3" stroke-width="2" stroke-dasharray="2 9" transform="rotate(-24 130 130)"/>
-    <ellipse cx="130" cy="130" rx="94" ry="64" stroke="#C9A227" stroke-width="2" stroke-dasharray="2 9" transform="rotate(-24 130 130)"/>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></symbol>
+    <symbol id="icon-bag" viewBox="0 0 24 24"><path d="M5 7h14l1 13H4L5 7ZM9 9V6a3 3 0 0 1 6 0v3"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14"/></symbol>
+    <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.25"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 16 16"><path d="M2.5 8h10m-4-4 4 4-4 4"/></symbol>
+    <symbol id="icon-arrow-up" viewBox="0 0 16 16"><path d="M8 13.5v-11m-4 4 4-4 4 4"/></symbol>
+    <symbol id="icon-up-right" viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></symbol>
+    <symbol id="icon-gift" viewBox="0 0 24 24"><path d="M3 8h18v4H3zm2 4v9h14v-9m-7-4v13m0-13H8.5A2.5 2.5 0 1 1 11 5.5L12 8Zm0 0h3.5A2.5 2.5 0 1 0 13 5.5L12 8Z"/></symbol>
+    <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></symbol>
+    <symbol id="icon-ruler" viewBox="0 0 24 24"><path d="m2.5 16.5 14-14 5 5-14 14-5-5ZM7 12l2.5 2.5m1-6 2.5 2.5m1-6 2.5 2.5"/></symbol>
+    <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path class="fill" d="M12.04 2a9.9 9.9 0 0 0-8.5 14.96L2.1 22l5.2-1.37A9.9 9.9 0 1 0 12.04 2Zm0 18.1a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.09.81.83-3.01-.2-.31a8.2 8.2 0 1 1 6.94 3.83Zm4.5-6.14c-.25-.12-1.46-.72-1.69-.8-.22-.09-.39-.13-.55.12-.16.25-.63.8-.78.96-.14.17-.29.19-.53.06a6.7 6.7 0 0 1-1.98-1.22 7.4 7.4 0 0 1-1.37-1.7c-.14-.25 0-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.16.04-.31-.02-.43-.06-.13-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47a.9.9 0 0 0-.65.3 2.75 2.75 0 0 0-.86 2.04c0 1.2.88 2.37 1 2.53.13.17 1.73 2.64 4.19 3.7.59.25 1.04.4 1.4.52.59.18 1.12.16 1.55.1.47-.07 1.46-.6 1.66-1.18.21-.58.21-1.07.15-1.18-.06-.1-.22-.16-.47-.29Z"/></symbol>
+    <symbol id="icon-instagram" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Zm1.5-4.87h.01"/></symbol>
   </svg>
-  <div class="wrap">
-    <div class="leti-grid">
-      <div class="leti-photo">
-        <!-- Foto de las manos trabajando o de la impresora, NO de su cara. -->
-        <div class="ph" id="letiPh">FOTO DE LAS MANOS<br>armando una pieza,<br>o de la impresora trabajando</div>
-        <img id="letiFoto" alt="" hidden>
-        <div class="leti-badge">✦ La artista detrás de Playmind</div>
+  <a class="skip" href="#main">Ir al contenido</a>
+  <div class="announcement" id="inicio">Hecho en Pilar • Impreso a pedido</div>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="#inicio">
+        <img class="brand-mark" src="./catalogo/assets/logo-intro.webp" width="560" height="561" alt="">
+        <span class="brand-name">PlayMind <span>3D</span></span>
+      </a>
+      <nav class="header-links" aria-label="Navegación principal">
+        <a href="#catalogo" data-category-link="todos">Catálogo</a>
+        <a href="#catalogo" data-category-link="todos" data-holiday-link hidden>Especial Navidad</a>
+        <a href="#como-pedir">Cómo pedir</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-button" id="search-toggle" type="button" aria-label="Abrir búsqueda" aria-controls="search-panel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#icon-search"/></svg></button>
+        <button class="bag-button" id="bag-button" type="button" aria-haspopup="dialog" aria-controls="bag-dialog" aria-label="Bolsa, 0 artículos"><svg class="icon" aria-hidden="true"><use href="#icon-bag"/></svg><span>Bolsa</span><span class="bag-count" id="bag-count" aria-hidden="true">0</span></button>
       </div>
-      <div>
-        <div class="eyebrow">La historia</div>
-        <h2>Cada pieza la diseño e imprimo yo.</h2>
-        <p class="quote" id="letiQuote">«Me encanta crear. Dibujo la idea, la modelo en 3D y la veo nacer <em>capa por capa</em> en mi impresora. Cada pieza que te llega pasó por mis manos.»</p>
-        <p class="story" id="letiStory">Playmind 3d nació de la curiosidad y las ganas de hacer de una chica de la casa: artista, creadora y emprendedora. Lo que empezó como un juego se convirtió en un pequeño taller donde el arte y la tecnología se encuentran — y de donde salen mundos para jugar, regalar y coleccionar.</p>
+    </div>
+    <div class="search-panel" id="search-panel" inert>
+      <div class="search-collapse">
+        <form class="container search-form" id="search-form" role="search">
+          <label class="sr-only" for="search-input">Buscá tu pieza</label>
+          <input id="search-input" type="search" placeholder="Buscá tu pieza..." autocomplete="off">
+          <button class="icon-button" id="search-close" aria-label="Cerrar búsqueda" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button>
+        </form>
       </div>
     </div>
-  </div>
-</section>
+  </header>
+  <p class="sr-only" id="bag-status" role="status"></p>
+  <main id="main" tabindex="-1" class="container">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="float-field" aria-hidden="true">
+        <span class="float-icon" data-wide style="--x: 41%; --y: 9%; --s: 3.5rem; --tilt: -10deg; --bg: var(--card);" data-speed="0.22" data-spin="0.05"><svg class="icon"><use href="#icon-layers"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 46%; --y: 66%; --s: 3rem; --tilt: 12deg; --bg: var(--terracotta); --fg: var(--card);" data-speed="-0.18" data-spin="-0.06"><svg class="icon"><use href="#icon-gift"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 90%; --y: 10%; --s: 3.25rem; --tilt: 8deg; --bg: var(--petrol); --fg: var(--card);" data-speed="0.3" data-spin="0.07"><svg class="icon"><use href="#icon-ruler"/></svg></span>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="signal"></span> Taller de impresión 3D <span class="hero-location">/ Pilar, AR</span></p>
+        <h1 id="hero-title" data-reveal>Objetos que <span class="accent">calman, decoran</span> y sorprenden.</h1>
+        <p class="hero-description">Diseño e impresión 3D en PLA vegetal. Piezas táctiles, deco moderna y regalos personalizados.</p>
+        <a class="button primary" href="#catalogo" data-category-link="todos">Explorá el catálogo <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
+      </div>
+      <figure class="hero-media">
+        <video id="hero-video" width="1200" height="800" autoplay muted loop playsinline preload="auto" poster="./catalogo/assets/studio-hero.webp" aria-label="Video: cubo terracota, cono verde petróleo y tortuga articulada en PLA sobre una base crema">
+          <source src="./catalogo/assets/studio-hero.mp4" type="video/mp4">
+        </video>
+        <button class="media-toggle" id="hero-video-toggle" type="button" aria-pressed="false" aria-label="Pausar video"><svg class="icon" aria-hidden="true"><use href="#icon-pause"/></svg></button>
+        <figcaption><span><i></i> PLA VEGETAL</span><span>COLECCIÓN 01</span></figcaption>
+      </figure>
+    </section>
 
-<div class="seals">
-  <div class="wrap">
-    <div class="seal">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F4A97F" stroke-width="2" stroke-linecap="round"><path d="M12 2l2.5 6.3L21 9l-5 4.3L17.5 20 12 16.4 6.5 20 8 13.3 3 9l6.5-.7z"/></svg>
-      <div><b>Diseñado e impreso<br>por nosotros</b></div>
+    <section class="holiday" id="holiday-section" aria-labelledby="holiday-title" hidden>
+      <div class="holiday-copy">
+        <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#icon-gift"/></svg> Edición de temporada</p>
+        <h2 id="holiday-title" data-reveal>Especial Navidad</h2>
+        <p>Piezas para decorar y regalar durante las fiestas, impresas a pedido.</p>
+      </div>
+      <a class="button holiday-button" href="#catalogo" data-category-link="todos" data-holiday-link hidden>Ver Especial Navidad <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
+    </section>
+
+    <section class="showcase" id="showcase" aria-labelledby="showcase-title" hidden>
+      <div class="float-field" aria-hidden="true">
+        <span class="float-icon" style="--x: 72%; --y: 3%; --s: 3.5rem; --tilt: -12deg; --bg: var(--card);" data-speed="0.26" data-spin="0.06"><svg class="icon"><use href="#icon-layers"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 92%; --y: 12%; --s: 3.25rem; --tilt: 10deg; --bg: var(--petrol); --fg: var(--card);" data-speed="-0.2" data-spin="-0.05"><svg class="icon"><use href="#icon-gift"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 5%; --y: 62%; --s: 3rem; --tilt: 14deg; --bg: var(--terracotta); --fg: var(--card);" data-speed="0.34" data-spin="0.08"><svg class="icon"><use href="#icon-ruler"/></svg></span>
+        <span class="float-icon" style="--x: 88%; --y: 82%; --s: 3.5rem; --tilt: -8deg; --bg: var(--rose); --fg: #783E30;" data-speed="-0.28" data-spin="-0.07"><svg class="icon"><use href="#icon-bag"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 48%; --y: 3%; --s: 2.75rem; --tilt: 6deg; --bg: var(--warm);" data-speed="0.4" data-spin="0.09"><svg class="icon"><use href="#icon-plus"/></svg></span>
+      </div>
+      <div class="showcase-head">
+        <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg> Selección del estudio</p>
+        <h2 id="showcase-title" data-reveal>Piezas <span class="accent">destacadas</span>.</h2>
+      </div>
+      <div class="showcase-stage" role="group" aria-roledescription="carrusel" aria-label="Piezas destacadas">
+        <button class="showcase-arrow" type="button" id="showcase-prev" aria-label="Pieza anterior" aria-controls="showcase-track"><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+        <div class="showcase-viewport">
+          <ul id="showcase-track" class="showcase-track" role="list"></ul>
+        </div>
+        <button class="showcase-arrow" type="button" id="showcase-next" aria-label="Pieza siguiente" aria-controls="showcase-track"><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+        <div class="showcase-dots" id="showcase-dots" role="group" aria-label="Elegir pieza"></div>
+      </div>
+      <p class="sr-only" id="showcase-counter" aria-live="polite"></p>
+    </section>
+
+    <section class="catalog" id="catalogo" aria-labelledby="catalog-title">
+      <div class="section-heading">
+        <div><p class="eyebrow"><span class="signal"></span> Diseñado en Pilar</p><h2 id="catalog-title" tabindex="-1">Elegí tu pieza</h2></div>
+        <p class="result-count" id="result-count" role="status"></p>
+      </div>
+      <div class="filters" role="group" aria-label="Categorías del catálogo">
+        <button type="button" data-category="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-category="sensoriales" aria-pressed="false">Juegos Sensoriales</button>
+        <button type="button" data-category="deco" aria-pressed="false">D3cor</button>
+        <button type="button" data-category="personalizados" hidden aria-pressed="false">Personalizados</button>
+        <button type="button" data-category="kits" hidden aria-pressed="false">Kits para Regalo</button>
+        <button type="button" id="stock-filter" aria-pressed="false" hidden>Listas para llevar</button>
+      </div>
+      <div class="product-grid" id="product-grid"></div>
+      <div class="empty-catalog" id="empty-catalog" hidden><h3>No encontramos piezas</h3><p>Probá con otro nombre o volvé a ver todo el catálogo.</p><button type="button" class="button secondary" id="reset-catalog">Ver todo</button></div>
+      <div class="empty-catalog" id="catalog-error" role="alert" hidden><h3>No pudimos conectar con el catálogo</h3><p>No mostramos datos de ejemplo. Revisá tu conexión y volvé a intentar.</p><button type="button" class="button secondary" id="retry-catalog">Reintentar</button></div>
+      <nav class="pagination" id="pagination" aria-label="Páginas del catálogo" hidden>
+        <button id="page-prev" class="button secondary" type="button">Anterior</button><span id="page-label"></span><button id="page-next" class="button secondary" type="button">Siguiente</button>
+      </nav>
+      <noscript><p>Activá JavaScript para explorar los productos y armar tu bolsa.</p></noscript>
+    </section>
+
+    <section class="guide" id="como-pedir" aria-labelledby="guide-title">
+      <div class="float-field" aria-hidden="true">
+        <span class="float-icon" style="--x: 78%; --y: 2%; --s: 3rem; --tilt: 12deg; --bg: var(--petrol); --fg: var(--card);" data-speed="0.3" data-spin="0.07"><svg class="icon"><use href="#icon-pin"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 90%; --y: 9%; --s: 3.5rem; --tilt: -9deg; --bg: var(--card);" data-speed="-0.22" data-spin="-0.06"><svg class="icon"><use href="#icon-gift"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 66%; --y: 5%; --s: 2.75rem; --tilt: 8deg; --bg: var(--rose); --fg: #783E30;" data-speed="0.4" data-spin="0.09"><svg class="icon"><use href="#icon-layers"/></svg></span>
+      </div>
+      <div class="section-heading"><div><p class="eyebrow"><span class="signal"></span> De Pilar a tus manos</p><h2 id="guide-title" data-reveal>Elegí sin vueltas</h2></div></div>
+      <ul class="benefits" role="list">
+        <li id="entrega"><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg></span><h3>Hecho en Pilar</h3><p>Coordinamos el retiro o la entrega en Pilar y alrededores.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg></span><h3>PLA vegetal</h3><p>Piezas impresas en 3D con bioplástico de origen vegetal.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-ruler"/></svg></span><h3>Fotos y medidas</h3><p>Cada ficha muestra las fotos, la disponibilidad y el tiempo de impresión.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></span><h3>Un solo pedido</h3><p>Armá tu bolsa y mandá todo junto por WhatsApp.</p></li>
+      </ul>
+    </section>
+  </main>
+
+  <button class="mobile-order-bar" id="mobile-order-bar" type="button" aria-label="Ver pedido" hidden>
+    <span class="mobile-order-copy"><strong>Ver pedido</strong><span id="mobile-order-count">0 artículos</span></span>
+    <strong id="mobile-order-total"></strong>
+  </button>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-lead">
+        <p class="eyebrow">Hablemos</p>
+        <h2 data-reveal>¿Tenés alguna duda?</h2>
+        <p>Consultanos por disponibilidad, personalizaciones o entregas en Pilar.</p>
+        <a class="button whatsapp" id="contact-link" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Escribinos por WhatsApp</a>
+        <div class="footer-social">
+          <h3>Seguinos</h3>
+          <ul role="list">
+            <li><a href="https://instagram.com/playmind3d" target="_blank" rel="noopener noreferrer" aria-label="PlayMind 3D en Instagram"><svg class="icon" aria-hidden="true"><use href="#icon-instagram"/></svg></a></li>
+          </ul>
+        </div>
+      </div>
+      <nav class="footer-nav" aria-label="Mapa del sitio">
+        <div>
+          <h3>Explorá</h3>
+          <ul role="list">
+            <li><a href="#catalogo" data-category-link="sensoriales">Juegos Sensoriales</a></li>
+            <li><a href="#catalogo" data-category-link="deco">D3cor</a></li>
+            <li><a href="#catalogo" data-category-link="personalizados" hidden>Personalizados</a></li>
+            <li><a href="#catalogo" data-category-link="kits" hidden>Kits para Regalo</a></li>
+            <li><a href="#catalogo" data-category-link="todos" data-holiday-link hidden>Especial Navidad</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Te ayudamos</h3>
+          <ul role="list">
+            <li><a href="#como-pedir">Cómo hacer un pedido</a></li>
+            <li><a href="#entrega">Entrega y retiro</a></li>
+            <li><a href="#catalogo" data-category-link="todos">Ver todo el catálogo</a></li>
+          </ul>
+        </div>
+      </nav>
     </div>
-    <div class="seal">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#8FBF7F" stroke-width="2" stroke-linecap="round"><path d="M12 21c-5 0-8-3.5-8-8 0-6 8-11 8-11s8 5 8 11c0 4.5-3 8-8 8z"/><path d="M12 21v-8"/></svg>
-      <div><b>Impreso en PLA</b><small>Plástico de origen vegetal</small></div>
+    <div class="container footer-signoff">
+      <p><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg> Diseñado e impreso en Pilar, Buenos Aires</p>
+      <div class="footer-meta">
+        <span class="footer-version">Catálogo V2 · en desarrollo</span>
+        <a class="footer-admin" href="https://playmind3d.com/app/">Admin</a>
+        <a href="#inicio">Volver arriba <svg class="icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg></a>
+      </div>
     </div>
-    <div class="seal">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7FB8D3" stroke-width="2" stroke-linecap="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4.5"/></svg>
-      <div><b>Desde 3 años</b><small>Tiene partes chicas</small></div>
+    <p class="footer-wordmark" aria-hidden="true">playmind3d</p>
+  </footer>
+
+  <a class="whatsapp-float" id="whatsapp-float" target="_blank" rel="noopener noreferrer" aria-label="Escribinos por WhatsApp"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></a>
+  <p class="toast" id="toast" aria-hidden="true"></p>
+
+  <dialog class="product-dialog" id="product-dialog" aria-labelledby="detail-title">
+    <div class="dialog-top"><p class="eyebrow">Ficha de producto</p><button class="icon-button" data-close type="button" aria-label="Cerrar ficha del producto"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
+    <div class="detail-layout">
+      <div class="detail-gallery">
+        <div class="detail-media">
+          <img id="detail-photo" width="480" height="480" alt="">
+          <a class="button secondary demo-button" id="video-link" target="_blank" rel="noopener noreferrer" hidden><svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg><span>Ver video</span></a>
+        </div>
+        <div class="detail-thumbs" id="detail-thumbs" role="group" aria-label="Vistas de la pieza" hidden></div>
+      </div>
+      <form class="detail-form" id="detail-form">
+        <div class="tags" id="detail-tags"></div>
+        <h2 id="detail-title" tabindex="-1"></h2>
+        <p class="detail-trait" id="detail-trait"></p>
+        <p class="detail-price" id="detail-price"></p>
+        <dl class="specs" id="detail-specs"></dl>
+        <label class="field" id="detail-color-field" for="detail-color" hidden>Elegí el color<select id="detail-color" name="color"></select></label>
+        <label class="field" for="detail-name">Aclaración o personalización <input type="text" id="detail-name" maxlength="60" placeholder="Opcional · Ej.: con el nombre Sofi"></label>
+        <button class="button primary" type="submit"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Sumar a la bolsa</button>
+      </form>
     </div>
-    <div class="seal">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="2" stroke-linecap="round"><path d="M20 7h-9M20 12H8M20 17h-6"/><circle cx="5" cy="7" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="10" cy="17" r="1.6"/></svg>
-      <div><b>Hecho a mano</b><small>Capa por capa</small></div>
+  </dialog>
+
+  <dialog class="bag-dialog" id="bag-dialog" aria-labelledby="bag-title">
+    <div class="drawer">
+      <div class="drawer-heading"><div><p class="eyebrow">Tu pedido</p><h2 id="bag-title" tabindex="-1">Tu bolsa</h2></div><button class="icon-button" data-close type="button" aria-label="Cerrar bolsa"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
+      <div class="bag-content" id="bag-content">
+        <div class="bag-empty" id="bag-empty"><svg class="icon" aria-hidden="true"><use href="#icon-bag"/></svg><h3>Tu bolsa está vacía</h3><p>Encontrá algo que te guste y sumalo a tu pedido.</p><button class="button secondary" data-close type="button">Seguir explorando</button></div>
+        <ul class="bag-list" id="bag-list" aria-label="Artículos de tu bolsa"></ul>
+      </div>
+      <div class="drawer-summary" id="bag-summary" hidden>
+        <p class="bag-note" id="bag-discount" role="status" hidden></p>
+        <p class="subtotal">Total <strong id="bag-total"></strong></p>
+        <p class="bag-note">Coordinamos disponibilidad, envío o retiro en Pilar por WhatsApp.</p>
+        <button class="button whatsapp" id="preview-order" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Enviar pedido por WhatsApp</button>
+      </div>
+      <section class="order-preview" id="order-preview" aria-labelledby="preview-title" hidden>
+        <h3 id="preview-title" tabindex="-1">Revisá el mensaje</h3>
+        <pre id="order-message"></pre>
+        <a class="button whatsapp" id="whatsapp-link" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Abrir WhatsApp</a>
+        <button class="button secondary" id="back-to-bag" type="button">Volver a la bolsa</button>
+      </section>
     </div>
-  </div>
-</div>
+  </dialog>
 
-<section id="contacto">
-  <div class="wrap">
-    <h2>¿Querés la tuya?</h2>
-    <p>Armá tu pedido acá arriba con el + y mandámelo por WhatsApp. Te contesto con el tiempo de entrega y coordinamos.</p>
-    <a class="btn wsp-big" href="#" id="verPedido2">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.1 14.2c-.2.6-1.2 1.1-1.7 1.2-.5 0-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.5.5c-.2.2-.3.4-.1.7.2.3.8 1.4 1.8 2.2 1.2 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.6.4.1.1.1.7-.2 1.4z"/></svg>
-      Ver mi pedido
-    </a>
-    <a class="ig-link" href="https://instagram.com/playmind3d" target="_blank" rel="noopener">@playmind3d en Instagram</a>
-  </div>
-</section>
-
-<footer>
-  Playmind <span>3d</span> · Hecho con arte, capa por capa
-</footer>
-
-
-
-<div class="barra" id="barra">
-  <div class="barra-in">
-    <div class="res" id="resumen">Elegí lo que te guste<b>y armá tu pedido</b></div>
-    <button class="btn wsp-big chico" id="verPedido" type="button">Ver pedido</button>
-  </div>
-</div>
-
-<!-- Arranca escondido: recién aparece cuando llegó el número de verdad
-     desde el catálogo, para no ofrecer un WhatsApp que no existe. -->
-<a class="wspFab" id="wspFab" href="#" target="_blank" rel="noopener" hidden
-   aria-label="Escribinos por WhatsApp" title="Escribinos por WhatsApp">
-  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.04 4C9.96 4 5.02 8.94 5.02 15.02c0 1.94.51 3.83 1.47 5.5L4.94 27l6.65-1.5a11 11 0 0 0 4.45.94h.01c6.08 0 11.02-4.94 11.02-11.02C27.07 8.94 22.12 4 16.04 4zm0 20.2h-.01a9.2 9.2 0 0 1-4.68-1.28l-.34-.2-3.47.78.74-3.38-.22-.35a9.14 9.14 0 0 1-1.4-4.87c0-5.05 4.11-9.16 9.17-9.16 2.45 0 4.75.96 6.48 2.69a9.1 9.1 0 0 1 2.68 6.48c0 5.06-4.11 9.17-9.16 9.17zm5.03-6.86c-.28-.14-1.63-.8-1.88-.9-.25-.09-.44-.14-.62.14-.18.28-.71.9-.87 1.08-.16.18-.32.2-.6.07-.28-.14-1.16-.43-2.21-1.37-.82-.73-1.37-1.63-1.53-1.9-.16-.28-.02-.43.12-.57.13-.13.28-.32.42-.49.14-.16.18-.28.28-.46.09-.18.05-.35-.02-.49-.07-.14-.62-1.5-.85-2.05-.22-.53-.45-.46-.62-.47l-.53-.01c-.18 0-.47.07-.72.35s-.94.92-.94 2.24.96 2.6 1.1 2.78c.14.18 1.9 2.9 4.6 4.07.64.28 1.14.44 1.53.57.64.2 1.23.18 1.69.11.52-.08 1.63-.67 1.86-1.31.23-.64.23-1.19.16-1.31-.07-.12-.25-.19-.53-.33z"/></svg>
-</a>
-
-<div class="hoja" id="hojaDetalle">
-  <div id="detalleBox"></div>
-</div>
-
-<div class="hoja" id="hoja">
-  <div>
-    <h3>Tu pedido</h3>
-    <p class="sub-hoja">Revisalo y mandámelo por WhatsApp. Te contesto con el tiempo de entrega.</p>
-    <div id="lineas"></div>
-    <div class="total"><span>Total</span><b id="totalTxt">$0</b></div>
-    <label for="cliNombre">Tu nombre</label>
-    <input id="cliNombre" type="text" placeholder="Cómo te llamás">
-    <label for="cliNota">Alguna aclaración</label>
-    <textarea id="cliNota" rows="3" placeholder="Para un cumpleaños, un color especial, para cuándo lo necesitás…"></textarea>
-    <button class="btn wsp-big" style="width:100%;margin-top:16px" id="enviarPedido" type="button">Mandar por WhatsApp</button>
-    <button class="cerrar" id="cerrarHoja" type="button">Seguir mirando</button>
-  </div>
-</div>
-
-<script src="app/protocolo.js"></script>
-<script>
-/* ==========================================================
-   Pegá acá la dirección del servidor (Apps Script, /exec).
-   El catálogo se arma solo con lo que se carga desde el app.
-   ========================================================== */
-var SERVIDOR_APPS = "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec";
-/* Worker que reemplaza al Apps Script para las acciones sobre el estado.
-   El catálogo (?action=catalogo) sigue leyéndose del Apps Script. */
-var SERVIDOR_WORKER = "https://playmind3d-api-prod.pdroarraes.workers.dev/";
-
-/** Edita una pieza en el servidor vigente (Apps Script o Worker). Si el Apps
-    Script avisa que ya migró, repite en el Worker y recuerda el modo.
-    Devuelve el JSON de la respuesta; propaga la excepción si falla la red. */
-function enviarEdicionPieza(nombre, campos, clave){
-  var almacen = null;
-  try{ almacen = window.localStorage; }catch(e){}
-  return Protocolo.pedirEstado({
-    modo: almacen ? Protocolo.leerModo(almacen) : 'apps',
-    cuerpo: {action:'editarPieza', key:clave, token:clave, pieza:nombre, campos:campos},
-    enviar: function(servidor, cuerpo){
-      return fetch(servidor==='worker'?SERVIDOR_WORKER:SERVIDOR_APPS,
-        {method:'POST', body:JSON.stringify(cuerpo)})
-        .then(function(r){ return r.json(); });
-    },
-    alCambiarModo: function(m){ if(almacen) Protocolo.guardarModo(almacen, m); }
-  }).then(function(r){ return r.respuesta; });
-}
-</script>
-<script>
-(function(){
-  var SERVIDOR = SERVIDOR_APPS;
-
-  var WSP = "";        // se completa con el número que está en el app
-  var COLORES = [];
-  var CAR = {};
-  var REGLAS = [];
-
-  var grid  = document.getElementById('catalogo');
-  var packs = document.getElementById('packs');
-
-  function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-  function plata(n){return '$'+Number(n||0).toLocaleString('es-AR');}
-  function horasTxt(h){
-    if(!h) return '';
-    if(h<1) return Math.round(h*60)+' min';
-    var H=Math.floor(h), M=Math.round((h-H)*60);
-    return H+' h'+(M?' '+M+'′':'');
-  }
-  function linkWA(txt){
-    if(!WSP) return '#pedir';
-    return 'https://wa.me/'+WSP+'?text='+encodeURIComponent(txt);
-  }
-
-  /* ---------- iconos del diseño ---------- */
-  var ICO = {
-    mano:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2C7A7B" stroke-width="2" stroke-linecap="round"><path d="M12 21c4-3.5 8-6.6 8-11a5 5 0 0 0-8-4 5 5 0 0 0-8 4c0 4.4 4 7.5 8 11z"/></svg>',
-    check:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2C7A7B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>',
-    reloj:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2C7A7B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-    paleta:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2C7A7B" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 1.4-2-.7-1.2.2-2.4 1.6-2.4H17a4 4 0 0 0 4-4c0-5-4-9.6-9-9.6z"/><circle cx="8" cy="10" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="15.8" cy="10.4" r="1"/></svg>',
-    regalo:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2C7A7B" stroke-width="2" stroke-linecap="round"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 7v13"/></svg>'
-  };
-
-  /* ---------- carrito ---------- */
-  function guardar(){ try{ localStorage.setItem('pm3d_car',JSON.stringify(CAR)); }catch(e){} }
-  function leer(){ try{ var v=localStorage.getItem('pm3d_car'); if(v) CAR=JSON.parse(v)||{}; }catch(e){ CAR={}; } }
-
-  function aplica(regla,nombre){
-    var lista=String(regla.piezas||'').trim();
-    if(!lista) return true;
-    var norm=function(x){return String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
-    return lista.split(',').some(function(x){ return norm(x)===norm(nombre); });
-  }
-  function totales(){
-    var n=0,bruto=0;
-    for(var k in CAR){ n+=CAR[k].qtd; bruto+=CAR[k].qtd*CAR[k].precio; }
-    // la mejor regla que se cumpla
-    var mejor=null, desc=0;
-    REGLAS.forEach(function(r){
-      var cant=0, base=0;
-      for(var k in CAR){
-        if(!aplica(r,CAR[k].nome)) continue;
-        cant+=CAR[k].qtd; base+=CAR[k].qtd*CAR[k].precio;
-      }
-      if(cant>=r.desde){
-        var d=Math.round(base*r.off/100);
-        if(d>desc){ desc=d; mejor=r; }
-      }
-    });
-    // cuánto falta para la próxima regla
-    var falta=null;
-    REGLAS.forEach(function(r){
-      var cant=0;
-      for(var k in CAR){ if(aplica(r,CAR[k].nome)) cant+=CAR[k].qtd; }
-      if(cant>0 && cant<r.desde){
-        var f=r.desde-cant;
-        if(!falta || f<falta.f) falta={f:f,off:r.off};
-      }
-    });
-    return {piezas:n,bruto:bruto,desc:desc,regla:mejor,falta:falta,total:bruto-desc};
-  }
-
-  function selector(cont,item,tipo){
-    if(!cont) return;
-    var k=item.nome, en=CAR[k]||{qtd:0};
-    cont.innerHTML='';
-    var st=document.createElement('div'); st.className='stepper';
-    var menos=document.createElement('button'); menos.type='button'; menos.textContent='−';
-    var val=document.createElement('i'); val.textContent=en.qtd||0;
-    var mas=document.createElement('button'); mas.type='button'; mas.textContent='+';
-    st.appendChild(menos); st.appendChild(val); st.appendChild(mas);
-    cont.appendChild(st);
-
-    var sel=null;
-    if(item.libre && COLORES.length){
-      sel=document.createElement('select');
-      sel.innerHTML='<option value="">Color: el que quieras</option>';
-      COLORES.forEach(function(c){
-        var o=document.createElement('option'); o.value=c.nome; o.textContent=c.nome; sel.appendChild(o);
-      });
-      if(en.color) sel.value=en.color;
-      sel.addEventListener('change',function(){
-        if(CAR[k]){ CAR[k].color=sel.value; guardar(); }
-      });
-      cont.appendChild(sel);
-    }
-    function set(q){
-      q=Math.max(0,q);
-      if(q===0) delete CAR[k];
-      else CAR[k]={tipo:tipo,nome:k,precio:item.precio,qtd:q,color:sel?sel.value:''};
-      val.textContent=q;
-      var card=cont.closest('.p-card')||cont.closest('.pack');
-      if(card) card.classList.toggle('elegido',q>0);
-      guardar(); barra();
-    }
-    menos.addEventListener('click',function(){ set((CAR[k]?CAR[k].qtd:0)-1); });
-    mas.addEventListener('click',function(){ set((CAR[k]?CAR[k].qtd:0)+1); });
-    if(en.qtd>0){
-      var card=cont.closest('.p-card')||cont.closest('.pack');
-      if(card) card.classList.add('elegido');
-    }
-  }
-
-  function barra(){
-    var t=totales(), r=document.getElementById('resumen');
-    if(!r) return;
-    if(!t.piezas) r.innerHTML='Elegí lo que te guste<b>y armá tu pedido</b>';
-    else if(t.falta) r.innerHTML='Sumá '+t.falta.f+' más y tenés '+t.falta.off+'% off<b>'+plata(t.total)+'</b>';
-    else r.innerHTML=t.piezas+(t.piezas===1?' cosa elegida':' cosas elegidas')+'<b>'+plata(t.total)+'</b>';
-  }
-
-  function abrirHoja(){
-    var cont=document.getElementById('lineas'), t=totales();
-    cont.innerHTML='';
-    if(!t.piezas){
-      cont.innerHTML='<p class="vacio">Todavía no elegiste nada. Tocá el + en las piezas que te gusten.</p>';
-    }else{
-      for(var k in CAR){
-        var it=CAR[k];
-        cont.innerHTML+='<div class="linea"><div class="n"><b>'+it.qtd+'× '+esc(it.nome)+'</b>'+
-          '<span>'+(it.color?'Color: '+esc(it.color):'Color a elección')+'</span></div>'+
-          '<div class="v">'+plata(it.qtd*it.precio)+'</div></div>';
-      }
-    }
-    if(t.desc>0){
-      cont.innerHTML+='<div class="linea desc"><div class="n"><b>'+esc(t.regla.nome)+'</b>'+
-        '<span>'+t.regla.off+'% de descuento</span></div>'+
-        '<div class="v">−'+plata(t.desc)+'</div></div>';
-    }else if(t.falta){
-      cont.innerHTML+='<p class="empuje">Sumando '+t.falta.f+' más te llevás '+t.falta.off+'% de descuento.</p>';
-    }
-    document.getElementById('totalTxt').textContent=plata(t.total);
-    document.getElementById('hoja').classList.add('on');
-  }
-
-  function textoPedido(){
-    var t=totales();
-    var nom=(document.getElementById('cliNombre').value||'').trim();
-    var nota=(document.getElementById('cliNota').value||'').trim();
-    var s='¡Hola! '+(nom?'Soy '+nom+'. ':'')+'Quiero hacer este pedido:\n\n';
-    for(var k in CAR){
-      var it=CAR[k];
-      s+='• '+it.qtd+'x '+it.nome+(it.color?' ('+it.color+')':'')+' — '+plata(it.qtd*it.precio)+'\n';
-    }
-    if(t.desc>0) s+='\nDescuento ('+t.regla.off+'%): −'+plata(t.desc);
-    s+='\nTotal: '+plata(t.total);
-    if(nota) s+='\n\nAclaración: '+nota;
-    return s;
-  }
-
-  /* ---------- tarjetas ---------- */
-  function idYoutube(u){
-    var m=String(u||'').match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([A-Za-z0-9_-]{6,})/);
-    return m?m[1]:'';
-  }
-  function fraseAuto(p){
-    if(p.libre) return 'Se imprime a pedido, en el color que elijas.';
-    if(p.horas>=6) return 'Una de las piezas más trabajadas del catálogo.';
-    return 'Hecha a pedido, una por una.';
-  }
-
-  function beneficios(p){
-    var b=[];
-    b.push([ICO.mano,'No podés soltarla', esc(p.desc||fraseAuto(p))]);
-    if(p.libre) b.push([ICO.paleta,'Elegís el color','la imprimo del color que quieras.']);
-    else b.push([ICO.check,'Sale de una pieza','no se arma ni se pega nada.']);
-    if(p.horas>=4) b.push([ICO.reloj,'Tarda '+horasTxt(p.horas),'la imprimo para vos, no está hecha de antes.']);
-    else b.push([ICO.regalo,'Regalo lindo','chiquita, entra en cualquier bolsillo.']);
-    return b.map(function(x){
-      return '<div class="p-benefit">'+x[0]+'<div><b>'+x[1]+'</b> — <span>'+x[2]+'</span></div></div>';
-    }).join('');
-  }
-
-  /* ¿Este navegador ya entró al sistema? Catálogo y sistema comparten dominio,
-     así que alcanza con mirar si quedó guardada la sesión. */
-  var ENTRO = (function(){
-    try{
-      var v=localStorage.getItem('playmind3d:v2');
-      if(!v) return false;
-      var d=JSON.parse(v);
-      return !!(d && d.cfg && d.cfg.token);
-    }catch(e){ return false; }
-  })();
-  (function(){
-    if(!ENTRO) return;
-    ['lnkVender','lnkAdmin'].forEach(function(id){
-      var a=document.getElementById(id); if(a) a.hidden=false;
-    });
-  })();
-
-  var ADMIN = (function(){
-    try{
-      var q=new URLSearchParams(location.search);
-      if(q.get('admin')==='1'){ localStorage.setItem('pm3d_admin','1'); }
-      if(q.get('admin')==='0'){ localStorage.removeItem('pm3d_admin'); }
-      return ENTRO && localStorage.getItem('pm3d_admin')==='1';
-    }catch(e){ return false; }
-  })();
-
-  /* Las tres partes de una galería, para que la tarjeta y el detalle usen
-     exactamente la misma y no se vayan separando con el tiempo. */
-  function partesGaleria(fotos,alt){
-    return {
-      fotos: fotos.length
-        ? fotos.map(function(f,n){ return '<img src="'+esc(f)+'" alt="'+esc(alt)+'" loading="lazy"'+(n?'':' class="on"')+'>'; }).join('')
-        : '<div class="ph">Sin foto todavía</div>',
-      flechas: fotos.length>1
-        ? '<button type="button" class="flecha prev" aria-label="Anterior">‹</button>'+
-          '<button type="button" class="flecha next" aria-label="Siguiente">›</button>'+
-          '<span class="contador">1/'+fotos.length+'</span>'
-        : '',
-      minis: fotos.length>1
-        ? fotos.map(function(f,n){
-            return '<button type="button" data-n="'+n+'"'+(n?'':' class="on"')+'><img src="'+esc(f)+'" alt=""></button>';
-          }).join('')
-        : ''
-    };
-  }
-
-  function tarjeta(p){
-    var fotos=(p.fotos||[]).filter(Boolean);
-    var g = partesGaleria(fotos,p.nome);
-    var foto = g.fotos, flechas = g.flechas;
-    var minis = g.minis ? '<div class="minis">'+g.minis+'</div>' : '';
-    var yt = idYoutube(p.video);
-    var top = p.vendidas>=3 ? '<div class="top">El más pedido</div>' : '';
-    var ficha='<div class="p-ficha"><span>PLA</span>'+
-      (p.medida?'<span>'+esc(p.medida)+'</span>':'')+
-      '<span>desde 3 años</span></div>';
-    var botonVideo = p.video
-      ? '<button type="button" class="play" data-video="'+esc(p.video)+'" data-yt="'+yt+'" title="Ver video">▶ Ver video</button>'
-      : '';
-    return '<article class="p-card">'+
-      '<div class="p-photo">'+foto+flechas+botonVideo+top+
-        '<div class="p-price"><span class="amount">'+plata(p.precio)+'</span><span class="per">cada una</span></div>'+
-      '</div>'+minis+
-      '<div class="p-body">'+
-        '<div class="cat">'+esc(p.cat||'Pieza')+'</div>'+
-        '<h3>'+esc(p.nome)+'</h3>'+
-        '<div class="p-benefits">'+beneficios(p)+'</div>'+
-        ficha+
-        '<div class="selector"></div>'+
-      '<button type="button" class="vermas">Ver más ↓</button>'+
-      (ADMIN ? '<a class="editar" href="/app/?pieza='+encodeURIComponent(p.nome)+'">✎ Editar esta pieza</a>' : '')+
-      '</div></article>';
-  }
-
-  function detalles(piezas){
-    grid.querySelectorAll('.p-card').forEach(function(card,i){
-      var p=piezas[i]; if(!p) return;
-      var b=card.querySelector('.vermas');
-      if(b) b.addEventListener('click',function(){ abrirDetalle(p); });
-      // tocar el título o la foto también abre el detalle
-      var t=card.querySelector('.p-body h3');
-      if(t){ t.style.cursor='pointer'; t.addEventListener('click',function(){ abrirDetalle(p); }); }
-      var f=card.querySelector('.p-photo');
-      if(f) f.addEventListener('click',function(e){
-        if(e.target.closest('.flecha,.play,.minis')) return;
-        abrirDetalle(p);
-      });
-    });
-  }
-  function abrirDetalle(p){
-    var b=document.getElementById('lineas');
-    var h=document.getElementById('hoja');
-    var cont=document.getElementById('detalleBox');
-    var fotos=(p.fotos||[]).filter(Boolean);
-    var tags=(p.tags||'').split(',').map(function(t){return t.trim();}).filter(Boolean);
-    // la galería entera, no sólo la primera foto: acá es donde se decide
-    var g = partesGaleria(fotos,p.nome);
-    cont.innerHTML=
-      (fotos.length
-        ? '<div class="p-photo detgal">'+g.fotos+g.flechas+'</div>'+
-          (g.minis?'<div class="minis detmin">'+g.minis+'</div>':'')
-        : '')+
-      '<h3>'+esc(p.nome)+'</h3>'+
-      (p.desc?'<p class="detlead">'+esc(p.desc)+'</p>':'')+
-      (tags.length?'<div class="tags">'+tags.map(function(t){
-        return '<button type="button" data-tag="'+esc(t)+'">'+esc(t)+'</button>';
-      }).join('')+'</div>':'')+
-      (p.detalle ? '<p class="detalle">'+esc(p.detalle).replace(/\n/g,'<br>')+'</p>'
-                 : '<p class="detalle">Se imprime a pedido, una por una.</p>')+
-      '<div class="datos">'+
-        fila('Material','PLA, plástico de origen vegetal')+
-        (p.medida?fila('Tamaño',esc(p.medida)):'')+
-        (p.horas?fila('Tarda en imprimirse',horasTxt(p.horas)):'')+
-        (p.libre?fila('Color','Lo elegís vos'):'')+
-        fila('Edad','Desde 3 años · tiene partes chicas')+
-        (p.stock>0?fila('Disponible','Hay '+p.stock+' lista'+(p.stock>1?'s':'')+' para entregar'):
-                   fila('Disponible','Se imprime cuando la pedís'))+
-      '</div>'+
-      (ADMIN?'<button class="editar" id="detEditar" style="margin-top:14px">✎ Editar los textos</button>':'')+
-      '<div class="total"><span>Precio</span><b>'+plata(p.precio)+'</b></div>'+
-      '<button class="btn wsp-big" style="width:100%;margin-top:6px" id="detPedir">Sumar al pedido</button>'+
-      '<button type="button" class="compartir" id="detCompartir">🔗 Compartir esta pieza</button>'+
-      '<button class="cerrar" id="detCerrar">Cerrar</button>';
-    if(ADMIN){
-      document.getElementById('detEditar').onclick=function(){ editarEnSitio(p); };
-    }
-    galeria(cont); // flechas, puntitos y swipe, igual que en la tarjeta
-    cont.querySelectorAll('.tags button').forEach(function(b){
-      b.addEventListener('click',function(){
-        document.getElementById('hojaDetalle').classList.remove('on');
-        ponerFiltro({tag:b.dataset.tag});
-      });
-    });
-    document.getElementById('detCompartir').onclick=function(){ compartir(p); };
-    // deja el link de ESTA pieza en la barra de direcciones, listo para copiar
-    try{ history.replaceState(null,'',location.pathname+'?pieza='+slug(p.nome)); }catch(e){}
-    document.getElementById('hojaDetalle').classList.add('on');
-    document.getElementById('detCerrar').onclick=function(){
-      document.getElementById('hojaDetalle').classList.remove('on');
-      try{ history.replaceState(null,'',location.pathname); }catch(e){}
-    };
-    document.getElementById('detPedir').onclick=function(){
-      var k=p.nome, en=CAR[k]||{qtd:0};
-      CAR[k]={tipo:'pieza',nome:k,precio:p.precio,qtd:en.qtd+1,color:en.color||''};
-      guardar(); barra();
-      document.getElementById('hojaDetalle').classList.remove('on');
-      pintarTodo();
-    };
-  }
-  function fila(k,v){ return '<div class="dato"><u>'+k+'</u><b>'+v+'</b></div>'; }
-
-  /* ---- edición desde el propio catálogo (sólo admin) ---- */
-  var CLAVE_ADMIN='';
-  function pedirClave(){
-    try{ CLAVE_ADMIN=CLAVE_ADMIN||localStorage.getItem('pm3d_clave')||''; }catch(e){}
-    if(CLAVE_ADMIN) return CLAVE_ADMIN;
-    var c=prompt('Clave de administrador:');
-    if(!c) return '';
-    CLAVE_ADMIN=c.trim();
-    try{ localStorage.setItem('pm3d_clave',CLAVE_ADMIN); }catch(e){}
-    return CLAVE_ADMIN;
-  }
-  function editarEnSitio(p){
-    var cont=document.getElementById('detalleBox');
-    cont.innerHTML='<h3>Editar “'+esc(p.nome)+'”</h3>'+
-      '<p class="sub-hoja">Se cambia acá y se ve en el catálogo. Los precios y los costos se tocan en el sistema.</p>'+
-      '<label>Frase corta (la de la tarjeta)</label>'+
-      '<textarea id="edDesc" rows="2" maxlength="140">'+esc(p.desc||'')+'</textarea>'+
-      '<label>Texto largo (el de esta ventana)</label>'+
-      '<textarea id="edDet" rows="6" maxlength="800">'+esc(p.detalle||'')+'</textarea>'+
-      '<label>Tamaño</label><input id="edMed" type="text" value="'+esc(p.medida||'')+'">'+
-      '<label>Etiquetas (separadas por coma)</label><input id="edTags" type="text" value="'+esc(p.tags||'')+'">'+
-      '<label>Categoría</label><input id="edCat" type="text" value="'+esc(p.cat||'')+'">'+
-      '<button class="btn wsp-big" style="width:100%;margin-top:16px" id="edGuardar">Guardar</button>'+
-      '<p class="err" id="edErr" hidden></p>'+
-      '<button class="cerrar" id="edCancel">Cancelar</button>';
-    document.getElementById('edCancel').onclick=function(){ abrirDetalle(p); };
-    document.getElementById('edGuardar').onclick=function(){
-      var clave=pedirClave(); if(!clave) return;
-      var campos={
-        desc:document.getElementById('edDesc').value,
-        detalle:document.getElementById('edDet').value,
-        medida:document.getElementById('edMed').value,
-        tags:document.getElementById('edTags').value,
-        cat:document.getElementById('edCat').value
-      };
-      var b=document.getElementById('edGuardar'), err=document.getElementById('edErr');
-      b.disabled=true; b.textContent='Guardando…'; err.hidden=true;
-      enviarEdicionPieza(p.nome,campos,clave)
-        .then(function(j){
-          b.disabled=false; b.textContent='Guardar';
-          if(!j||!j.ok){
-            if(j&&j.error==='clave'){ try{localStorage.removeItem('pm3d_clave');}catch(e){} CLAVE_ADMIN=''; }
-            err.textContent=(j&&j.error==='clave')?'Esa clave no es correcta.':'No se pudo guardar.';
-            err.hidden=false; return;
-          }
-          Object.keys(campos).forEach(function(k){ p[k]=campos[k]; });
-          document.getElementById('hojaDetalle').classList.remove('on');
-          location.reload();
-        })
-        .catch(function(){
-          b.disabled=false; b.textContent='Guardar';
-          err.textContent='No pude conectar.'; err.hidden=false;
-        });
-    };
-  }
-
-  function pintarTodo(){ /* refresca los steppers visibles */
-    grid.querySelectorAll('.p-card').forEach(function(card){
-      var t=card.querySelector('.p-body h2, .p-body h3');
-      var nom=t?t.textContent:'';
-      var val=card.querySelector('.stepper i');
-      if(val) val.textContent=(CAR[nom]?CAR[nom].qtd:0);
-      card.classList.toggle('elegido', !!CAR[nom]);
-    });
-  }
-  function pintarLeti(l){
-    l=l||{};
-    var foto=document.getElementById('letiFoto'), ph=document.getElementById('letiPh');
-    if(l.foto && foto){
-      foto.src=l.foto;
-      foto.hidden=false;
-      if(ph) ph.hidden=true;
-    }
-    var quote=document.getElementById('letiQuote');
-    if(l.cita && quote) quote.textContent='«'+l.cita+'»';
-    var story=document.getElementById('letiStory');
-    if(l.historia && story) story.textContent=l.historia;
-  }
-  function opiniones(lista){
-    var caja=document.getElementById('opiniones');
-    if(!caja) return;
-    if(!lista.length){ caja.innerHTML=''; return; }
-    var h='<h2 class="rubro">Lo que dicen</h2><div class="opis">';
-    lista.forEach(function(o){
-      h+='<figure class="opi"><blockquote>“'+esc(o.texto)+'”</blockquote>'+
-         '<figcaption>'+esc(o.quien||'Un cliente')+
-         (o.pieza?' · <span>'+esc(o.pieza)+'</span>':'')+'</figcaption></figure>';
-    });
-    caja.innerHTML=h+'</div>';
-  }
-  function pintarPacks(todos){
-    REGLAS=(todos||[]).filter(function(k){ return k.tipo==='descuento'; });
-    var lista=(todos||[]).filter(function(k){ return k.tipo!=='descuento'; });
-    var reglaHTML='';
-    REGLAS.forEach(function(r){
-      reglaHTML+='<div class="regla"><b>'+esc(r.nome)+'</b>'+
-        '<span>'+esc(r.desc||('Llevando '+r.desde+' o más, '+r.off+'% de descuento.'))+'</span></div>';
-    });
-    if(!lista.length && !reglaHTML){ packs.innerHTML=''; return; }
-    var h='<div class="packs-tit">Lo que más conviene</div>'+reglaHTML+'<div class="packs-grid">';
-    lista.forEach(function(k){
-      var ah = k.sueltas>k.precio ? k.sueltas-k.precio : 0;
-      h+='<div class="pack">'+
-        (ah?'<div class="cinta">Ahorrás '+plata(ah)+'</div>':'')+
-        '<b>'+esc(k.nome)+'</b>'+
-        (k.desc?'<p>'+esc(k.desc)+'</p>':'')+
-        (k.incluye?'<span class="inc">'+esc(k.incluye)+'</span>':'')+
-        '<div class="precios"><u>'+plata(k.precio)+'</u>'+(ah?'<s>'+plata(k.sueltas)+'</s>':'')+'</div>'+
-        '<div class="selector"></div></div>';
-    });
-    packs.innerHTML=h+'</div>';
-    var conts=packs.querySelectorAll('.selector');
-    lista.forEach(function(k,n){
-      selector(conts[n],{nome:k.nome,precio:k.precio,libre:false},'pack');
-    });
-  }
-
-  function videos(){
-    grid.querySelectorAll('.play').forEach(function(b){
-      b.addEventListener('click',function(){
-        var yt=b.dataset.yt, url=b.dataset.video;
-        if(!yt){ window.open(url,'_blank','noopener'); return; }
-        var marco=b.parentElement;
-        marco.querySelectorAll('img').forEach(function(i){ i.style.display='none'; });
-        b.remove();
-        var f=document.createElement('iframe');
-        f.src='https://www.youtube.com/embed/'+yt+'?autoplay=1&rel=0';
-        f.allow='autoplay; encrypted-media; picture-in-picture';
-        f.allowFullscreen=true; f.className='vid';
-        marco.appendChild(f);
-      });
-    });
-  }
-  /* Recibe cualquier contenedor que tenga adentro una .p-photo y sus .minis:
-     sirve igual para una tarjeta del grid que para la hoja de detalle. */
-  function galeria(caja){
-    var imgs=caja.querySelectorAll('.p-photo img');
-    var bts=caja.querySelectorAll('.minis button');
-    var marcador=caja.querySelector('.contador');
-    if(imgs.length<2) return;
-    var act=0;
-    function ver(n){
-      act=(n+imgs.length)%imgs.length;
-      imgs.forEach(function(im,k){ im.classList.toggle('on',k===act); });
-      bts.forEach(function(x,k){ x.classList.toggle('on',k===act); });
-      if(marcador) marcador.textContent=(act+1)+'/'+imgs.length;
-    }
-    bts.forEach(function(b){ b.addEventListener('click',function(){ ver(+b.dataset.n); }); });
-    var pv=caja.querySelector('.flecha.prev'), nx=caja.querySelector('.flecha.next');
-    if(pv) pv.addEventListener('click',function(){ ver(act-1); });
-    if(nx) nx.addEventListener('click',function(){ ver(act+1); });
-    var x0=null, marco=caja.querySelector('.p-photo');
-    if(!marco) return;
-    marco.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
-    marco.addEventListener('touchend',function(e){
-      if(x0===null) return;
-      var d=e.changedTouches[0].clientX-x0;
-      if(Math.abs(d)>45) ver(act+(d<0?1:-1));
-      x0=null;
-    },{passive:true});
-  }
-  function galerias(){ grid.querySelectorAll('.p-card').forEach(galeria); }
-
-  /* ---------- muestrario que gira solo, abajo del encabezado ---------- */
-  function vitrina(piezas){
-    var sec=document.getElementById('vitrina'), tira=document.getElementById('vitrinaTira');
-    if(!sec||!tira) return;
-    // primero lo que hay listo para llevar: es lo que se puede vender hoy
-    var lista=piezas.filter(function(p){ return (p.fotos||[]).length; })
-      .slice().sort(function(a,b){
-        return (b.stock>0?1:0)-(a.stock>0?1:0) || (b.fotos||[]).length-(a.fotos||[]).length;
-      }).slice(0,10);
-    if(lista.length<3) return; // con menos de tres no se ve girar
-
-    function item(p,n){
-      return '<div class="item" data-n="'+n+'">'+
-        '<div class="f"><img src="'+esc(p.fotos[0])+'" alt="'+esc(p.nome)+'" loading="lazy"></div>'+
-        '<div class="t"><b>'+esc(p.nome)+'</b><span>'+plata(p.precio)+
-        (p.stock>0?' <i>· hay lista</i>':'')+'</span></div></div>';
-    }
-    // la lista va DOS veces: es lo que hace que el reinicio no se note
-    var una=lista.map(item).join('');
-    tira.innerHTML=una+una;
-    // más piezas, vuelta más larga: así la velocidad se siente igual siempre
-    tira.style.animationDuration=(lista.length*6)+'s';
-    sec.hidden=false;
-
-    tira.querySelectorAll('.item').forEach(function(el){
-      el.addEventListener('click',function(){ abrirDetalle(lista[+el.dataset.n]); });
-    });
-  }
-
-  /* ---------- filtros, búsqueda y link por pieza ---------- */
-  var PIEZAS=[], FILTRO={cat:'',tag:'',texto:'',stock:false};
-
-  /* Sin acentos y sin espacios: sirve para la URL y para que buscar "dragon"
-     encuentre "Dragón". */
-  function slug(s){
-    return String(s||'').toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-  }
-
-  function compartir(p){
-    var url=location.origin+location.pathname+'?pieza='+slug(p.nome);
-    if(navigator.share){
-      navigator.share({title:p.nome,text:p.nome+' — '+plata(p.precio),url:url}).catch(function(){});
-      return;
-    }
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(url)
-        .then(function(){ alert('Link copiado:\n'+url); })
-        .catch(function(){ prompt('Copiá el link:',url); });
-      return;
-    }
-    prompt('Copiá el link:',url);
-  }
-
-  function pasaFiltro(p){
-    if(FILTRO.stock && !(p.stock>0)) return false;
-    if(FILTRO.cat && (p.cat||'')!==FILTRO.cat) return false;
-    if(FILTRO.tag){
-      var t=(p.tags||'').split(',').map(slug);
-      if(t.indexOf(slug(FILTRO.tag))<0) return false;
-    }
-    if(FILTRO.texto){
-      var heno=slug((p.nome||'')+' '+(p.desc||'')+' '+(p.tags||'')+' '+(p.cat||''));
-      if(heno.indexOf(slug(FILTRO.texto))<0) return false;
-    }
-    return true;
-  }
-
-  /* categoría y etiqueta no se acumulan: elegir una limpia la otra */
-  function ponerFiltro(cambio,irArriba){
-    if(cambio.cat!==undefined){ FILTRO.cat=cambio.cat; FILTRO.tag=''; }
-    if(cambio.tag!==undefined){ FILTRO.tag=cambio.tag; FILTRO.cat=''; }
-    if(cambio.texto!==undefined) FILTRO.texto=cambio.texto;
-    if(cambio.stock!==undefined) FILTRO.stock=cambio.stock;
-    pintarChips(); pintarGrid();
-    if(irArriba){
-      var s=document.getElementById('piezas');
-      if(s) s.scrollIntoView({behavior:'smooth',block:'start'});
-    }
-  }
-
-  function pintarChips(){
-    var caja=document.getElementById('chips');
-    if(!caja) return;
-    var cats=[];
-    PIEZAS.forEach(function(p){
-      var c=(p.cat||'').trim();
-      if(c && cats.indexOf(c)<0) cats.push(c);
-    });
-    cats.sort();
-    var h='<button type="button" data-cat=""'+(!FILTRO.cat&&!FILTRO.tag?' class="on"':'')+'>Todas</button>';
-    cats.forEach(function(c){
-      h+='<button type="button" data-cat="'+esc(c)+'"'+(FILTRO.cat===c?' class="on"':'')+'>'+esc(c)+'</button>';
-    });
-    if(PIEZAS.some(function(p){ return p.stock>0; })){
-      h+='<button type="button" data-stock="1" class="stock'+(FILTRO.stock?' on':'')+'">Listas para llevar</button>';
-    }
-    if(FILTRO.tag) h+='<button type="button" data-cat="" class="on">'+esc(FILTRO.tag)+' ✕</button>';
-    caja.innerHTML=h;
-    caja.querySelectorAll('button').forEach(function(b){
-      b.addEventListener('click',function(){
-        if(b.dataset.stock) ponerFiltro({stock:!FILTRO.stock});
-        else ponerFiltro({cat:b.dataset.cat||''});
-      });
-    });
-  }
-
-  function limpiarFiltros(){
-    var b=document.getElementById('buscar'); if(b) b.value='';
-    FILTRO={cat:'',tag:'',texto:'',stock:false};
-    pintarChips(); pintarGrid();
-  }
-
-  function pintarGrid(){
-    var lista=PIEZAS.filter(pasaFiltro);
-    if(!lista.length){
-      grid.innerHTML='<div class="nada">No encontré piezas con eso.<br>'+
-        '<button type="button" id="verTodas">Ver todas</button></div>';
-      var vt=document.getElementById('verTodas');
-      if(vt) vt.addEventListener('click',limpiarFiltros);
-      return;
-    }
-    grid.innerHTML=lista.map(tarjeta).join('');
-    var conts=grid.querySelectorAll('.selector');
-    lista.forEach(function(p,n){ selector(conts[n],p,'pieza'); });
-    galerias(); videos(); detalles(lista); pintarTodo();
-  }
-
-  /* ?pieza=dragon-articulado abre esa pieza directo: es el link que se manda
-     por WhatsApp. */
-  function abrirDeLaUrl(){
-    try{
-      var q=new URLSearchParams(location.search).get('pieza');
-      if(!q) return;
-      var s=slug(q);
-      var p=PIEZAS.filter(function(x){ return slug(x.nome)===s; })[0];
-      if(p) abrirDetalle(p);
-    }catch(e){}
-  }
-
-  /* ---------- arranque ---------- */
-  function arrancar(){
-    leer(); barra();
-    document.getElementById('verPedido').addEventListener('click',abrirHoja);
-    var v2=document.getElementById('verPedido2');
-    if(v2) v2.addEventListener('click',function(e){ e.preventDefault(); abrirHoja(); });
-    document.getElementById('cerrarHoja').addEventListener('click',function(){
-      document.getElementById('hoja').classList.remove('on');
-    });
-    document.getElementById('hojaDetalle').addEventListener('click',function(e){
-      if(e.target.id!=='hojaDetalle') return;
-      document.getElementById('hojaDetalle').classList.remove('on');
-      // cerrar tocando afuera también saca la pieza de la barra de direcciones
-      try{ history.replaceState(null,'',location.pathname); }catch(err){}
-    });
-    var busc=document.getElementById('buscar');
-    if(busc) busc.addEventListener('input',function(){ ponerFiltro({texto:busc.value.trim()}); });
-    document.getElementById('hoja').addEventListener('click',function(e){
-      if(e.target.id==='hoja') document.getElementById('hoja').classList.remove('on');
-    });
-    document.getElementById('enviarPedido').addEventListener('click',function(){
-      if(!totales().piezas){ abrirHoja(); return; }
-      window.open(linkWA(textoPedido()),'_blank','noopener');
-    });
-  }
-
-  if(!SERVIDOR){
-    grid.innerHTML='<div class="cargando">Falta pegar la dirección del servidor en index.html (la variable SERVIDOR).</div>';
-    return;
-  }
-
-  arrancar();
-
-  fetch(SERVIDOR+'?action=catalogo')
-    .then(function(r){ return r.json(); })
-    .then(function(j){
-      if(!j || !j.ok || !j.catalogo) throw new Error('sin datos');
-      var c=j.catalogo;
-      WSP=(c.wa||'').replace(/[^0-9]/g,'');
-      COLORES=c.colores||[];
-      document.querySelectorAll('a[href*="wa.me"]:not(#verPedido2)').forEach(function(a){
-        a.href=linkWA('¡Hola! Vi el catálogo de Playmind 3d y quería hacer un pedido.');
-      });
-      // el botón flotante sólo aparece si hay número cargado en los ajustes
-      var fab=document.getElementById('wspFab');
-      if(fab && WSP){
-        fab.href=linkWA('¡Hola! Estoy mirando el catálogo y quería preguntarte por una pieza.');
-        fab.hidden=false;
-      }
-
-      pintarPacks(c.packs||[]);
-      pintarLeti(c.leti);
-
-      var piezas=(c.piezas||[]).slice().sort(function(a,b){
-        return ((b.fotos&&b.fotos.length?2:0)+(b.desc?1:0)) -
-               ((a.fotos&&a.fotos.length?2:0)+(a.desc?1:0));
-      });
-      if(!piezas.length){
-        grid.innerHTML='<div class="cargando">Todavía no hay piezas cargadas.</div>';
-        return;
-      }
-      PIEZAS=piezas;
-      // con pocas piezas los filtros estorban más de lo que ayudan
-      var cajaF=document.getElementById('filtros');
-      if(cajaF) cajaF.hidden = piezas.length<6;
-      vitrina(piezas);
-      pintarChips();
-      pintarGrid();
-      abrirDeLaUrl();
-      opiniones(c.opiniones||[]);
-      barra();
-    })
-    .catch(function(){
-      grid.innerHTML='<div class="cargando">No pude traer las piezas. Revisá que el servidor esté publicado en su versión nueva.</div>';
-    });
-})();
-</script>
-
+  <template id="product-template">
+    <article class="product-card">
+      <button class="product-media" type="button" data-detail aria-haspopup="dialog">
+        <img width="480" height="480" alt="" decoding="async">
+        <span class="tags media-tags" data-tags></span>
+      </button>
+      <div class="product-info">
+        <p class="product-category" data-product-category></p>
+        <h3><button type="button" data-detail aria-haspopup="dialog"></button></h3>
+        <p class="product-trait" data-trait></p>
+        <div class="card-actions">
+          <p class="product-price" data-price></p>
+          <div class="cart-control" data-control></div>
+        </div>
+      </div>
+    </article>
+  </template>
 </body>
 </html>

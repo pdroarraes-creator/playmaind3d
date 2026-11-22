@@ -1,4 +1,4 @@
-import { CATEGORIAS, adaptarCatalogo, linkWhatsApp, pedirCatalogo, totalesPedido } from './catalog-api.mjs';
+import { CATEGORIAS, adaptarCatalogo, linkWhatsApp, pedirCatalogo, slug, totalesPedido } from './catalog-api.mjs';
 import { nombreDeVista, textoDeBusqueda } from './catalog-logic.mjs';
 import { renderShowcase } from './showcase.mjs';
 import './float-icons.mjs';
@@ -6,7 +6,7 @@ import './float-icons.mjs';
 const $ = (selector, root = document) => root.querySelector(selector);
 const money = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0, minimumGroupingDigits: 1 });
 const formatPrice = (value) => `$${money.format(value)}`;
-const fallbackImage = './assets/logo-mark.webp';
+const fallbackImage = new URL('./assets/logo-mark.webp', import.meta.url).href;
 const image = (product, index = 0) => product.fotos[index] ?? fallbackImage;
 const bagKey = 'pm3d-bolsa-v1';
 const pageSize = 16;
@@ -481,6 +481,17 @@ function applyCatalog(raw) {
   renderShowcase(productos, { openDetail, formatPrice, setPhoto, renderControl, categoryOf: (product) => CATEGORIAS[product.linea] });
   renderCatalog();
   renderBag();
+  openFromUrl();
+}
+
+// Enlaces compartidos: /?pieza=Nombre abre la ficha de esa pieza (una sola vez).
+let urlHandled = false;
+function openFromUrl() {
+  if (urlHandled) return;
+  urlHandled = true;
+  const wanted = new URLSearchParams(location.search).get('pieza');
+  const product = wanted && productos.find((item) => item.id === slug(wanted));
+  if (product) openDetail(product, null);
 }
 
 async function loadCatalog() {

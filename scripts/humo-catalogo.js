@@ -23,9 +23,11 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FALLA') + ' ' + m); if (!c) f
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errores.push(m.text()); });
   await page.route('**/lh3.googleusercontent.com/**', (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   await page.route('**/fonts.g*apis.com/**', (r) => r.abort());
-  await page.goto(base + '/catalogo/');
+  await page.goto(base + '/');
   await page.waitForSelector('.product-card', { timeout: 30000 });
   ok(await page.locator('.product-card').count() === 16, 'primera página con 16 tarjetas reales');
+  ok(await page.locator('meta[name=robots]').count() === 0, 'sin noindex: la página se puede indexar');
+  ok(await page.getAttribute('link[rel=canonical]', 'href') === 'https://playmind3d.com/', 'canonical apunta al dominio');
   ok(/\d+ piezas/.test(await page.textContent('#result-count')), 'contador de piezas');
   ok(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'sin scroll horizontal a 390px');
   ok(await page.locator('.footer-social a').count() === 1, 'redes: solo Instagram (las otras no están confirmadas)');
@@ -47,6 +49,13 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FALLA') + ' ' + m); if (!c) f
 
   await page.locator('.product-card', { hasText: 'Llavero 2 Clickers Nombre' }).locator('h3 button').click();
   ok(/Podés personalizar/.test(await page.textContent('#detail-specs')) , '¿Para qué sirve? usa la descripción real cuando existe');
+  // enlace compartido ?pieza=Nombre abre la ficha
+  const p2 = await page.context().newPage();
+  await p2.route('**/lh3.googleusercontent.com/**', (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  await p2.route('**/fonts.g*apis.com/**', (r) => r.abort());
+  await p2.goto(base + '/?pieza=' + encodeURIComponent('Fidget Cube Toy'));
+  await p2.waitForFunction(() => document.querySelector('#product-dialog')?.open, null, { timeout: 30000 });
+  ok(/Fidget Cube Toy/.test(await p2.textContent('#detail-title')), '?pieza=Nombre abre la ficha de esa pieza');
   ok(errores.length === 0, 'cero errores de consola' + (errores.length ? ': ' + errores.join(' | ') : ''));
   await browser.close(); srv.close();
   console.log(fallos ? '\n' + fallos + ' fallo(s)' : '\nTodo ok');
