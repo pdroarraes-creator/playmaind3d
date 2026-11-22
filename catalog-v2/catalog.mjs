@@ -8,7 +8,7 @@ const image = (name) => `./assets/${name}.webp`;
 const defaultPack = (product) => PACKS.find(({ unidades }) => unidades === (product.pack ?? 1));
 const packPrice = (product, pack) => Math.round(product.precio * pack.unidades * (100 - pack.descuento) / 100);
 const pageSize = 16;
-const colors = new Map();
+const maxCount = 99;
 const bag = [];
 const filters = [...document.querySelectorAll('[data-category]')];
 const grid = $('#product-grid');
@@ -20,7 +20,6 @@ let holiday = false;
 let page = 0;
 let activeProduct;
 let detailTrigger;
-let detailColor;
 let toastTimer;
 
 function element(tag, text, className) {
@@ -30,38 +29,88 @@ function element(tag, text, className) {
   return node;
 }
 
-function selectSwatch(group, name) {
-  for (const button of group.querySelectorAll('.swatch')) {
-    button.setAttribute('aria-pressed', String(button.dataset.color === name));
-  }
+function icon(name) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'icon');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', `#${name}`);
+  svg.append(use);
+  return svg;
 }
 
-function swatches(product, selected, onChange) {
-  const group = element('div', undefined, 'swatches');
-  group.setAttribute('role', 'group');
-  group.setAttribute('aria-label', `Colores de ${product.nombre}`);
-  for (const color of product.colores) {
-    const button = element('button', undefined, 'swatch');
-    button.type = 'button';
-    button.dataset.color = color.nombre;
-    button.setAttribute('aria-pressed', String(color.nombre === selected.nombre));
-    button.setAttribute('aria-label', color.nombre);
-    button.title = color.nombre;
-    button.style.setProperty('--swatch', color.hex);
-    button.append(element('span'));
-    button.addEventListener('click', () => {
-      selectSwatch(group, color.nombre);
-      onChange(color);
-    });
-    group.append(button);
+function iconButton(name, label, className, onClick) {
+  const button = element('button', undefined, className);
+  button.type = 'button';
+  button.setAttribute('aria-label', label);
+  button.append(icon(name));
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function pulse(node) {
+  if (!node) return;
+  node.classList.remove('is-pulsing');
+  void node.offsetWidth;
+  node.classList.add('is-pulsing');
+}
+
+function tagList(product, root) {
+  const tags = [...(product.navidad ? ['Navidad'] : []), ...product.tags, ...(product.demo ? ['Video'] : [])];
+  root.replaceChildren(...tags.map((tag) => element('span', tag, `tag${tag === 'Navidad' ? ' holiday-tag' : ''}${tag === 'Video' ? ' video-tag' : ''}`)));
+}
+
+const productCount = (product) => bag.reduce((total, item) => total + (item.product.id === product.id ? item.count : 0), 0);
+
+function stepper(count, label, onMinus, onPlus) {
+  const control = element('div', undefined, 'stepper');
+  control.setAttribute('role', 'group');
+  control.setAttribute('aria-label', label);
+  const value = element('span', String(count), 'stepper-value');
+  value.setAttribute('aria-live', 'polite');
+  const plus = iconButton('icon-plus', `Sumar uno más de ${label}`, 'stepper-button', onPlus);
+  plus.disabled = count >= maxCount;
+  control.append(iconButton('icon-minus', `Quitar uno de ${label}`, 'stepper-button', onMinus), value, plus);
+  return control;
+}
+
+function renderControl(card, product, focus) {
+  const slot = $('[data-control]', card);
+  const count = productCount(product);
+  if (count === 0) {
+    const add = element('button', undefined, 'add-button');
+    add.type = 'button';
+    add.setAttribute('aria-label', `Sumar ${product.nombre} a la bolsa`);
+    add.append(icon('icon-plus'), element('span', 'Sumar'));
+    add.addEventListener('click', () => changeFromCard(product, 1, 'plus'));
+    slot.replaceChildren(add);
+    if (focus) add.focus();
+    return add;
   }
-  return group;
+  const control = stepper(count, product.nombre, () => changeFromCard(product, -1, 'minus'), () => changeFromCard(product, 1, 'plus'));
+  slot.replaceChildren(control);
+  if (focus) $(`.stepper-button:${focus === 'minus' ? 'first-of-type' : 'last-of-type'}`, control).focus();
+  return control;
+}
+
+function refreshCards(product, focus) {
+  const card = grid.querySelector(`[data-product="${product.id}"]`);
+  if (card) pulse(renderControl(card, product, focus));
+}
+
+function changeFromCard(product, delta, focus) {
+  if (delta > 0) addToBag(product, defaultPack(product), '', focus);
+  else {
+    const index = bag.findLastIndex((item) => item.product.id === product.id);
+    if (index !== -1) changeRow(index, -1, focus);
+  }
 }
 
 function productCard(product, index) {
   const fragment = $('#product-template').content.cloneNode(true);
   const card = $('.product-card', fragment);
   card.dataset.product = product.id;
+  card.style.setProperty('--i', String(index % 4));
   const img = $('img', card);
   if (index > 3) img.loading = 'lazy';
   img.src = image(product.id);
@@ -70,19 +119,11 @@ function productCard(product, index) {
   const title = $('h3 button', card);
   title.textContent = product.nombre;
   for (const trigger of [media, title]) trigger.addEventListener('click', () => openDetail(product, trigger));
-  const badge = $('[data-badge]', card);
-  if (product.navidad || product.demo) {
-    badge.hidden = false;
-    badge.textContent = product.navidad ? 'Navidad' : '▷ Video';
-    badge.classList.toggle('holiday-tag', Boolean(product.navidad));
-  }
-  const pack = defaultPack(product);
+  tagList(product, $('[data-tags]', card));
+  $('[data-trait]', card).textContent = product.rasgo;
   $('[data-product-category]', card).textContent = CATEGORIAS[product.linea];
-  $('[data-price]', card).textContent = `${formatPrice(packPrice(product, pack))}${product.pack ? ` · x${product.pack}` : ''}`;
-  $('[data-colors]', card).append(swatches(product, colors.get(product.id) ?? product.colores[0], (color) => colors.set(product.id, color)));
-  const add = $('[data-add]', card);
-  add.setAttribute('aria-label', `Sumar ${product.nombre} a la bolsa`);
-  add.addEventListener('click', () => addToBag(product, colors.get(product.id) ?? product.colores[0], pack, ''));
+  $('[data-price]', card).textContent = `${formatPrice(packPrice(product, defaultPack(product)))}${product.pack ? ` · x${product.pack}` : ''}`;
+  renderControl(card, product);
   return fragment;
 }
 
@@ -91,10 +132,11 @@ function renderCatalog() {
   const results = PRODUCTOS.filter((product) =>
     (category === 'todos' || product.linea === category) &&
     (!holiday || product.navidad) &&
-    textoDeBusqueda(`${product.nombre} ${CATEGORIAS[product.linea]}`).includes(query));
+    textoDeBusqueda(`${product.nombre} ${CATEGORIAS[product.linea]} ${product.tags.join(' ')} ${product.rasgo}`).includes(query));
   const pageCount = Math.max(1, Math.ceil(results.length / pageSize));
   page = Math.min(pageCount - 1, Math.max(0, page));
   grid.replaceChildren(...results.slice(page * pageSize, (page + 1) * pageSize).map(productCard));
+  for (const card of grid.children) revealObserver?.observe(card);
   $('#result-count').textContent = `${results.length} ${results.length === 1 ? 'pieza' : 'piezas'}`;
   $('#empty-catalog').hidden = results.length !== 0;
   $('#pagination').hidden = pageCount === 1;
@@ -181,8 +223,9 @@ function setDemo(playing) {
 function openDetail(product, trigger) {
   activeProduct = product;
   detailTrigger = trigger;
-  detailColor = colors.get(product.id) ?? product.colores[0];
   $('#detail-title').textContent = product.nombre;
+  $('#detail-trait').textContent = product.rasgo;
+  tagList(product, $('#detail-tags'));
   $('#demo-toggle').hidden = !product.demo;
   setDemo(false);
   const specs = [
@@ -193,14 +236,6 @@ function openDetail(product, trigger) {
     const entry = element('div');
     entry.append(element('dt', label), element('dd', value));
     return entry;
-  }));
-  const label = element('div', `Color · ${detailColor.nombre}`, 'swatch-label');
-  $('#detail-colors').replaceChildren(label, swatches(product, detailColor, (color) => {
-    detailColor = color;
-    colors.set(product.id, color);
-    label.textContent = `Color · ${color.nombre}`;
-    const cardSwatches = grid.querySelector(`[data-product="${product.id}"] .swatches`);
-    if (cardSwatches) selectSwatch(cardSwatches, color.nombre);
   }));
   const select = $('#detail-pack');
   select.replaceChildren(...PACKS.map((pack) => new Option(pack.etiqueta, String(pack.unidades))));
@@ -218,53 +253,95 @@ $('#detail-form').addEventListener('submit', (event) => {
   event.preventDefault();
   const pack = PACKS.find(({ unidades }) => unidades === Number($('#detail-pack').value));
   if (!pack || !activeProduct) return;
-  addToBag(activeProduct, detailColor, pack, $('#detail-name').value.trim());
+  addToBag(activeProduct, pack, $('#detail-name').value.trim());
   detail.close();
 });
 detail.addEventListener('close', () => { setDemo(false); detailTrigger?.focus({ preventScroll: true }); });
 
-function addToBag(product, color, pack, note) {
-  const row = bag.find((item) => item.product.id === product.id && item.color.nombre === color.nombre && item.pack.unidades === pack.unidades && item.note === note);
-  if (row) row.count += 1;
-  else bag.push({ product, color, pack, note, count: 1 });
-  renderBag();
+function announce(text) {
   const toast = $('#toast');
   clearTimeout(toastTimer);
-  toast.textContent = `${product.nombre}: agregado a tu bolsa`;
-  toastTimer = setTimeout(() => { toast.textContent = ''; }, 2600);
+  toast.textContent = text;
+  toast.classList.add('is-visible');
+  $('#bag-status').textContent = text;
+  toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2200);
+}
+
+function addToBag(product, pack, note, focus) {
+  const row = bag.find((item) => item.product.id === product.id && item.pack.unidades === pack.unidades && item.note === note);
+  if (row) row.count = Math.min(maxCount, row.count + 1);
+  else bag.push({ product, pack, note, count: 1 });
+  afterBagChange(product, focus);
+  announce(`${product.nombre}: agregado a tu bolsa`);
+}
+
+function changeRow(index, delta, focus) {
+  const item = bag[index];
+  if (!item) return;
+  item.count = Math.min(maxCount, item.count + delta);
+  if (item.count <= 0) {
+    bag.splice(index, 1);
+    announce(`${item.product.nombre}: quitado de tu bolsa`);
+  }
+  afterBagChange(item.product, focus);
+}
+
+function afterBagChange(product, focus) {
+  renderBag();
+  refreshCards(product, focus);
+  pulse($('#bag-button'));
 }
 
 const rowTotal = (item) => item.count * packPrice(item.product, item.pack);
 const subtotal = () => bag.reduce((total, item) => total + rowTotal(item), 0);
+const packLabel = (item) => item.pack.unidades === 1 ? 'Unidad' : `Pack x${item.pack.unidades} (−${item.pack.descuento}%)`;
 const rowQuantity = (item) => item.pack.unidades === 1 ? `${item.count} ${item.count === 1 ? 'unidad' : 'unidades'}` : `${item.count} × Pack x${item.pack.unidades} (−${item.pack.descuento}%)`;
+
+function focusBagRow(index, selector) {
+  const rows = $('#bag-list').children;
+  const target = rows[Math.min(index, rows.length - 1)];
+  ($(selector, target ?? document) ?? $('#bag-empty button')).focus();
+}
 
 function renderBag() {
   const count = bag.reduce((total, item) => total + item.count * item.pack.unidades, 0);
   $('#bag-count').textContent = count;
   $('#bag-button').setAttribute('aria-label', `Bolsa, ${count} ${count === 1 ? 'artículo' : 'artículos'}`);
+  $('#bag-button').classList.toggle('has-items', count > 0);
   $('#bag-empty').hidden = Boolean(bag.length);
-  $('#bag-summary').hidden = !bag.length;
+  $('#bag-summary').hidden = !bag.length || !$('#order-preview').hidden;
   $('#bag-total').textContent = `${formatPrice(subtotal())} ARS`;
   $('#bag-list').replaceChildren(...bag.map((item, index) => {
     const row = element('li', undefined, 'bag-row');
     const img = element('img');
     img.src = image(item.product.id);
     img.alt = '';
-    img.width = 56;
-    img.height = 56;
-    const info = element('div');
-    const remove = element('button', 'Quitar');
-    remove.type = 'button';
-    remove.setAttribute('aria-label', `Quitar ${item.product.nombre}`);
-    remove.addEventListener('click', () => {
+    img.width = 64;
+    img.height = 64;
+    const info = element('div', undefined, 'bag-info');
+    const top = element('div', undefined, 'bag-row-top');
+    top.append(element('h3', item.product.nombre), iconButton('icon-trash', `Eliminar ${item.product.nombre} de la bolsa`, 'remove-button', () => {
       bag.splice(index, 1);
-      renderBag();
-      ($('#bag-list button') ?? $('#bag-empty button')).focus();
-    });
-    info.append(element('h3', item.product.nombre), element('p', `${item.color.nombre} · ${rowQuantity(item)}`));
-    if (item.note) info.append(element('p', `Personalización: ${item.note}`));
-    info.append(remove);
-    row.append(img, info, element('strong', formatPrice(rowTotal(item))));
+      afterBagChange(item.product);
+      announce(`${item.product.nombre}: quitado de tu bolsa`);
+      focusBagRow(index, '.remove-button');
+    }));
+    info.append(top, element('p', packLabel(item), 'bag-meta'));
+    if (item.note) info.append(element('p', `Personalización: ${item.note}`, 'bag-meta'));
+    const bottom = element('div', undefined, 'bag-row-bottom');
+    bottom.append(
+      stepper(item.count, item.product.nombre, () => {
+        const removes = item.count === 1;
+        changeRow(index, -1);
+        focusBagRow(index, removes ? '.remove-button' : '.stepper-button');
+      }, () => {
+        changeRow(index, 1);
+        focusBagRow(index, '.stepper-button:last-of-type');
+      }),
+      element('strong', formatPrice(rowTotal(item))),
+    );
+    info.append(bottom);
+    row.append(img, info);
     return row;
   }));
 }
@@ -274,7 +351,7 @@ function showOrderPreview(show) {
   $('#bag-content').hidden = show;
   $('#bag-summary').hidden = show || !bag.length;
   if (show) {
-    const lines = bag.map((item) => `• ${item.product.nombre} — ${item.color.nombre} · ${rowQuantity(item)} — ${formatPrice(rowTotal(item))}${item.note ? `\n  Personalización: ${item.note}` : ''}`);
+    const lines = bag.map((item) => `• ${item.product.nombre} — ${rowQuantity(item)} — ${formatPrice(rowTotal(item))}${item.note ? `\n  Personalización: ${item.note}` : ''}`);
     const message = ['¡Hola PlayMind 3D! Quiero consultar por este pedido:', '', ...lines, '', `Subtotal: ${formatPrice(subtotal())} ARS`, '¿Coordinamos el envío o retiro?'].join('\n');
     $('#order-message').textContent = message;
     $('#whatsapp-link').href = linkWA(message);
@@ -298,6 +375,51 @@ for (const dialog of [detail, drawer]) {
     const { top, bottom, left, right } = dialog.getBoundingClientRect();
     if (event.clientX < left || event.clientX > right || event.clientY < top || event.clientY > bottom) dialog.close();
   });
+}
+
+const contactHref = linkWA('¡Hola PlayMind 3D! Tengo una consulta sobre el catálogo.');
+for (const link of [$('#contact-link'), $('#whatsapp-float')]) link.href = contactHref;
+
+function splitWords(root) {
+  let index = 0;
+  const wrap = (node) => {
+    for (const child of [...node.childNodes]) {
+      if (child.nodeType === Node.ELEMENT_NODE) { wrap(child); continue; }
+      if (child.nodeType !== Node.TEXT_NODE || !child.textContent.trim()) continue;
+      const pieces = child.textContent.split(/(\s+)/).map((piece) => {
+        if (!piece.trim()) return document.createTextNode(piece);
+        const word = element('span', undefined, 'word');
+        const inner = element('span', piece);
+        word.style.setProperty('--w', String(index++));
+        word.append(inner);
+        return word;
+      });
+      child.replaceWith(...pieces);
+    }
+  };
+  root.setAttribute('aria-label', root.textContent.trim());
+  wrap(root);
+  for (const word of root.querySelectorAll('.word')) word.setAttribute('aria-hidden', 'true');
+}
+
+const motionOk = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
+const revealObserver = motionOk && 'IntersectionObserver' in window
+  ? new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add('is-revealed');
+      revealObserver.unobserve(entry.target);
+    }
+  }, { rootMargin: '0px 0px -12% 0px' })
+  : null;
+
+if (revealObserver) {
+  document.documentElement.classList.add('motion');
+  for (const heading of document.querySelectorAll('[data-reveal]')) {
+    splitWords(heading);
+    revealObserver.observe(heading);
+  }
+  for (const node of document.querySelectorAll('.benefits li, .footer-brand')) revealObserver.observe(node);
 }
 
 renderCatalog();

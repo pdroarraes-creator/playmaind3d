@@ -7,6 +7,7 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="description" content="Juegos sensoriales, deco moderna y regalos personalizados impresos en 3D con PLA vegetal en Pilar, Argentina.">
   <title>PlayMind 3D · Diseño e impresión en Pilar</title>
+  <link rel="icon" href="./assets/logo-mark.webp" type="image/webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&amp;display=swap">
@@ -20,20 +21,30 @@
     <symbol id="icon-bag" viewBox="0 0 24 24"><path d="M5 7h14l1 13H4L5 7ZM9 9V6a3 3 0 0 1 6 0v3"/></symbol>
     <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
     <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
     <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
     <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.25"/></symbol>
     <symbol id="icon-arrow" viewBox="0 0 16 16"><path d="M2.5 8h10m-4-4 4 4-4 4"/></symbol>
+    <symbol id="icon-arrow-up" viewBox="0 0 16 16"><path d="M8 13.5v-11m-4 4 4-4 4 4"/></symbol>
     <symbol id="icon-up-right" viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></symbol>
     <symbol id="icon-gift" viewBox="0 0 24 24"><path d="M3 8h18v4H3zm2 4v9h14v-9m-7-4v13m0-13H8.5A2.5 2.5 0 1 1 11 5.5L12 8Zm0 0h3.5A2.5 2.5 0 1 0 13 5.5L12 8Z"/></symbol>
+    <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></symbol>
+    <symbol id="icon-ruler" viewBox="0 0 24 24"><path d="m2.5 16.5 14-14 5 5-14 14-5-5ZM7 12l2.5 2.5m1-6 2.5 2.5m1-6 2.5 2.5"/></symbol>
+    <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path class="fill" d="M12.04 2a9.9 9.9 0 0 0-8.5 14.96L2.1 22l5.2-1.37A9.9 9.9 0 1 0 12.04 2Zm0 18.1a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.09.81.83-3.01-.2-.31a8.2 8.2 0 1 1 6.94 3.83Zm4.5-6.14c-.25-.12-1.46-.72-1.69-.8-.22-.09-.39-.13-.55.12-.16.25-.63.8-.78.96-.14.17-.29.19-.53.06a6.7 6.7 0 0 1-1.98-1.22 7.4 7.4 0 0 1-1.37-1.7c-.14-.25 0-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.16.04-.31-.02-.43-.06-.13-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47a.9.9 0 0 0-.65.3 2.75 2.75 0 0 0-.86 2.04c0 1.2.88 2.37 1 2.53.13.17 1.73 2.64 4.19 3.7.59.25 1.04.4 1.4.52.59.18 1.12.16 1.55.1.47-.07 1.46-.6 1.66-1.18.21-.58.21-1.07.15-1.18-.06-.1-.22-.16-.47-.29Z"/></symbol>
   </svg>
   <a class="skip" href="#main">Ir al contenido</a>
-  <div class="announcement">Hecho en Pilar <span>•</span> Envíos y retiros <span>•</span> Packs navideños con descuento</div>
+  <div class="announcement" id="inicio">Hecho en Pilar <span>•</span> Envíos y retiros <span>•</span> Packs navideños con descuento</div>
   <header class="site-header">
     <div class="container header-row">
-      <a class="brand" href="#main">PlayMind <span>3D</span></a>
+      <a class="brand" href="#inicio">
+        <img class="brand-mark" src="./assets/logo-mark.webp" width="44" height="44" alt="">
+        <span class="brand-lockup"><span class="brand-name">PlayMind <span>3D</span></span><span class="brand-caption">Impresión 3D en Pilar</span></span>
+      </a>
       <nav class="header-links" aria-label="Navegación principal">
         <a href="#catalogo" data-category-link="todos">Catálogo</a>
         <a href="#catalogo" data-category-link="kits" data-holiday-link>Especial Navidad</a>
+        <a href="#como-pedir">Cómo pedir</a>
       </nav>
       <div class="header-actions">
         <button class="icon-button" id="search-toggle" type="button" aria-label="Abrir búsqueda" aria-controls="search-panel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#icon-search"/></svg></button>
@@ -50,11 +61,12 @@
       </div>
     </div>
   </header>
+  <p class="sr-only" id="bag-status" role="status"></p>
   <main id="main" tabindex="-1" class="container">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow"><span class="signal"></span> Taller de impresión 3D <span class="hero-location">/ Pilar, AR</span></p>
-        <h1 id="hero-title">Objetos que <span>calman, decoran</span> y sorprenden.</h1>
+        <h1 id="hero-title" data-reveal>Objetos que <span class="accent">calman, decoran</span> y sorprenden.</h1>
         <p class="hero-description">Diseño e impresión 3D en PLA vegetal. Piezas táctiles, deco moderna y regalos personalizados.</p>
         <a class="button primary" href="#catalogo" data-category-link="todos">Explorá el catálogo <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
       </div>
@@ -67,7 +79,7 @@
     <section class="holiday" aria-labelledby="holiday-title">
       <div class="holiday-copy">
         <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#icon-gift"/></svg> Edición de temporada</p>
-        <h2 id="holiday-title">Especial Navidad</h2>
+        <h2 id="holiday-title" data-reveal>Especial Navidad</h2>
         <p>Regalos personalizados sin gastar una fortuna. Armá tu Pack x3, x5 o x10 con tag personalizada.</p>
       </div>
       <a class="button holiday-button" href="#catalogo" data-category-link="kits" data-holiday-link>Ver Packs Navideños <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
@@ -91,14 +103,57 @@
       </nav>
       <noscript><p>Activá JavaScript para explorar los productos y armar tu bolsa.</p></noscript>
     </section>
+
+    <section class="guide" id="como-pedir" aria-labelledby="guide-title">
+      <div class="section-heading"><div><p class="eyebrow"><span class="signal"></span> De Pilar a tus manos</p><h2 id="guide-title" data-reveal>Elegí sin vueltas</h2></div></div>
+      <ul class="benefits" role="list">
+        <li id="entrega"><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg></span><h3>Hecho en Pilar</h3><p>Coordinamos el retiro o la entrega en Pilar y alrededores.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg></span><h3>PLA vegetal</h3><p>Piezas impresas en 3D con bioplástico de origen vegetal.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-ruler"/></svg></span><h3>Fotos y medidas</h3><p>Cada ficha muestra el tamaño real y el tiempo de impresión.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></span><h3>Un solo pedido</h3><p>Armá tu bolsa y mandá todo junto por WhatsApp.</p></li>
+      </ul>
+    </section>
   </main>
+
   <footer class="site-footer">
-    <div class="container footer-row">
-      <div><a class="brand" href="#main">PlayMind <span>3D</span></a><p>Diseño local, hecho capa por capa.</p></div>
-      <p><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg> Pilar, Buenos Aires · Envíos y retiros</p>
+    <div class="container footer-grid">
+      <div class="footer-lead">
+        <p class="eyebrow">Hablemos</p>
+        <h2 data-reveal>¿Tenés alguna duda?</h2>
+        <p>Consultanos por disponibilidad, personalizaciones o entregas en Pilar.</p>
+        <a class="button whatsapp" id="contact-link" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Escribinos por WhatsApp</a>
+      </div>
+      <nav class="footer-nav" aria-label="Mapa del sitio">
+        <div>
+          <h3>Explorá</h3>
+          <ul role="list">
+            <li><a href="#catalogo" data-category-link="sensoriales">Juegos Sensoriales</a></li>
+            <li><a href="#catalogo" data-category-link="deco">D3cor</a></li>
+            <li><a href="#catalogo" data-category-link="kits">Kits para Regalo</a></li>
+            <li><a href="#catalogo" data-category-link="kits" data-holiday-link>Especial Navidad</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Te ayudamos</h3>
+          <ul role="list">
+            <li><a href="#como-pedir">Cómo hacer un pedido</a></li>
+            <li><a href="#entrega">Entrega y retiro</a></li>
+            <li><a href="#catalogo" data-category-link="todos">Ver todo el catálogo</a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="footer-brand">
+        <img src="./assets/logo-full.webp" width="359" height="360" alt="PlayMind 3D" loading="lazy" decoding="async">
+      </div>
+    </div>
+    <div class="container footer-signoff">
+      <p><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg> Diseñado e impreso en Pilar, Buenos Aires</p>
+      <a href="#inicio">Volver arriba <svg class="icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg></a>
     </div>
   </footer>
-  <p class="toast" id="toast" role="status"></p>
+
+  <a class="whatsapp-float" id="whatsapp-float" target="_blank" rel="noopener noreferrer" aria-label="Escribinos por WhatsApp"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></a>
+  <p class="toast" id="toast" aria-hidden="true"></p>
 
   <dialog class="product-dialog" id="product-dialog" aria-labelledby="detail-title">
     <div class="dialog-top"><p class="eyebrow">Ficha de producto</p><button class="icon-button" data-close type="button" aria-label="Cerrar ficha del producto"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
@@ -108,10 +163,11 @@
         <button class="button secondary demo-button" id="demo-toggle" type="button" aria-pressed="false" hidden><svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg><span>Ver demo</span></button>
       </div>
       <form class="detail-form" id="detail-form">
+        <div class="tags" id="detail-tags"></div>
         <h2 id="detail-title" tabindex="-1"></h2>
+        <p class="detail-trait" id="detail-trait"></p>
         <p class="detail-price" id="detail-price"></p>
         <dl class="specs" id="detail-specs"></dl>
-        <div class="detail-colors" id="detail-colors"></div>
         <label class="field" for="detail-pack">Elegí la cantidad<select id="detail-pack" name="pack"></select></label>
         <label class="field" for="detail-name">Nombre para la tag / personalización <input type="text" id="detail-name" maxlength="60" placeholder="Opcional · Ej.: Para Sofi"></label>
         <button class="button primary" type="submit"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Sumar a la bolsa</button>
@@ -129,13 +185,13 @@
       <div class="drawer-summary" id="bag-summary" hidden>
         <p class="subtotal">Subtotal <strong id="bag-total"></strong></p>
         <p class="bag-note">Coordinamos disponibilidad, envío o retiro en Pilar por WhatsApp.</p>
-        <button class="button primary" id="preview-order" type="button">Enviar pedido por WhatsApp <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></button>
+        <button class="button whatsapp" id="preview-order" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Enviar pedido por WhatsApp</button>
       </div>
       <section class="order-preview" id="order-preview" aria-labelledby="preview-title" hidden>
         <h3 id="preview-title" tabindex="-1">Revisá el mensaje</h3>
         <pre id="order-message"></pre>
         <p class="bag-note">Catálogo de prueba: el número de WhatsApp es de demostración.</p>
-        <a class="button primary" id="whatsapp-link" target="_blank" rel="noopener noreferrer">Abrir WhatsApp <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
+        <a class="button whatsapp" id="whatsapp-link" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Abrir WhatsApp</a>
         <button class="button secondary" id="back-to-bag" type="button">Volver a la bolsa</button>
       </section>
     </div>
@@ -145,15 +201,15 @@
     <article class="product-card">
       <button class="product-media" type="button" data-detail aria-haspopup="dialog">
         <img width="480" height="480" alt="" decoding="async">
-        <span class="media-tag" data-badge hidden></span>
+        <span class="tags media-tags" data-tags></span>
       </button>
       <div class="product-info">
         <p class="product-category" data-product-category></p>
         <h3><button type="button" data-detail aria-haspopup="dialog"></button></h3>
-        <p class="product-price" data-price></p>
+        <p class="product-trait" data-trait></p>
         <div class="card-actions">
-          <div data-colors></div>
-          <button class="button add-button" type="button" data-add><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Sumar</button>
+          <p class="product-price" data-price></p>
+          <div class="cart-control" data-control></div>
         </div>
       </div>
     </article>
