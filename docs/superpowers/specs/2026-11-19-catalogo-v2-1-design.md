@@ -185,6 +185,21 @@ linha em `catalogoPublico_` (cache de 15 minutos; antes do deploy o fallback por
 Possíveis conflitos com o cutover: `server/Codigo.gs` (hunk pequeno), `app/index.html`, `app/js/editor.js`,
 `app/sw.js` (CACHE).
 
+## Protótipos de ferramentas externas (teste em andamento, 22/11/2026)
+
+O dono está testando o **v0** (Vercel) e o **Lovable** com o mesmo prompt para gerar uma versão da V2.1.
+
+- **v0:** conectado ao GitHub, criou a branch `v0/catalog-v2` (3 commits de 22/11, ainda sobre a `main` antiga) e o
+  **pull request #2** (aberto, não mergeado). Só acrescenta arquivos: pasta `catalog-v2/` (`index.html`, `styles.css`,
+  `catalog.mjs`, `catalog-logic.mjs`, `catalog-data.mjs`, um GIF de ~585 KB) e `tests/catalog-v2.test.js`. É HTML e JS
+  puros (módulos `.mjs`), sem build. Acrescentou por conta própria uma "sacola" (carrinho) e uma galeria.
+  **Não mergear o PR direto**: é protótipo. A spec prevê a pasta `catalogo/`, código em espanhol, e a lógica pura
+  (`lineaDe`, `vistasDe`, `horasTxt`, `mensajeWA`, `descuentoPct`) dual-mode como `app/calculo.js`.
+- **Lovable:** sem resultado registrado ainda.
+- Avaliação prevista (nota de 0 a 2 em cada item): fidelidade ao mockup, regras de dados, mensagem de WhatsApp,
+  celular a 390 px, acessibilidade, facilidade de exportar sem framework, esforço (iterações e créditos).
+- Se o dono gostar da "sacola" do v0, isso responde a pendência do carrinho (item 1 abaixo).
+
 ## Pendências do dono (resolver antes do plano)
 
 1. **Carrinho**: hoje a família monta um pedido com várias peças (barra "Ver pedido", + e −). O mockup tem só

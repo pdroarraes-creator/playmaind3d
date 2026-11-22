@@ -1,5 +1,9 @@
 # Modularizar `app/app.js` — Plano de implementação
 
+> **Estado: EXECUTADO em 19–22/11/2026 e publicado na `main`.** As Tasks 1 a 11 foram feitas; a Task 10 (`nube`) e a parte
+> `entrada` da Task 8 ficaram para o fim, depois do cutover D1. Onde o texto abaixo diverge do código (lista de 38 handlers,
+> `cargar-app.js`, `app/js/calculo.js` ES, números de versão do `sw.js`), vale o código e o `CLAUDE.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Trocar o `app/app.js` único (4.670 linhas) por módulos ES nativos em `app/js/`, sem mudar nenhum comportamento.

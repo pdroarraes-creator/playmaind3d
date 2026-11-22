@@ -301,6 +301,10 @@ funciona quando for preciso.
 
 ### O protocolo no app (mudanças em `app/app.js` e `app/sw.js`)
 
+> Nota de 22/11/2026: o `app/app.js` foi dividido em módulos (`app/js/*.js`). O código descrito nesta seção
+> vive hoje em `app/js/nube.js` (protocolo de dois servidores, `subirALaNube`, `bajarDeLaNube`) e
+> `app/js/entrada.js` (login). O texto abaixo é o desenho original e continua válido quanto ao comportamento.
+
 - Dois endereços: `SERVIDOR` (Apps Script: `login`, `logout`, `foto`, `mundo`, e `load`/`save`
   enquanto o modo for `apps`) e `SERVIDOR_ESTADO` (Worker, para `load`/`save` no modo
   `worker`). `pedir()` escolhe pelo modo e pela ação.

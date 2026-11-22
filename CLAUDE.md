@@ -25,7 +25,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `app/index.html` | Shell da app: markup das abas. Sem CSS e sem JS inline. |
 | `app/app.css` | Todo o estilo. Design tokens em `:root`. |
 | `app/js/*.js` | Toda a lógica da app, em módulos ES (`<script type="module" src="js/main.js">`). Ver a tabela de módulos abaixo. |
-| `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy** e a linha "Versión de la app" em `app/index.html` (Ajustes) junto. Atual: `playmind3d-v43`. |
+| `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy** e a linha "Versión de la app" em `app/index.html` (Ajustes) junto. O número atual está na 2ª linha do arquivo (não repita aqui: fica velho a cada deploy). |
 | `app/manifest.json` | PWA. `scope` e `start_url` = `/app/`. |
 | `index.html` (raiz) | Catálogo público. Consome `?action=catalogo`, não faz login. |
 | `vender/index.html` | Página curta de venda. |
