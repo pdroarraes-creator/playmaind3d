@@ -136,7 +136,7 @@ function armarKit(kit) {
 }
 
 const secciones = new Map([...document.querySelectorAll("[data-shelf]")].map((seccion) => [
-  seccion.id, { seccion, lista: seccion.querySelector("[data-products]"), tarjetas: [] },
+  seccion.dataset.shelf, { seccion, lista: seccion.querySelector("[data-products]"), tarjetas: [] },
 ]));
 const buscar = document.querySelector("#search-input");
 const borrar = document.querySelector("#clear-search");
@@ -154,9 +154,9 @@ function actualizarNavegacion() {
   cuadroNavegacion = undefined;
   const umbral = navegacion.offsetHeight + 16;
   let activa;
-  for (const [linea, { seccion }] of secciones) {
+  for (const { seccion } of secciones.values()) {
     if (seccion.hidden) continue;
-    if (!activa || seccion.getBoundingClientRect().top <= umbral) activa = linea;
+    if (!activa || seccion.getBoundingClientRect().top <= umbral) activa = seccion.id;
   }
   for (const enlace of enlacesDeLinea) {
     if (enlace.hash === `#${activa}`) enlace.setAttribute("aria-current", "location");
@@ -242,8 +242,8 @@ verTodas.addEventListener("click", () => {
 for (const enlace of document.querySelectorAll("[data-shelf-link]")) {
   enlace.addEventListener("click", (evento) => {
     if (evento.ctrlKey || evento.metaKey || evento.altKey || evento.shiftKey) return;
-    const destino = secciones.get(enlace.hash.slice(1));
-    if (destino?.seccion.hidden) {
+    const destino = document.getElementById(enlace.hash.slice(1));
+    if (destino?.hidden) {
       buscar.value = "";
       filtrarCatalogo();
     }
