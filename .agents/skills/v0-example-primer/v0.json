@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "referenceWorkspace": {
+    "sources": [
+      {
+        "id": "github-repo:primer/react-template:main",
+        "type": "github-repo",
+        "repo": {
+          "org": "primer",
+          "name": "react-template"
+        },
+        "ref": "main",
+        "mountPath": "/vercel/share/v0-reference-workspace-sources/primer/react-template/main"
+      }
+    ]
+  },
+  "starter": {
+    "source": "skill-directory",
+    "path": "assets/starter"
+  }
+}

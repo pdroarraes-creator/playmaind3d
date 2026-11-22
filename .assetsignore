@@ -24,6 +24,9 @@ node_modules/**
 .superpowers/**
 **/.superpowers
 **/.superpowers/**
+.agents
+.agents/
+.agents/**
 api-worker
 api-worker/
 api-worker/**
