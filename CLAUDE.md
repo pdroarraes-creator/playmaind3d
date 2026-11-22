@@ -54,7 +54,9 @@ o navegador carrega os módulos direto. Use `grep -n` para achar, não leia tudo
 
 | Módulo | O que guarda |
 |---|---|
-| `main.js` | Boot, registro do service worker, a ponte `window.PM` e as seções ainda **não extraídas**: `entrada` (login), `nube` (sync: `pedir`, `subirALaNube`, `bajarDeLaNube`, `sincronizarAlAbrir`…) e `plumbing`. |
+| `main.js` | Só a ligação: chama os `iniciar<Modulo>()` em ordem, liga os botões e campos do HTML (`plumbing`), registra o service worker, roda o arranque `init()` e monta `window.PM` e `window.PM_ENSAYO`. Não ponha lógica nova aqui. |
+| `entrada.js` | Login: `mostrarEntrada`, `entrar`, `claveVencida`, `salir`, `alternarClave`. |
+| `nube.js` | Sincronização: protocolo de dois servidores (`SERVIDOR_ESTADO`, `MODO_SERVIDOR`, `pedirEstado`), `pedir`, `save`, `subirALaNube`, `bajarDeLaNube`, `sincronizarAlAbrir`, `exportar`, e o estado `listoParaSubir` (setter `setListoParaSubir`). |
 | `util.js` | Helpers puros (`$`, `el`, `num`, `money`…). |
 | `estado.js` | O estado `D`, `reemplazarEstado`, `defaults`, `local`, constantes `SERVIDOR`/`WORKER_CADASTRO`/`KEY`/`LOGO`. |
 | `ui.js` | `toast`, `showTab`, `renderAll`, `renderLight`. |
@@ -62,9 +64,6 @@ o navegador carrega os módulos direto. Use `grep -n` para achar, não leia tudo
 | `stock.js` · `fotos.js` · `catalogo.js` · `editor.js` · `pedido.js` · `vitrina.js` · `ventas.js` · `radar.js` · `ajustes.js` | Uma por seção antiga, mesmo nome. |
 | `pos.js` | Seção `punto de venta`. |
 | `chat.js` | Seção `cadastro por chat`. |
-
-`entrada` e `nube` ficam em `main.js` de propósito, até a troca do servidor (migração
-para D1) ser feita em outra frente; extrair agora só criaria conflito.
 
 `app/calculo.js` **não** é módulo: é script clássico (global `Calculo`), também
 empacotado pelo Worker da Cloudflare. Deve continuar clássico.
@@ -78,13 +77,15 @@ Regras dos módulos:
 - Um `let`/`var` exportado só é reatribuído pelo módulo dono; os outros usam um setter
   exportado (ex.: `setFotosTmp`, `setPosForma`).
 - O código executável de topo de cada seção vive numa função `iniciar<Modulo>()` que o
-  `main.js` chama numa ordem fixa. Exceções inofensivas: `main.js` ainda mantém no topo
-  os listeners de `nube`/`plumbing`, e `radar.js` mantém no topo o IIFE somente-leitura
-  `PIEZA_PENDIENTE`.
+  `main.js` chama numa ordem fixa (a ordem das antigas seções do `app.js`). Exceções
+  inofensivas, só de leitura: `radar.js` mantém no topo o IIFE `PIEZA_PENDIENTE` e
+  `nube.js` inicializa `MODO_SERVIDOR` lendo o `localStorage`. Os listeners de
+  `plumbing` ficam no topo de `main.js`, que é o lugar deles.
 - `window.PM_ENSAYO` (fim de `main.js`) existe só para `scripts/ensayo-protocolo.js`, que precisa
   ler `D`, `listoParaSubir` e o reintento e chamar `subirALaNube()`/`save()`. Não use em código da app.
-- Há ciclos de import deliberados com `main.js`; só são seguros porque nada roda na
-  avaliação dos módulos. **Não adicione leituras de topo de bindings de outro módulo.**
+- Há ciclos de import deliberados (por exemplo `nube.js` ↔ `entrada.js`); só são seguros
+  porque nada roda na avaliação dos módulos. **Não adicione leituras de topo de bindings
+  de outro módulo.**
 
 ## O estado (`D`)
 
