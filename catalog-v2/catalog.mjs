@@ -1,5 +1,7 @@
 import { CATEGORIAS, PRODUCTOS, PACKS } from './storefront-data.mjs';
 import { linkWA, textoDeBusqueda } from './catalog-logic.mjs';
+import { introFinished } from './intro.mjs';
+import { mountGlobe } from './globe.mjs';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const money = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0, minimumGroupingDigits: 1 });
@@ -417,10 +419,36 @@ if (revealObserver) {
   document.documentElement.classList.add('motion');
   for (const heading of document.querySelectorAll('[data-reveal]')) {
     splitWords(heading);
-    revealObserver.observe(heading);
+    if (heading.closest('.hero')) introFinished.then(() => revealObserver.observe(heading));
+    else revealObserver.observe(heading);
   }
-  for (const node of document.querySelectorAll('.benefits li, .footer-brand')) revealObserver.observe(node);
+  for (const node of document.querySelectorAll('.benefits li')) revealObserver.observe(node);
 }
+
+const brandGlobe = document.getElementById('brand-globe');
+mountGlobe(brandGlobe, { animate: motionOk }).catch(() => {});
+
+const heroVideo = document.getElementById('hero-video');
+const heroVideoToggle = document.getElementById('hero-video-toggle');
+const syncVideoToggle = () => {
+  const paused = heroVideo.paused;
+  heroVideoToggle.setAttribute('aria-pressed', String(paused));
+  heroVideoToggle.setAttribute('aria-label', paused ? 'Reproducir video' : 'Pausar video');
+  heroVideoToggle.querySelector('use').setAttribute('href', paused ? '#icon-play' : '#icon-pause');
+};
+heroVideo.addEventListener('play', syncVideoToggle);
+heroVideo.addEventListener('pause', syncVideoToggle);
+heroVideoToggle.addEventListener('click', () => {
+  if (heroVideo.paused) heroVideo.play().catch(() => {});
+  else heroVideo.pause();
+});
+if (!motionOk) heroVideo.pause();
+introFinished.then(() => {
+  if (!motionOk) return;
+  heroVideo.currentTime = 0;
+  heroVideo.play().catch(() => {});
+});
+syncVideoToggle();
 
 renderCatalog();
 renderBag();
