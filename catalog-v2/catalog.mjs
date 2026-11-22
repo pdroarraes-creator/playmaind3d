@@ -9,6 +9,7 @@ const formatPrice = (value) => `$${money.format(value)}`;
 const fallbackImage = './assets/logo-mark.webp';
 const image = (product, index = 0) => product.fotos[index] ?? fallbackImage;
 const cacheKey = 'pm3d-catalogo-v2';
+const bagKey = 'pm3d-bolsa-v1';
 const pageSize = 16;
 const maxCount = 99;
 const bag = [];
@@ -23,6 +24,7 @@ let colores = [];
 let reglas = [];
 let whatsapp = '';
 let loaded = false;
+let bagRestored = false;
 let lastCatalog = '';
 let category = 'todos';
 let holiday = false;
@@ -238,46 +240,49 @@ function showPhoto(index) {
 function openDetail(product, trigger) {
   activeProduct = product;
   detailTrigger = trigger;
-  $('#detail-title').textContent = product.nombre;
-  $('#detail-trait').textContent = product.rasgo;
-  $('#detail-price').textContent = `${formatPrice(product.precio)} ARS`;
-  tagList(product, $('#detail-tags'));
-  const video = $('#video-link');
-  video.hidden = !product.video;
-  if (product.video) video.href = product.video;
-  else video.removeAttribute('href');
-  const thumbs = $('#detail-thumbs');
-  thumbs.hidden = product.fotos.length < 2;
-  thumbs.replaceChildren(...product.fotos.map((foto, index) => {
-    const thumb = element('button');
-    thumb.type = 'button';
-    thumb.setAttribute('aria-label', `Ver foto ${index + 1} de ${product.fotos.length}`);
-    const img = element('img');
-    img.alt = '';
-    img.width = 56;
-    img.height = 56;
-    setPhoto(img, foto);
-    thumb.append(img);
-    thumb.addEventListener('click', () => showPhoto(index));
-    return thumb;
-  }));
-  showPhoto(0);
-  const specs = [
-    ['Detalle', product.detalle], ['Disponibilidad', product.disponibilidad],
-    ['Tamaño real', product.medida], ['Tiempo de impresión', product.tiempo], ['Material', 'PLA vegetal'],
-  ].filter(([, value]) => value);
-  $('#detail-specs').replaceChildren(...specs.map(([label, value]) => {
-    const entry = element('div');
-    entry.append(element('dt', label), element('dd', value));
-    return entry;
-  }));
-  const color = $('#detail-color');
-  color.replaceChildren(new Option('El que quieras', ''), ...colores.map((nombre) => new Option(nombre, nombre)));
-  $('#detail-color-field').hidden = !product.libre || colores.length === 0;
-  $('#detail-name').value = '';
-  detail.showModal();
-  $('#detail-title').focus({ preventScroll: true });
-  detail.scrollTop = 0;
+  const show = () => {
+    $('#detail-title').textContent = product.nombre;
+    $('#detail-trait').textContent = product.rasgo;
+    $('#detail-price').textContent = `${formatPrice(product.precio)} ARS`;
+    tagList(product, $('#detail-tags'));
+    const video = $('#video-link');
+    video.hidden = !product.video;
+    if (product.video) video.href = product.video;
+    else video.removeAttribute('href');
+    const thumbs = $('#detail-thumbs');
+    thumbs.hidden = product.fotos.length < 2;
+    thumbs.replaceChildren(...product.fotos.map((foto, index) => {
+      const thumb = element('button');
+      thumb.type = 'button';
+      thumb.setAttribute('aria-label', `Ver foto ${index + 1} de ${product.fotos.length}`);
+      const img = element('img');
+      img.alt = '';
+      img.width = 56;
+      img.height = 56;
+      setPhoto(img, foto);
+      thumb.append(img);
+      thumb.addEventListener('click', () => showPhoto(index));
+      return thumb;
+    }));
+    showPhoto(0);
+    const specs = [
+      ['Detalle', product.detalle], ['Disponibilidad', product.disponibilidad],
+      ['Tamaño real', product.medida], ['Tiempo de impresión', product.tiempo], ['Material', 'PLA vegetal'],
+    ].filter(([, value]) => value);
+    $('#detail-specs').replaceChildren(...specs.map(([label, value]) => {
+      const entry = element('div');
+      entry.append(element('dt', label), element('dd', value));
+      return entry;
+    }));
+    const color = $('#detail-color');
+    color.replaceChildren(new Option('El que quieras', ''), ...colores.map((nombre) => new Option(nombre, nombre)));
+    $('#detail-color-field').hidden = !product.libre || colores.length === 0;
+    $('#detail-name').value = '';
+    detail.showModal();
+    $('#detail-title').focus({ preventScroll: true });
+    detail.scrollTop = 0;
+  };
+  show();
 }
 
 $('#detail-form').addEventListener('submit', (event) => {
@@ -318,6 +323,7 @@ function changeRow(index, delta, focus) {
 }
 
 function afterBagChange(product, focus) {
+  persistBag();
   renderBag();
   refreshCards(product, focus);
   pulse($('#bag-button'));
@@ -333,9 +339,34 @@ function focusBagRow(index, selector) {
   ($(selector, target ?? document) ?? $('#bag-empty button')).focus();
 }
 
+function persistBag() {
+  try {
+    localStorage.setItem(bagKey, JSON.stringify(bag.map(({ product, color, note, count }) => ({ id: product.id, color, note, count }))));
+  } catch {}
+}
+
+function restoreBag(byId) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(bagKey) || '[]');
+    if (!Array.isArray(saved)) return;
+    for (const entry of saved) {
+      const product = byId.get(entry?.id);
+      if (!product || !Number.isInteger(entry.count) || entry.count < 1) continue;
+      const color = typeof entry.color === 'string' && colores.includes(entry.color) ? entry.color : '';
+      const note = typeof entry.note === 'string' ? entry.note.slice(0, 60) : '';
+      bag.push({ product, color, note, count: Math.min(maxCount, entry.count) });
+    }
+  } catch {}
+}
+
 function renderBag() {
   const order = totals();
   const count = order.unidades;
+  const mobileOrderBar = $('#mobile-order-bar');
+  mobileOrderBar.hidden = count === 0;
+  $('#mobile-order-count').textContent = `${count} ${count === 1 ? 'artículo' : 'artículos'}`;
+  $('#mobile-order-total').textContent = formatPrice(order.total);
+  mobileOrderBar.setAttribute('aria-label', `Ver pedido: ${count} ${count === 1 ? 'artículo' : 'artículos'}, total ${formatPrice(order.total)}`);
   const discount = $('#bag-discount');
   discount.hidden = !order.descuento && !order.falta;
   if (order.descuento) discount.textContent = `Descuento ${order.regla.off}%: −${formatPrice(order.descuento)}`;
@@ -406,6 +437,7 @@ $('#bag-button').addEventListener('click', () => {
   drawer.showModal();
   $('#bag-title').focus();
 });
+$('#mobile-order-bar').addEventListener('click', () => $('#bag-button').click());
 $('#preview-order').addEventListener('click', () => showOrderPreview(true));
 $('#back-to-bag').addEventListener('click', () => showOrderPreview(false));
 drawer.addEventListener('close', () => $('#bag-button').focus());
@@ -428,11 +460,16 @@ function applyCatalog(raw) {
   ({ productos, reglas, colores, whatsapp } = adaptarCatalogo(raw));
   loaded = true;
   const byId = new Map(productos.map((product) => [product.id, product]));
+  if (!bagRestored) {
+    restoreBag(byId);
+    bagRestored = true;
+  }
   for (let index = bag.length - 1; index >= 0; index--) {
     const current = byId.get(bag[index].product.id);
     if (current) bag[index].product = current;
     else bag.splice(index, 1);
   }
+  persistBag();
   stockFilter.hidden = !productos.some((product) => product.stock > 0);
   if (stockFilter.hidden) onlyStock = false;
   const hasHoliday = productos.some((product) => product.navidad);
