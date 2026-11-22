@@ -1,7 +1,7 @@
 # Modularizar `app/app.js` (Fase 2) — design
 
 > **Estado: CONCLUÍDO e publicado na `main` em 22/11/2026** (commit `ca7060b`; site no ar com CACHE v46).
-> `app/app.js` não existe mais: a lógica está em `app/js/*.js` (18 módulos; `main.js` é só a ligação).
+> `app/app.js` não existe mais: a lógica está em `app/js/*.js` (18 arquivos: `main.js`, que é só a ligação, e 17 módulos).
 > Desvios em relação ao que está escrito abaixo (todos decididos durante a execução, no ledger de rulings):
 > `entrada.js` e `nube.js` foram extraídos por último, depois de o cutover D1 entrar na `main` e ser portado
 > à mão; existe `ui.js` (toast, showTab, renderAll) que a estrutura proposta não previa; `window.PM` expõe os 42
