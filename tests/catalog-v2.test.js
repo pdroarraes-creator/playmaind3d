@@ -154,8 +154,9 @@ test("arma el enlace de WhatsApp sólo si hay número cargado", async () => {
 test("pide el catálogo al servidor y rechaza una respuesta sin datos", async () => {
   const { pedirCatalogo, SERVIDOR_CATALOGO } = await api;
   const pedidas = [];
-  const ok = await pedirCatalogo(async (url) => { pedidas.push(url); return { json: async () => ({ ok: true, catalogo: CATALOGO }) }; });
+  const ok = await pedirCatalogo(async (url, options) => { pedidas.push({ url, options }); return { ok: true, json: async () => ({ ok: true, catalogo: CATALOGO }) }; });
   assert.equal(ok, CATALOGO);
-  assert.deepEqual(pedidas, [SERVIDOR_CATALOGO]);
-  await assert.rejects(pedirCatalogo(async () => ({ json: async () => ({ ok: false }) })));
+  assert.deepEqual(pedidas, [{ url: SERVIDOR_CATALOGO, options: { method: "GET" } }]);
+  assert.equal(SERVIDOR_CATALOGO, "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec?action=catalogo");
+  await assert.rejects(pedirCatalogo(async () => ({ ok: true, json: async () => ({ ok: false }) })));
 });

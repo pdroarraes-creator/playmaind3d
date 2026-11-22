@@ -8,7 +8,6 @@ const money = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0, minimum
 const formatPrice = (value) => `$${money.format(value)}`;
 const fallbackImage = './assets/logo-mark.webp';
 const image = (product, index = 0) => product.fotos[index] ?? fallbackImage;
-const cacheKey = 'pm3d-catalogo-v2';
 const bagKey = 'pm3d-bolsa-v1';
 const pageSize = 16;
 const maxCount = 99;
@@ -478,6 +477,12 @@ function applyCatalog(raw) {
   if (!hasHoliday) holiday = false;
   $('#holiday-section').hidden = !hasHoliday;
   for (const link of document.querySelectorAll('[data-holiday-link]')) (link.closest('li') ?? link).hidden = !hasHoliday;
+  for (const line of ['kits', 'personalizados']) {
+    const hasLine = productos.some((product) => product.linea === line);
+    $(`[data-category="${line}"]`).hidden = !hasLine;
+    for (const link of document.querySelectorAll(`[data-category-link="${line}"]`)) (link.closest('li') ?? link).hidden = !hasLine;
+    if (!hasLine && category === line) category = 'todos';
+  }
   const contactHref = linkWhatsApp(whatsapp, '¡Hola PlayMind 3D! Tengo una consulta sobre el catálogo.');
   for (const link of [$('#contact-link'), $('#whatsapp-float')]) setLink(link, contactHref);
   renderShowcase(productos, { openDetail, formatPrice, setPhoto, renderControl, categoryOf: (product) => CATEGORIAS[product.linea] });
@@ -487,15 +492,6 @@ function applyCatalog(raw) {
 
 async function loadCatalog() {
   $('#catalog-error').hidden = true;
-  if (!loaded) {
-    try {
-      const saved = localStorage.getItem(cacheKey);
-      if (saved) {
-        applyCatalog(JSON.parse(saved));
-        lastCatalog = saved;
-      }
-    } catch {}
-  }
   if (!loaded) $('#result-count').textContent = 'Cargando piezas…';
   try {
     const raw = await pedirCatalogo();
@@ -503,10 +499,8 @@ async function loadCatalog() {
     if (fresh === lastCatalog) return;
     lastCatalog = fresh;
     applyCatalog(raw);
-    try { localStorage.setItem(cacheKey, fresh); } catch {}
   } catch {
-    if (loaded) return;
-    $('#result-count').textContent = '';
+    if (!loaded) $('#result-count').textContent = '';
     $('#catalog-error').hidden = false;
   }
 }

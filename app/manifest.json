@@ -4,8 +4,8 @@
   "description": "Costos, precios y ventas de PlayMind 3d",
   "start_url": "/app/",
   "display": "standalone",
-  "background_color": "#FAF9F6",
-  "theme_color": "#FAF9F6",
+  "background_color": "#FAF6EE",
+  "theme_color": "#FAF6EE",
   "orientation": "portrait",
   "icons": [
     {

@@ -1,9 +1,7 @@
 import { horasTxt } from "./catalog-logic.mjs";
 
-// Worker de staging compartido con el sistema actual. Producción sigue vacía
-// durante la migración; el precio y el stock siempre salen del servidor.
 export const SERVIDOR_CATALOGO =
-  "https://playmind3d-api.pdroarraes.workers.dev/catalogo";
+  "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec?action=catalogo";
 
 export const CATEGORIAS = {
   todos: "Todos",
@@ -172,8 +170,9 @@ export function linkWhatsApp(numeroWA, mensaje) {
 }
 
 export async function pedirCatalogo(pedir = fetch) {
-  const respuesta = await pedir(SERVIDOR_CATALOGO);
+  const respuesta = await pedir(SERVIDOR_CATALOGO, { method: "GET" });
+  if (!respuesta.ok) throw new Error("No se pudo conectar con el catálogo");
   const json = await respuesta.json();
-  if (!json?.ok || !json.catalogo) throw new Error("catalogo no disponible");
+  if (!json?.ok || !json.catalogo) throw new Error("Catálogo no disponible");
   return json.catalogo;
 }
