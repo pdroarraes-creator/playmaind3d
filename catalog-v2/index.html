@@ -139,10 +139,7 @@
             <h2 id="sensartias-title">Juguetes &amp; Sensartias</h2>
             <p>Fidgets silenciosos y compañeros de foco y calma, sin pantallas.</p>
           </header>
-          <div class="shelf-list" id="sensartias-products" data-products></div>
-          <button class="button button-outline shelf-more" id="expand-sensartias" type="button" aria-expanded="false" aria-controls="sensartias-products" hidden>
-            <span>Ver todas las piezas de esta línea</span><svg class="icon" aria-hidden="true"><use href="#icon-chevron"/></svg>
-          </button>
+          <div data-carousel></div>
         </section>
 
         <section class="shelf" id="line-3corn" data-shelf="3corn" aria-labelledby="deco-title" tabindex="-1">
@@ -151,7 +148,7 @@
             <h2 id="deco-title">3corn &amp; Deco</h2>
             <p>Para decorar el cuarto, la estantería y ordenar el escritorio.</p>
           </header>
-          <div class="shelf-list" data-products></div>
+          <div data-carousel></div>
         </section>
 
         <section class="shelf" id="navidad" data-shelf="navidad" aria-labelledby="navidad-title" tabindex="-1">
@@ -160,7 +157,7 @@
             <h2 id="navidad-title">Especial Navidad</h2>
             <p>Piezas para darle un toque distinto a las fiestas.</p>
           </header>
-          <div class="shelf-list" data-products></div>
+          <div data-carousel></div>
           <article class="notice season-note" id="navidad-note">
             <div class="season-note-top">
               <span class="fact-icon" aria-hidden="true"><svg class="icon"><use href="#icon-gift"/></svg></span>
@@ -183,7 +180,7 @@
             <h2 id="kits-title">Kits con 15% OFF</h2>
             <p>Elegí una combinación y sumala a tu bolsa.</p>
           </header>
-          <div class="shelf-list" id="kit-list"></div>
+          <div data-carousel></div>
         </section>
       </div>
 
@@ -328,6 +325,29 @@
       </div>
     </div>
   </dialog>
+
+  <template id="shelf-carousel-template">
+    <div class="shelf-carousel" role="group" aria-roledescription="carrusel" hidden>
+      <div class="carousel-toolbar" data-carousel-toolbar hidden>
+        <div class="carousel-choice">
+          <p class="carousel-count" data-carousel-count role="status"></p>
+          <div class="carousel-picker">
+            <select data-carousel-picker></select>
+            <svg class="icon" aria-hidden="true"><use href="#icon-chevron"/></svg>
+          </div>
+        </div>
+        <div class="carousel-controls">
+          <button class="icon-button carousel-step carousel-prev" type="button" data-carousel-prev>
+            <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg>
+          </button>
+          <button class="icon-button carousel-step carousel-next" type="button" data-carousel-next>
+            <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="carousel-track" data-carousel-track role="group"></div>
+    </div>
+  </template>
 
   <template id="product-template">
     <article class="product-card">

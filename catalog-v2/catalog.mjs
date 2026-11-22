@@ -1,8 +1,8 @@
 import { KITS, PIEZAS } from "./catalog-data.mjs";
 import { LINEAS, MAX_UNIDADES_POR_ARTICULO, ajustarPedido, descuentoPct, horasTxt, lineaDe, linkWA, mensajePedidoWA, precioTxt, resumenPedido, textoDeBusqueda, vistasDe } from "./catalog-logic.mjs";
+import { crearCarrusel } from "./carousel.mjs";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const PIEZAS_DESTACADAS = 3;
 
 const fichaPieza = document.querySelector("#product-template");
 const fichaKit = document.querySelector("#kit-template");
@@ -156,7 +156,7 @@ function agregarDato(ficha, simbolo, etiqueta, valor) {
   ficha.append(grupo);
 }
 
-function armarPieza(pieza, destacada) {
+function armarPieza(pieza) {
   const tarjeta = fichaPieza.content.firstElementChild.cloneNode(true);
   const foto = tarjeta.querySelector(".product-photo");
   const errorFoto = tarjeta.querySelector(".photo-unavailable");
@@ -181,8 +181,7 @@ function armarPieza(pieza, destacada) {
   pestañas.setAttribute("aria-label", `Vistas de ${pieza.nombre}`);
   movimiento.hidden = !pieza.gif || !vistas.length;
 
-  foto.loading = destacada ? "eager" : "lazy";
-  if (destacada) foto.fetchPriority = "high";
+  foto.loading = "lazy";
 
   function actualizarControlesDeVista() {
     tipoMovimiento.hidden = !reproduciendo;
@@ -273,19 +272,17 @@ function armarKit(kit) {
 }
 
 const secciones = new Map([...document.querySelectorAll("[data-shelf]")].map((seccion) => [
-  seccion.dataset.shelf, { seccion, lista: seccion.querySelector("[data-products]"), tarjetas: [] },
+  seccion.dataset.shelf, { seccion, mostrar: crearCarrusel(seccion, "Pieza", armarPieza), piezas: [] },
 ]));
 const buscar = document.querySelector("#search-input");
 const borrar = document.querySelector("#clear-search");
 const estadoBusqueda = document.querySelector("#search-status");
 const sinResultados = document.querySelector("#no-results");
-const verTodas = document.querySelector("#expand-sensartias");
 const avisoNavidad = document.querySelector("#navidad-note");
 const seccionKits = document.querySelector("#kits");
 const cabecera = document.querySelector(".site-header");
 const navegacion = document.querySelector("#line-nav");
 const enlacesDeLinea = [...navegacion.querySelectorAll("a")];
-let sensartiasCompleta = false;
 let cuadroNavegacion;
 
 function actualizarNavegacion() {
@@ -310,19 +307,14 @@ function programarNavegacion() {
 function filtrarCatalogo() {
   const consulta = textoDeBusqueda(buscar.value);
   let resultados = 0;
-  for (const [linea, { seccion, tarjetas }] of secciones) {
-    let visibles = 0;
-    for (const [indice, { tarjeta, nombre }] of tarjetas.entries()) {
-      const coincide = consulta ? nombre.includes(consulta) : linea !== "sensartias" || sensartiasCompleta || indice < PIEZAS_DESTACADAS;
-      tarjeta.hidden = !coincide;
-      if (coincide) visibles++;
-    }
-    seccion.hidden = Boolean(consulta) && visibles === 0;
-    resultados += visibles;
+  for (const { seccion, mostrar, piezas } of secciones.values()) {
+    const coincidencias = consulta ? piezas.filter(({ nombre }) => nombre.includes(consulta)).map(({ pieza }) => pieza) : piezas.map(({ pieza }) => pieza);
+    seccion.hidden = Boolean(consulta) && coincidencias.length === 0;
+    mostrar(coincidencias);
+    resultados += coincidencias.length;
   }
 
-  verTodas.hidden = Boolean(consulta) || secciones.get("sensartias").tarjetas.length <= PIEZAS_DESTACADAS;
-  avisoNavidad.hidden = secciones.get("navidad").tarjetas.length > 0;
+  avisoNavidad.hidden = secciones.get("navidad").piezas.length > 0;
   seccionKits.hidden = Boolean(consulta);
   sinResultados.hidden = !consulta || resultados > 0;
   borrar.hidden = !buscar.value;
@@ -336,14 +328,10 @@ function limpiarBusqueda() {
   buscar.focus();
 }
 
-for (const [indice, pieza] of PIEZAS.entries()) {
-  const destino = secciones.get(lineaDe(pieza));
-  const tarjeta = armarPieza(pieza, indice === 0);
-  destino.tarjetas.push({ tarjeta, nombre: textoDeBusqueda(pieza.nombre) });
-  destino.lista.append(tarjeta);
+for (const pieza of PIEZAS) {
+  secciones.get(lineaDe(pieza)).piezas.push({ pieza, nombre: textoDeBusqueda(pieza.nombre) });
 }
-
-document.querySelector("#kit-list").append(...KITS.map(armarKit));
+crearCarrusel(seccionKits, "Kit", armarKit)(KITS);
 
 for (const dialogo of document.querySelectorAll(".message-sheet")) {
   dialogo.addEventListener("click", (evento) => {
@@ -366,19 +354,6 @@ buscar.addEventListener("input", (evento) => {
 buscar.addEventListener("compositionend", filtrarCatalogo);
 borrar.addEventListener("click", limpiarBusqueda);
 document.querySelector("#reset-search").addEventListener("click", limpiarBusqueda);
-
-verTodas.addEventListener("click", () => {
-  sensartiasCompleta = !sensartiasCompleta;
-  verTodas.setAttribute("aria-expanded", String(sensartiasCompleta));
-  verTodas.querySelector("span").textContent = sensartiasCompleta ? "Mostrar solo las destacadas" : "Ver todas las piezas de esta línea";
-  filtrarCatalogo();
-  if (sensartiasCompleta) {
-    const siguiente = secciones.get("sensartias").tarjetas[PIEZAS_DESTACADAS].tarjeta;
-    siguiente.setAttribute("tabindex", "-1");
-    siguiente.focus({ preventScroll: true });
-    siguiente.scrollIntoView({ block: "start" });
-  }
-});
 
 for (const enlace of document.querySelectorAll("[data-shelf-link]")) {
   enlace.addEventListener("click", (evento) => {
