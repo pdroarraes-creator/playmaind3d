@@ -965,6 +965,12 @@ function invalidarCatalogo_() {
   } catch (e) {}
 }
 
+// Solo enlaces https van al catálogo público (nada de javascript: ni data:).
+function videoPublico_(u) {
+  u = typeof u === 'string' ? u.trim() : '';
+  return /^https:\/\//i.test(u) ? u : '';
+}
+
 function catalogoPublico_() {
   var data = leerEstado_();
   if (!data || !data.produtos) return { marca: '', wa: '', piezas: [] };
@@ -989,6 +995,7 @@ function catalogoPublico_() {
       video: p.video || '',
       detalle: p.detalle || '',
       tags: p.tags || '',
+      destacada: !!p.destacada,
       stock: n(p.stock),
       vendidas: 0,
       fotos: fotos
@@ -1044,6 +1051,10 @@ function catalogoPublico_() {
     colores: colores,
     packs: packs,
     piezas: piezas,
+    hero: {
+      v1: videoPublico_(data.cfg && data.cfg.hero && data.cfg.hero.v1),
+      v2: videoPublico_(data.cfg && data.cfg.hero && data.cfg.hero.v2)
+    },
     leti: {
       cita: (data.cfg && data.cfg.leti && data.cfg.leti.cita) || '',
       historia: (data.cfg && data.cfg.leti && data.cfg.leti.historia) || '',

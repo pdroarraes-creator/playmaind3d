@@ -27,6 +27,8 @@ export function bindCfg() {
   $("#s_cat").value = D.cfg.catalogo || "";
   $("#s_letiCita").value = D.cfg.leti.cita || "";
   $("#s_letiHistoria").value = D.cfg.leti.historia || "";
+  $("#s_heroV1").value = (D.cfg.hero && D.cfg.hero.v1) || "";
+  $("#s_heroV2").value = (D.cfg.hero && D.cfg.hero.v2) || "";
   const q = $("#quienSoy");
   if (q)
     q.textContent = D.cfg.email
@@ -72,6 +74,13 @@ export function bindCfg() {
     D.cfg.leti.historia = $("#s_letiHistoria").value;
     save();
   });
+  for (const [id, k] of [["#s_heroV1", "v1"], ["#s_heroV2", "v2"]]) {
+    $(id).addEventListener("input", () => {
+      if (!D.cfg.hero) D.cfg.hero = { v1: "", v2: "" };
+      D.cfg.hero[k] = $(id).value.trim();
+      save();
+    });
+  }
 }
 function fieldRow(obj, campos, onDel, nota, acciones, resumen) {
   if (resumen) return fieldCard(obj, campos, onDel, nota, acciones, resumen);

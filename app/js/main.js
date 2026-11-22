@@ -137,6 +137,7 @@ if ("serviceWorker" in navigator) {
   if (!D.packs) D.packs = [];
   if (!D.opiniones) D.opiniones = [];
   if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
+  if (!D.cfg.hero) D.cfg.hero = { v1: "", v2: "" };
   migrarStockVentas();
   migrarPresupuestos(D);
   if (D.cfg.merma === undefined || D.cfg.merma === null) D.cfg.merma = 12;

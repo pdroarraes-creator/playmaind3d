@@ -184,7 +184,7 @@
             </div>
             <div>
               <label class="f" for="c_video">Video (link)</label
-              ><input id="c_video" type="text" placeholder="YouTube, Drive o Instagram" />
+              ><input id="c_video" type="text" placeholder="Link a un video corto o a un GIF (.mp4, .gif)" />
             </div>
             <div>
               <label class="f" for="c_tags">Etiquetas</label
@@ -208,6 +208,12 @@
 
           <label class="chk" for="c_libre" style="margin-top: 12px"
             ><input type="checkbox" id="c_libre" /> El cliente elige el color al pedir</label
+          >
+          <label class="chk" for="c_publicada" style="margin-top: 8px"
+            ><input type="checkbox" id="c_publicada" checked /> Publicada: se muestra en el catálogo</label
+          >
+          <label class="chk" for="c_destacada" style="margin-top: 8px"
+            ><input type="checkbox" id="c_destacada" /> Destacada: va en el carrusel del catálogo</label
           >
 
           <div style="margin-top: 14px">
@@ -647,6 +653,18 @@
         </div>
 
         <div class="card">
+          <h2><i class="dot" style="background: var(--teal)"></i> Videos del catálogo</h2>
+          <p class="mut" style="margin: 0 0 10px">
+            Van en la portada del catálogo, mudos y en bucle. Pegá el link directo a un archivo de video (.mp4 o .webm).
+            Si el 1 queda vacío se usa el que ya tiene el catálogo. El 2 es opcional y se muestra después del 1.
+          </p>
+          <label class="f" for="s_heroV1">Video 1</label>
+          <input id="s_heroV1" type="url" inputmode="url" placeholder="https://…/video.mp4" />
+          <label class="f" for="s_heroV2" style="margin-top: 12px">Video 2 (opcional)</label>
+          <input id="s_heroV2" type="url" inputmode="url" placeholder="https://…/video.mp4" />
+        </div>
+
+        <div class="card">
           <h2><i class="dot" style="background: var(--teal)"></i> Costos generales</h2>
           <p class="hint">Estos números mandan sobre todo el catálogo.</p>
           <div class="grid">
@@ -759,7 +777,7 @@
             + Canal
           </button>
         </div>
-        <p class="mut" style="margin: 16px 0 0; font-size: 12px">Versión de la app: v46</p>
+        <p class="mut" style="margin: 16px 0 0; font-size: 12px">Versión de la app: v47</p>
       </section>
     </div>
 

@@ -56,6 +56,28 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FALLA') + ' ' + m); if (!c) f
   await p2.goto(base + '/?pieza=' + encodeURIComponent('Fidget Cube Toy'));
   await p2.waitForFunction(() => document.querySelector('#product-dialog')?.open, null, { timeout: 30000 });
   ok(/Fidget Cube Toy/.test(await p2.textContent('#detail-title')), '?pieza=Nombre abre la ficha de esa pieza');
+  // admin: destacadas en el carrusel, videos del hero y demo en gif dentro de la ficha
+  const p3 = await page.context().newPage();
+  await p3.route('**/lh3.googleusercontent.com/**', (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
+  await p3.route('**/fonts.g*apis.com/**', (r) => r.abort());
+  await p3.route('https://ejemplo.test/**', (r) => r.fulfill({ status: 200, contentType: 'video/mp4', body: fs.readFileSync(path.join(RAIZ, 'catalogo/assets/studio-hero.mp4')) }));
+  await p3.route('**/script.google.com/**', async (r) => {
+    const resp = await r.fetch(); const j = await resp.json();
+    j.catalogo.piezas.forEach((x) => { if (x.nome === 'Tortuga Articulada' || x.nome === 'Cono fidget toy') x.destacada = true; });
+    j.catalogo.piezas.find((x) => x.nome === 'Tortuga Articulada').video = 'https://ejemplo.test/demo.gif';
+    j.catalogo.hero = { v1: 'https://ejemplo.test/uno.mp4', v2: 'https://ejemplo.test/dos.mp4' };
+    r.fulfill({ response: resp, json: j });
+  });
+  await p3.goto(base + '/?pieza=' + encodeURIComponent('Tortuga Articulada')); await p3.waitForSelector('.product-card', { timeout: 30000 });
+  await p3.waitForFunction(() => document.querySelector('#product-dialog')?.open, null, { timeout: 30000 });
+  await p3.waitForTimeout(800);
+  const slides = await p3.locator('#showcase-track > *').count();
+  ok(slides === 2, 'carrusel muestra solo las 2 piezas destacadas (' + slides + ')');
+  ok((await p3.getAttribute('#hero-video', 'src')) === 'https://ejemplo.test/uno.mp4', 'hero usa el video 1 del admin');
+  const vistas = await p3.locator('#detail-thumbs button').allTextContents();
+  ok(vistas.at(-1) === 'Demo', 'la ficha suma la pestaña Demo para el gif (' + vistas.join(' | ') + ')');
+  await p3.locator('#detail-thumbs button').last().click();
+  ok((await p3.getAttribute('#detail-photo', 'src')) === 'https://ejemplo.test/demo.gif', 'la pestaña Demo muestra el gif');
   ok(errores.length === 0, 'cero errores de consola' + (errores.length ? ': ' + errores.join(' | ') : ''));
   await browser.close(); srv.close();
   console.log(fallos ? '\n' + fallos + ' fallo(s)' : '\nTodo ok');

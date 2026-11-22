@@ -14,6 +14,7 @@ function estadoInventado() {
       marca: "Marca de Prueba", wa: "5491100000000", merma: 12, kwh: 120, maoObra: 3000,
       risco: 10, mult: 2.5, round: 50, token: "tok-secreto", key: "clave-secreta",
       leti: { cita: "Una cita", historia: "Una historia", foto: "https://lh3.googleusercontent.com/d/FOTOLETI_1" },
+      hero: { v1: " https://ejemplo.com/uno.mp4 ", v2: "javascript:alert(1)" },
     },
     filamentos: [
       { id: "f1", precoKg: 20000, cor: "Rojo", hex: "#ff0000" },
@@ -25,7 +26,7 @@ function estadoInventado() {
     produtos: [
       { nome: "Llavero", cat: "Varios", desc: "d", fil: "f1", imp: "i1", peso: 12.34, h: 1, m: 20, mo: 5, stock: 3,
         fotos: ["https://lh3.googleusercontent.com/d/ABC_123", "https://ejemplo.com/foto.jpg", "", "https://lh3.googleusercontent.com/d/XYZ=s400"],
-        ref: "https://ref.example/x", mercado: 9999, tags: "a,b", video: "v", detalle: "det", libre: true, medida: "5cm" },
+        ref: "https://ref.example/x", mercado: 9999, tags: "a,b", video: "v", detalle: "det", libre: true, medida: "5cm", destacada: true },
       { nome: "Maceta", cat: "Hogar", fil: "borrado", imp: "i1", peso: 80, h: 4, m: 45, stock: "2", foto: "https://lh3.googleusercontent.com/d/MACETA9" },
       { nome: "Oculta", oculta: true, fil: "f1", imp: "i1", peso: 10, h: 1, m: 0 },
       { nome: "Manual", fil: "f2", imp: "i1", peso: 20, h: 1, m: 0, manual: 12345, insumos: { s1: 2 } },
@@ -191,4 +192,13 @@ for (const [ruta, origen] of [["/catalogo", "https://malo.example"], ["/?action=
 test("index: GET / sin action sigue siendo 404", async () => {
   const r = await worker.fetch(new Request("https://api.test/"), {});
   assert.equal(r.status, 404);
+});
+
+test("destacada y videos del hero salen al catálogo; sólo enlaces https", () => {
+  const c = catalogoPublico(estadoInventado());
+  assert.equal(c.piezas[0].destacada, true);
+  assert.equal(c.piezas[1].destacada, false);
+  assert.deepEqual(c.hero, { v1: "https://ejemplo.com/uno.mp4", v2: "" });
+  const sinHero = catalogoPublico({ ...estadoInventado(), cfg: { marca: "M" } });
+  assert.deepEqual(sinHero.hero, { v1: "", v2: "" });
 });

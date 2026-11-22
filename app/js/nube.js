@@ -235,6 +235,7 @@ async function bajarDeLaNube() {
       // que el servidor sepa si tiene que fusionar o puede pisar tranquilo
       D._v = j.v || "";
       if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
+      if (!D.cfg.hero) D.cfg.hero = { v1: "", v2: "" };
       migrarInsumos();
       migrarStockVentas();
       migrarPresupuestos(D);
@@ -340,6 +341,7 @@ export function iniciarNube() {
         D.cfg.api = api;
         D.cfg.token = tk;
         if (!D.cfg.leti) D.cfg.leti = { cita: "", historia: "", foto: "" };
+      if (!D.cfg.hero) D.cfg.hero = { v1: "", v2: "" };
         migrarInsumos();
         migrarStockVentas();
         migrarPresupuestos(D);

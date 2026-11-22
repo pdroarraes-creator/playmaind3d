@@ -51,6 +51,8 @@ export function cargarPieza(p) {
   $("#c_detalle").value = p ? p.detalle || "" : "";
   $("#c_tags").value = p ? p.tags || "" : "";
   $("#c_libre").checked = p ? !!p.libre : false;
+  $("#c_publicada").checked = p ? !p.oculta : true;
+  $("#c_destacada").checked = p ? !!p.destacada : false;
   $("#c_desc").value = p ? p.desc || "" : "";
   $("#c_risk").placeholder = D.cfg.risco;
   $("#c_mult").placeholder = D.cfg.mult;
@@ -198,6 +200,8 @@ function piezaActual() {
     cat: $("#c_cat").value.trim(),
     desc: $("#c_desc").value.trim(),
     libre: $("#c_libre").checked,
+    oculta: !$("#c_publicada").checked,
+    destacada: $("#c_destacada").checked,
     medida: $("#c_medida").value.trim(),
     video: $("#c_video").value.trim(),
     detalle: $("#c_detalle").value.trim(),

@@ -49,6 +49,7 @@ export const defaults = () => ({
     api: "",
     token: "",
     leti: { cita: "", historia: "", foto: "" },
+    hero: { v1: "", v2: "" },
   },
   canais: [
     { id: "c1", nome: "Escuela", comision: 0 },

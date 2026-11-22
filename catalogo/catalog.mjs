@@ -1,5 +1,5 @@
 import { CATEGORIAS, adaptarCatalogo, linkWhatsApp, pedirCatalogo, slug, totalesPedido } from './catalog-api.mjs';
-import { nombreDeVista, textoDeBusqueda } from './catalog-logic.mjs';
+import { nombreDeVista, textoDeBusqueda, tipoDeMedia, videosDeHero, vistasFicha } from './catalog-logic.mjs';
 import { renderShowcase } from './showcase.mjs';
 import './float-icons.mjs';
 
@@ -230,11 +230,23 @@ search.addEventListener('keydown', (event) => {
   }
 });
 
+let activeViews = [];
 function showPhoto(index) {
   const photo = $('#detail-photo');
-  const total = activeProduct.fotos.length;
-  setPhoto(photo, image(activeProduct, index));
-  photo.alt = total > 1 ? `${activeProduct.nombre}, ${nombreDeVista(index)}` : activeProduct.nombre;
+  const demo = $('#detail-demo');
+  const view = activeViews[index];
+  demo.pause();
+  if (view?.tipo === 'video') {
+    photo.hidden = true;
+    demo.hidden = false;
+    demo.src = view.src;
+    demo.play().catch(() => {});
+  } else {
+    demo.hidden = true;
+    photo.hidden = false;
+    setPhoto(photo, view ? view.src : image(activeProduct, 0));
+    photo.alt = activeViews.length > 1 ? `${activeProduct.nombre}, ${view.etiqueta}` : activeProduct.nombre;
+  }
   for (const [i, thumb] of [...$('#detail-thumbs').children].entries()) thumb.setAttribute('aria-pressed', String(i === index));
 }
 
@@ -247,13 +259,15 @@ function openDetail(product, trigger) {
     $('#detail-price').textContent = `${formatPrice(product.precio)} ARS`;
     tagList(product, $('#detail-tags'));
     const video = $('#video-link');
-    video.hidden = !product.video;
-    if (product.video) video.href = product.video;
+    const enlace = tipoDeMedia(product.video) === 'enlace';
+    video.hidden = !enlace;
+    if (enlace) video.href = product.video;
     else video.removeAttribute('href');
+    activeViews = vistasFicha(product);
     const thumbs = $('#detail-thumbs');
-    thumbs.hidden = product.fotos.length < 2;
-    thumbs.replaceChildren(...product.fotos.map((_, index) => {
-      const tab = element('button', nombreDeVista(index));
+    thumbs.hidden = activeViews.length < 2;
+    thumbs.replaceChildren(...activeViews.map((view, index) => {
+      const tab = element('button', view.etiqueta);
       tab.type = 'button';
       tab.addEventListener('click', () => showPhoto(index));
       return tab;
@@ -286,7 +300,7 @@ $('#detail-form').addEventListener('submit', (event) => {
   addToBag(activeProduct, color, $('#detail-name').value.trim());
   detail.close();
 });
-detail.addEventListener('close', () => detailTrigger?.focus({ preventScroll: true }));
+detail.addEventListener('close', () => { $('#detail-demo').pause(); detailTrigger?.focus({ preventScroll: true }); });
 
 function announce(text) {
   const toast = $('#toast');
@@ -451,7 +465,9 @@ function setLink(link, href) {
 }
 
 function applyCatalog(raw) {
-  ({ productos, reglas, colores, whatsapp } = adaptarCatalogo(raw));
+  let heroVideos;
+  ({ productos, reglas, colores, whatsapp, heroVideos } = adaptarCatalogo(raw));
+  applyHero(heroVideos);
   loaded = true;
   const byId = new Map(productos.map((product) => [product.id, product]));
   if (!bagRestored) {
@@ -485,6 +501,20 @@ function applyCatalog(raw) {
 }
 
 // Enlaces compartidos: /?pieza=Nombre abre la ficha de esa pieza (una sola vez).
+let heroKey = '';
+function applyHero(videos) {
+  const lista = videosDeHero(videos, new URL('./assets/studio-hero.mp4', import.meta.url).href);
+  if (lista.join('|') === heroKey) return;
+  heroKey = lista.join('|');
+  let actual = 0;
+  const poner = () => { heroVideo.src = lista[actual]; heroVideo.play().catch(() => {}); };
+  heroVideo.onended = lista.length > 1 ? () => { actual = (actual + 1) % lista.length; poner(); } : null;
+  heroVideo.loop = lista.length === 1;
+  // si el video del admin no carga, vuelve el que viene con el catálogo
+  heroVideo.onerror = () => { heroVideo.onerror = null; heroVideo.onended = null; heroVideo.loop = true; heroVideo.src = new URL('./assets/studio-hero.mp4', import.meta.url).href; heroVideo.play().catch(() => {}); };
+  if (lista[0] !== new URL('./assets/studio-hero.mp4', import.meta.url).href) poner();
+}
+
 let urlHandled = false;
 function openFromUrl() {
   if (urlHandled) return;

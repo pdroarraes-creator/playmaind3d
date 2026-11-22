@@ -95,6 +95,14 @@ Objeto global único. Chaves de topo:
 `cfg` (config e credenciais) · `canais` · `filamentos` · `impressoras` · `insumos` ·
 `produtos` · `vendas` · `pedido` · `pedidoFil` · `radar` · `packs` · `opiniones` · `v`
 
+Campos que o admin controla no catálogo público (todos opcionais, sem migração): por peça,
+`oculta` (a UI mostra "Publicada" = não oculta), `destacada` (carrossel: se houver alguma marcada,
+só elas aparecem), `libre` (cliente escolhe a cor), `video` (link: gif/imagem e mp4/webm viram a aba
+"Demo" na ficha; outros links, como YouTube, ficam como botão "Ver video") e `stock` (>0 = pronta;
+0 = a pedido); globais, `cfg.hero.v1` e `cfg.hero.v2` (vídeos da portada, só https; vazio = vídeo
+que acompanha o catálogo). Saem em `catalogoPublico_` (`server/Codigo.gs`) e `catalogoPublico`
+(`api-worker/src/catalogo.js`), que o teste de paridade obriga a andar juntos.
+
 Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor via
 `action=save` / `action=load`. **Todo save envia o estado completo.**
 

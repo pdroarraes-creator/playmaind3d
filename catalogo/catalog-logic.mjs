@@ -24,6 +24,34 @@ export function vistasDe(pieza) {
   });
 }
 
+// Qué es el enlace de "video" de una pieza: imagen animada (gif…), video de archivo, u otro enlace (YouTube, Drive…).
+export function tipoDeMedia(url) {
+  if (typeof url !== "string" || !/^https:\/\//i.test(url)) return "";
+  if (/\.(gif|webp|png|jpe?g)(\?|#|$)/i.test(url)) return "imagen";
+  if (/\.(mp4|webm|mov)(\?|#|$)/i.test(url)) return "video";
+  return "enlace";
+}
+
+// Lo que muestra la ficha: las fotos con su nombre y, al final, la demo si es imagen o video de archivo.
+export function vistasFicha(pieza) {
+  const vistas = (pieza.fotos ?? []).map((src, indice) => ({ tipo: "foto", src, etiqueta: nombreDeVista(indice) }));
+  const tipo = tipoDeMedia(pieza.video);
+  if (tipo === "imagen" || tipo === "video") vistas.push({ tipo, src: pieza.video, etiqueta: "Demo" });
+  return vistas;
+}
+
+// Si el dueño marcó piezas como destacadas, el carrusel muestra solo esas; si no, queda la selección automática.
+export function destacadasDe(piezas, { automaticas, max = 6 }) {
+  const marcadas = piezas.filter((p) => p.destacada && p.fotos.length);
+  return (marcadas.length ? marcadas : automaticas).slice(0, marcadas.length ? 8 : max);
+}
+
+// Videos de la portada: los del admin (solo https) o, si no hay, el que viene con el catálogo.
+export function videosDeHero(urls, porDefecto) {
+  const lista = (urls ?? []).filter((u) => typeof u === "string" && /^https:\/\//i.test(u));
+  return lista.length ? lista : [porDefecto];
+}
+
 export function horasTxt(horas) {
   if (!Number.isFinite(horas) || horas <= 0) return "";
   const minutos = Math.max(1, Math.round(horas * 60 / 5) * 5);

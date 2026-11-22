@@ -308,6 +308,9 @@ async function main() {
       );
       await page.fill("#tab-calc #c_nome", nombre);
       await page.fill("#tab-calc #c_peso", "37");
+      if (!(await page.isChecked("#tab-calc #c_publicada"))) throw new Error("una pieza existente debería salir como publicada");
+      await page.uncheck("#tab-calc #c_publicada");
+      await page.check("#tab-calc #c_destacada");
       await page.click("#tab-calc #bSave");
       const t0 = Date.now();
       let bueno;
@@ -315,7 +318,7 @@ async function main() {
         bueno = saves.find(
           (s) =>
             s.data &&
-            (s.data.produtos || []).some((p) => p.nome === nombre && Number(p.peso) === 37),
+            (s.data.produtos || []).some((p) => p.nome === nombre && Number(p.peso) === 37 && p.oculta === true && p.destacada === true),
         );
         if (!bueno) await page.waitForTimeout(100);
       }
@@ -325,6 +328,19 @@ async function main() {
       chequeo("(f) editar pieza guarda en el servidor", true, "estado de " + largo + " chars");
     } catch (e) {
       chequeo("(f) editar pieza guarda en el servidor", false, e.message.split("\n")[0]);
+    }
+
+    // (g) los videos del catálogo (Ajustes) se guardan en cfg.hero
+    try {
+      const v1 = "https://ejemplo.test/humo" + Date.now() + ".mp4";
+      await page.click('[role=tab][data-tab="cfg"]');
+      await page.fill("#s_heroV1", v1);
+      await page.waitForTimeout(2500);
+      const bueno = saves.find((s) => s.data && s.data.cfg && s.data.cfg.hero && s.data.cfg.hero.v1 === v1);
+      if (!bueno) throw new Error("ningún save trae cfg.hero.v1");
+      chequeo("(g) video del catálogo se guarda", true, "cfg.hero.v1 llegó al servidor");
+    } catch (e) {
+      chequeo("(g) video del catálogo se guarda", false, e.message.split("\n")[0]);
     }
 
     // (d) cero errores durante todo el recorrido

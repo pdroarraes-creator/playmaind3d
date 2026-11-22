@@ -273,3 +273,4 @@ dialog::backdrop { background: #181a1b80; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+.detail-media video { display: block; width: 100%; height: 100%; object-fit: cover; }

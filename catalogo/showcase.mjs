@@ -1,3 +1,5 @@
+import { destacadasDe } from './catalog-logic.mjs';
+
 const section = document.getElementById('showcase');
 const track = document.getElementById('showcase-track');
 const viewport = track.parentElement;
@@ -68,7 +70,8 @@ viewport.addEventListener('pointercancel', () => { swipeStart = null; });
 export function renderShowcase(products, { openDetail, formatPrice, setPhoto, renderControl, categoryOf }) {
   const eligible = products.filter((product) => product.fotos.length && !product.navidad);
   const isCurated = (product) => /(?:^|\s)vitrine(?:\s|$)/i.test(product.busqueda);
-  const featured = [...eligible.filter(isCurated), ...eligible.filter((product) => !isCurated(product))].slice(0, 6);
+  const automaticas = [...eligible.filter(isCurated), ...eligible.filter((product) => !isCurated(product))];
+  const featured = destacadasDe(products, { automaticas });
   const keep = Math.min(current, Math.max(0, featured.length - 1));
 
   slides = featured.map((product, index) => {

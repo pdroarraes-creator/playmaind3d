@@ -126,7 +126,7 @@ test("adapta las piezas reales: precio, stock, color, fotos y orden del servidor
   assert.deepEqual([kit.linea, kit.precio, kit.detalle], ["kits", 15300, "Incluye: Cubo + cono"]);
   assert.deepEqual(colores, ["Azul"]);
   assert.equal(whatsapp, "5491155550000");
-  assert.deepEqual(adaptarCatalogo(undefined), { productos: [], reglas: [], colores: [], whatsapp: "" });
+  assert.deepEqual(adaptarCatalogo(undefined), { productos: [], reglas: [], colores: [], whatsapp: "", heroVideos: [] });
 });
 
 test("aplica la regla que más descuenta y avisa cuánto falta", async () => {
@@ -178,4 +178,46 @@ test("\"para qué sirve\" sólo sale de una descripción real, sin frase inventa
   assert.equal(con.uso, "Para calmar las manos");
   assert.equal(sin.uso, "");
   assert.equal(sin.detalle, "");
+});
+
+test("tipoDeMedia distingue gif, video de archivo y otros enlaces; nada que no sea https", async () => {
+  const { tipoDeMedia } = await modulos.then(([m]) => m);
+  assert.equal(tipoDeMedia("https://x.com/a.gif"), "imagen");
+  assert.equal(tipoDeMedia("https://x.com/a.GIF?v=2"), "imagen");
+  assert.equal(tipoDeMedia("https://x.com/a.mp4"), "video");
+  assert.equal(tipoDeMedia("https://youtu.be/abc"), "enlace");
+  assert.equal(tipoDeMedia("javascript:alert(1)"), "");
+  assert.equal(tipoDeMedia("http://x.com/a.mp4"), "");
+  assert.equal(tipoDeMedia(""), "");
+});
+
+test("la ficha suma la demo (gif o mp4) como última vista; un enlace de YouTube no", async () => {
+  const { vistasFicha } = await modulos.then(([m]) => m);
+  const base = { fotos: ["a", "b"] };
+  assert.deepEqual(vistasFicha({ ...base, video: "https://x.com/d.gif" }).map((v) => [v.tipo, v.etiqueta]), [["foto", "1. Limpia"], ["foto", "2. En mano"], ["imagen", "Demo"]]);
+  assert.equal(vistasFicha({ ...base, video: "https://x.com/d.mp4" }).at(-1).tipo, "video");
+  assert.equal(vistasFicha({ ...base, video: "https://youtu.be/abc" }).length, 2);
+  assert.equal(vistasFicha({ fotos: [], video: "https://x.com/d.gif" }).length, 1);
+});
+
+test("carrusel: con piezas destacadas muestra solo esas; sin ninguna, la selección automática", async () => {
+  const { destacadasDe } = await modulos.then(([m]) => m);
+  const p = (nombre, extra = {}) => ({ nombre, fotos: ["f"], destacada: false, ...extra });
+  const piezas = [p("A"), p("B", { destacada: true }), p("C", { destacada: true }), p("D", { destacada: true, fotos: [] })];
+  assert.deepEqual(destacadasDe(piezas, { automaticas: [piezas[0]] }).map((x) => x.nombre), ["B", "C"]);
+  assert.deepEqual(destacadasDe([p("A"), p("B")], { automaticas: [p("A")] }).map((x) => x.nombre), ["A"]);
+});
+
+test("videos del hero: los del admin, solo https; sin ninguno queda el de por defecto", async () => {
+  const { videosDeHero } = await modulos.then(([m]) => m);
+  assert.deepEqual(videosDeHero(["https://x.com/1.mp4", "javascript:x", "https://x.com/2.mp4"], "d.mp4"), ["https://x.com/1.mp4", "https://x.com/2.mp4"]);
+  assert.deepEqual(videosDeHero([], "d.mp4"), ["d.mp4"]);
+  assert.deepEqual(videosDeHero(undefined, "d.mp4"), ["d.mp4"]);
+});
+
+test("adaptarCatalogo: destacada y heroVideos llegan de los datos del servidor", async () => {
+  const { adaptarCatalogo } = await api;
+  const r = adaptarCatalogo({ hero: { v1: "https://x.com/1.mp4", v2: "ftp://no" }, piezas: [{ nome: "A", precio: 1000, destacada: true }, { nome: "B", precio: 1000 }] });
+  assert.deepEqual(r.heroVideos, ["https://x.com/1.mp4"]);
+  assert.deepEqual(r.productos.map((x) => x.destacada).sort(), [false, true]);
 });

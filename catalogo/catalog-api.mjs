@@ -79,6 +79,7 @@ export function adaptarCatalogo(catalogo) {
       precio: Math.max(0, Math.round(numero(p.precio))),
       fotos: (p.fotos ?? []).filter((foto) => typeof foto === "string" && /^https:\/\//.test(foto)),
       video: /^https:\/\//.test(texto(p.video)) ? texto(p.video) : "",
+      destacada: Boolean(p.destacada),
       tags: etiquetas,
       busqueda: propias.join(" "),
       navidad,
@@ -127,7 +128,9 @@ export function adaptarCatalogo(catalogo) {
 
   const colores = [...new Set((c.colores ?? []).map((color) => texto(color?.nome)).filter(Boolean))];
 
-  return { productos, reglas, colores, whatsapp: String(c.wa ?? "").replace(/\D/g, "") };
+  const heroVideos = [c.hero?.v1, c.hero?.v2].map(texto).filter((u) => /^https:\/\//.test(u));
+
+  return { productos, reglas, colores, whatsapp: String(c.wa ?? "").replace(/\D/g, ""), heroVideos };
 }
 
 const aplica = (regla, nombre) => regla.piezas.length === 0 || regla.piezas.includes(slug(nombre));

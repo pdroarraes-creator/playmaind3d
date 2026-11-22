@@ -19,6 +19,12 @@ const n = (x) => {
   return isFinite(x) ? x : 0;
 };
 
+// Sólo enlaces https van al catálogo público (nada de javascript: ni data:).
+export function videoPublico(u) {
+  u = typeof u === "string" ? u.trim() : "";
+  return /^https:\/\//i.test(u) ? u : "";
+}
+
 export function catalogoPublico(data) {
   if (!data || !data.produtos) return { marca: "", wa: "", piezas: [] };
 
@@ -41,6 +47,7 @@ export function catalogoPublico(data) {
       video: p.video || "",
       detalle: p.detalle || "",
       tags: p.tags || "",
+      destacada: !!p.destacada,
       stock: n(p.stock),
       vendidas: 0,
       fotos,
@@ -97,6 +104,10 @@ export function catalogoPublico(data) {
     colores,
     packs,
     piezas,
+    hero: {
+      v1: videoPublico(data.cfg && data.cfg.hero && data.cfg.hero.v1),
+      v2: videoPublico(data.cfg && data.cfg.hero && data.cfg.hero.v2),
+    },
     leti: {
       cita: leti.cita || "",
       historia: leti.historia || "",
