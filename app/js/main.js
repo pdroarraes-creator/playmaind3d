@@ -1,43 +1,20 @@
 "use strict";
-import { $, el, uid, num, money, pct, hhmm, ceilTo, hoy, fechaCorta } from "./util.js";
+import { $ } from "./util.js";
 import {
   D,
   reemplazarEstado,
   defaults,
   local,
   SERVIDOR,
-  WORKER_CADASTRO,
   LOGO,
-  LOGO_FULL,
 } from "./estado.js";
-import { toast, showTab, renderAll, renderLight } from "./ui.js";
+import { toast, showTab, renderAll } from "./ui.js";
+import { migrarInsumos } from "./calculo.js";
+import { pintarMarca, pintarLeti, iniciarFotos } from "./fotos.js";
 import {
-  calc,
-  prod,
-  gramosCon,
-  unitario,
-  migrarInsumos,
-  proximoNumFil,
-} from "./calculo.js";
-import { consumoDe, aplicarConsumo, alertasStock } from "./stock.js";
-import {
-  fotosTmp,
-  setFotosTmp,
-  leerFoto,
-  pintarFoto,
-  pintarMarca,
-  pintarLeti,
-  thumb,
-  iniciarFotos,
-} from "./fotos.js";
-import { renderCat, chgQty, sumarStock } from "./catalogo.js";
-import {
-  editId,
   nuevaPieza,
   cargarPieza,
-  fillSel,
   abrirInsumos,
-  renderCalc,
   buscarMercado,
   gastoSinVenta,
   addAlPedido,
@@ -62,9 +39,9 @@ import {
   totalPOS,
   setPosForma,
 } from "./pos.js";
-import { aplicarVenta, cerrarSheet, migrarStockVentas, iniciarVentas } from "./ventas.js";
-import { renderVit, compartirVitrina, bajarVitrina } from "./vitrina.js";
-import { alternarClave, mostrarEntrada, entrar, claveVencida, salir } from "./entrada.js";
+import { migrarStockVentas, iniciarVentas } from "./ventas.js";
+import { compartirVitrina, bajarVitrina } from "./vitrina.js";
+import { alternarClave, mostrarEntrada, entrar, salir } from "./entrada.js";
 import {
   exportar,
   iniciarNube,
@@ -82,7 +59,6 @@ import {
   renderRad,
   nuevaIdea,
   traerMundo,
-  abrirPiezaDeLaUrl,
   ideaCompartida,
   pegarLink,
   abrirPegar,
@@ -96,12 +72,10 @@ import {
   confirmarChatCad,
   enviarChatCad,
   quitarFotoChat,
-  revisarLinkCadastroMW,
   iniciarChat,
 } from "./chat.js";
 import {
   bindCfg,
-  renderAccesos,
   renderCfgLists,
   addFil,
   addImp,
