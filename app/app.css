@@ -1288,6 +1288,16 @@ body:has(#chatCad:not([hidden])) .mindFab {
   border-color: #e8c6be;
   color: #a8483a;
 }
+.vistaRevisao {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--deep-soft);
+  color: var(--deep);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
 .entrada {
   position: fixed;
   inset: 0;

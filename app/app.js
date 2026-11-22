@@ -45,6 +45,16 @@ const SERVIDOR =
    Apps Script; el modo pasa a "worker" cuando el Apps Script contesta "migrado"
    y vuelve a "apps" si el Worker contesta "revertido" (ver protocolo.js). */
 const SERVIDOR_ESTADO = "https://playmind3d-api-prod.pdroarraes.workers.dev/";
+/* Solo el preview de revisión puede mostrar el panel sin clave. No crea sesión
+   ni habilita la nube: en el dominio real la entrada sigue cerrada. */
+const VISTA_REVISAO = (function () {
+  try {
+    const h = location.hostname;
+    return h === "localhost" || h === "127.0.0.1" || h === "v0.build" || h.endsWith(".v0.build");
+  } catch (e) {
+    return false;
+  }
+})();
 /* Si el navegador bloquea el almacenamiento, el getter de window.localStorage lanza:
    se protege acá para que app.js cargue igual (sin memoria del modo, queda en "apps"). */
 function almacenModo() {
@@ -3561,9 +3571,12 @@ function bindCfg() {
   $("#s_letiHistoria").value = D.cfg.leti.historia || "";
   const q = $("#quienSoy");
   if (q)
-    q.textContent = D.cfg.email
-      ? "Estás dentro como " + D.cfg.email
-      : "Estás dentro con la clave del sistema.";
+    q.textContent =
+      VISTA_REVISAO && !(D.cfg.token || "")
+        ? "Vista de revisión: se ve el panel, pero no hay sesión ni datos de la nube."
+        : D.cfg.email
+          ? "Estás dentro como " + D.cfg.email
+          : "Estás dentro con la clave del sistema.";
 
   // 2) los oyentes se atan una sola vez: si no, cada campo terminaba con varios
   if (CFG_ATADO) return;
@@ -4192,6 +4205,18 @@ async function probarLogin(email, clave) {
     return { ok: false, error: "red" };
   }
 }
+function mostrarVistaRevisao() {
+  $("#entrada").hidden = true;
+  listoParaSubir = false;
+  if ($("#vistaRevisao")) return;
+  const aviso = document.createElement("p");
+  aviso.id = "vistaRevisao";
+  aviso.className = "vistaRevisao";
+  aviso.textContent =
+    "Vista de revisión en este preview. La nube sigue bloqueada hasta entrar con la clave.";
+  const header = document.querySelector("header.top");
+  if (header) header.insertAdjacentElement("afterend", aviso);
+}
 function mostrarEntrada() {
   const lg = $("#entLogo");
   if (D.cfg.logo) lg.src = D.cfg.logo;
@@ -4266,6 +4291,7 @@ function salir() {
 /** Todo lo privado va por POST: así ni la clave ni el token quedan en la URL.
     Sin encabezados propios, para no disparar el preflight de CORS. */
 async function pedir(cuerpo) {
+  if (VISTA_REVISAO && !(D.cfg.token || "")) throw new Error("vista");
   const url = (D.cfg.api || SERVIDOR || "").trim();
   if (!url) throw new Error("sin servidor");
   const r = await fetch(url, { method: "POST", body: JSON.stringify(cuerpo) });
@@ -4422,6 +4448,10 @@ async function traerDeLaNubeManual() {
   await bajarDeLaNube();
 }
 async function subirAhora() {
+  if (VISTA_REVISAO && !(D.cfg.token || "")) {
+    toast("Esta vista no guarda en la nube.");
+    return;
+  }
   if (!D.cfg.api) {
     toast("Primero conectá el servidor.");
     return;
@@ -4664,6 +4694,9 @@ if ("serviceWorker" in navigator) {
   D.cfg.api = SERVIDOR;
   if (D.cfg.token) {
     await sincronizarAlAbrir();
+  } else if (VISTA_REVISAO) {
+    listoParaSubir = false;
+    mostrarVistaRevisao();
   } else {
     listoParaSubir = false;
     mostrarEntrada();
