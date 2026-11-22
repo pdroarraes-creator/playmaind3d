@@ -1,372 +1,304 @@
-import { KITS, PIEZAS } from "./catalog-data.mjs";
-import { LINEAS, MAX_UNIDADES_POR_ARTICULO, ajustarPedido, descuentoPct, horasTxt, lineaDe, linkWA, mensajePedidoWA, precioTxt, resumenPedido, textoDeBusqueda, vistasDe } from "./catalog-logic.mjs";
-import { crearCarrusel } from "./carousel.mjs";
+import { CATEGORIAS, PRODUCTOS, PACKS } from './storefront-data.mjs';
+import { linkWA, textoDeBusqueda } from './catalog-logic.mjs';
 
-const SVG_NS = "http://www.w3.org/2000/svg";
+const $ = (selector, root = document) => root.querySelector(selector);
+const money = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0, minimumGroupingDigits: 1 });
+const formatPrice = (value) => `$${money.format(value)}`;
+const image = (name) => `./assets/${name}.webp`;
+const defaultPack = (product) => PACKS.find(({ unidades }) => unidades === (product.pack ?? 1));
+const packPrice = (product, pack) => Math.round(product.precio * pack.unidades * (100 - pack.descuento) / 100);
+const pageSize = 16;
+const colors = new Map();
+const bag = [];
+const filters = [...document.querySelectorAll('[data-category]')];
+const grid = $('#product-grid');
+const detail = $('#product-dialog');
+const drawer = $('#bag-dialog');
+const search = $('#search-input');
+let category = 'todos';
+let holiday = false;
+let page = 0;
+let activeProduct;
+let detailTrigger;
+let detailColor;
+let toastTimer;
 
-const fichaPieza = document.querySelector("#product-template");
-const fichaKit = document.querySelector("#kit-template");
-const hoja = document.querySelector("#message-sheet");
-const tituloHoja = document.querySelector("#message-title");
-const textoHoja = document.querySelector("#message-text");
-const enlaceWhatsApp = document.querySelector("#whatsapp-link");
-let disparadorHoja;
-
-function mostrarMensaje(texto, disparador, titulo) {
-  disparadorHoja = disparador;
-  tituloHoja.textContent = titulo;
-  textoHoja.textContent = texto;
-  enlaceWhatsApp.href = linkWA(texto);
-  hoja.showModal();
-  tituloHoja.focus({ preventScroll: true });
+function element(tag, text, className) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  if (className) node.className = className;
+  return node;
 }
 
-function icono(nombre) {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("class", "icon");
-  svg.setAttribute("aria-hidden", "true");
-  const uso = document.createElementNS(SVG_NS, "use");
-  uso.setAttribute("href", `#icon-${nombre}`);
-  svg.append(uso);
-  return svg;
+function selectSwatch(group, name) {
+  for (const button of group.querySelectorAll('.swatch')) {
+    button.setAttribute('aria-pressed', String(button.dataset.color === name));
+  }
 }
 
-function iniciarBolsa() {
-  const boton = document.querySelector("#bag-button");
-  const contador = document.querySelector("#bag-count");
-  const estadoCatalogo = document.querySelector("#bag-status");
-  const dialogo = document.querySelector("#bag-sheet");
-  const titulo = document.querySelector("#bag-title");
-  const lista = document.querySelector("#bag-items");
-  const vacia = document.querySelector("#bag-empty");
-  const pie = document.querySelector("#bag-footer");
-  const totalPedido = document.querySelector("#bag-total");
-  const envio = document.querySelector("#send-order");
-  const plantilla = document.querySelector("#bag-row-template");
-  const estadoDetalle = document.querySelector("#bag-detail-status");
-  const fichas = new Map();
-  const filas = new Map();
-  let pedido = new Map();
-
-  function actualizarResumen() {
-    const { unidades, total } = resumenPedido(pedido);
-    const cantidad = unidades === 1 ? "1 artículo" : `${unidades} artículos`;
-    contador.textContent = String(unidades);
-    boton.setAttribute("aria-label", `Ver bolsa, ${cantidad}`);
-    vacia.hidden = unidades > 0;
-    lista.hidden = pie.hidden = unidades === 0;
-    totalPedido.textContent = precioTxt(total);
-    if (unidades) envio.href = linkWA(mensajePedidoWA(pedido));
-    else envio.removeAttribute("href");
-    return cantidad;
+function swatches(product, selected, onChange) {
+  const group = element('div', undefined, 'swatches');
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', `Colores de ${product.nombre}`);
+  for (const color of product.colores) {
+    const button = element('button', undefined, 'swatch');
+    button.type = 'button';
+    button.dataset.color = color.nombre;
+    button.setAttribute('aria-pressed', String(color.nombre === selected.nombre));
+    button.setAttribute('aria-label', color.nombre);
+    button.title = color.nombre;
+    button.style.setProperty('--swatch', color.hex);
+    button.append(element('span'));
+    button.addEventListener('click', () => {
+      selectSwatch(group, color.nombre);
+      onChange(color);
+    });
+    group.append(button);
   }
-
-  function crearFila(articulo) {
-    const fila = plantilla.content.firstElementChild.cloneNode(true);
-    const menos = fila.querySelector("[data-minus]");
-    const mas = fila.querySelector("[data-plus]");
-    const quitar = fila.querySelector("[data-remove]");
-    const thumb = fila.querySelector("img");
-    fila.querySelector("[data-bag-name]").textContent = articulo.nombre;
-    fila.querySelector("[data-bag-unit]").textContent = `${precioTxt(articulo.precio)} c/u`;
-    fila.querySelector(".quantity-control").setAttribute("aria-label", `Cantidad de ${articulo.nombre}`);
-    menos.setAttribute("aria-label", `Quitar una unidad de ${articulo.nombre}`);
-    mas.setAttribute("aria-label", `Sumar una unidad de ${articulo.nombre}`);
-    quitar.setAttribute("aria-label", `Quitar ${articulo.nombre} de la bolsa`);
-    menos.addEventListener("click", () => cambiar(articulo, -1));
-    mas.addEventListener("click", () => cambiar(articulo, 1));
-    quitar.addEventListener("click", () => cambiar(articulo, -pedido.get(articulo)));
-    if (articulo.fotos?.[0]) {
-      thumb.addEventListener("error", () => { thumb.hidden = true; });
-      thumb.src = articulo.fotos[0];
-      thumb.hidden = false;
-    }
-    filas.set(articulo, fila);
-    lista.append(fila);
-    return fila;
-  }
-
-  function cambiar(articulo, cambio) {
-    const actualizado = ajustarPedido(pedido, articulo, cambio);
-    if (actualizado === pedido) return;
-    pedido = actualizado;
-    const cantidad = pedido.get(articulo) ?? 0;
-    const { orden, indicador } = fichas.get(articulo);
-    let destinoDeFoco;
-    indicador.textContent = `×${cantidad}`;
-    indicador.hidden = cantidad === 0;
-    orden.disabled = cantidad >= MAX_UNIDADES_POR_ARTICULO;
-    orden.setAttribute("aria-label", `Sumar al pedido: ${articulo.nombre}${cantidad ? ` (${cantidad} en la bolsa)` : ""}`);
-
-    if (cantidad) {
-      const fila = filas.get(articulo) ?? crearFila(articulo);
-      const mas = fila.querySelector("[data-plus]");
-      fila.querySelector("[data-bag-quantity]").textContent = String(cantidad);
-      fila.querySelector("[data-bag-subtotal]").textContent = precioTxt(articulo.precio * cantidad);
-      if (cantidad === MAX_UNIDADES_POR_ARTICULO && mas === document.activeElement) {
-        destinoDeFoco = fila.querySelector("[data-minus]");
-      }
-      mas.disabled = cantidad >= MAX_UNIDADES_POR_ARTICULO;
-    } else {
-      const fila = filas.get(articulo);
-      if (fila.contains(document.activeElement)) {
-        const vecina = fila.nextElementSibling ?? fila.previousElementSibling;
-        destinoDeFoco = vecina?.querySelector("[data-remove]") ?? vacia.querySelector("button");
-      }
-      fila.remove();
-      filas.delete(articulo);
-    }
-
-    const totalArticulos = actualizarResumen();
-    destinoDeFoco?.focus();
-    const anuncio = cantidad ? `${articulo.nombre}: ${cantidad} en la bolsa.` : `Quitaste ${articulo.nombre}.`;
-    const estado = dialogo.open ? estadoDetalle : estadoCatalogo;
-    estado.textContent = `${anuncio} ${totalArticulos} en total.`;
-  }
-
-  boton.addEventListener("click", () => {
-    estadoDetalle.textContent = "";
-    dialogo.showModal();
-    titulo.focus({ preventScroll: true });
-  });
-  dialogo.addEventListener("close", () => boton.focus({ preventScroll: true }));
-  boton.disabled = false;
-
-  return function registrar(articulo, orden) {
-    fichas.set(articulo, { orden, indicador: orden.querySelector("[data-added-quantity]") });
-    orden.setAttribute("aria-label", `Sumar al pedido: ${articulo.nombre}`);
-    orden.addEventListener("click", () => cambiar(articulo, 1));
-  };
+  return group;
 }
 
-const registrarEnBolsa = iniciarBolsa();
-
-function agregarDato(ficha, simbolo, etiqueta, valor) {
-  if (!valor) return;
-  const grupo = document.createElement("div");
-  grupo.className = "product-fact";
-  const titulo = document.createElement("dt");
-  const marca = document.createElement("span");
-  marca.className = "fact-icon";
-  marca.append(icono(simbolo));
-  titulo.append(marca, etiqueta);
-  const dato = document.createElement("dd");
-  dato.textContent = valor;
-  grupo.append(titulo, dato);
-  ficha.append(grupo);
+function productCard(product, index) {
+  const fragment = $('#product-template').content.cloneNode(true);
+  const card = $('.product-card', fragment);
+  card.dataset.product = product.id;
+  const img = $('img', card);
+  if (index > 3) img.loading = 'lazy';
+  img.src = image(product.id);
+  const media = $('.product-media', card);
+  media.setAttribute('aria-label', `Ver detalles: ${product.nombre}`);
+  const title = $('h3 button', card);
+  title.textContent = product.nombre;
+  for (const trigger of [media, title]) trigger.addEventListener('click', () => openDetail(product, trigger));
+  const badge = $('[data-badge]', card);
+  if (product.navidad || product.demo) {
+    badge.hidden = false;
+    badge.textContent = product.navidad ? 'Navidad' : '▷ Video';
+    badge.classList.toggle('holiday-tag', Boolean(product.navidad));
+  }
+  const pack = defaultPack(product);
+  $('[data-product-category]', card).textContent = CATEGORIAS[product.linea];
+  $('[data-price]', card).textContent = `${formatPrice(packPrice(product, pack))}${product.pack ? ` · x${product.pack}` : ''}`;
+  $('[data-colors]', card).append(swatches(product, colors.get(product.id) ?? product.colores[0], (color) => colors.set(product.id, color)));
+  const add = $('[data-add]', card);
+  add.setAttribute('aria-label', `Sumar ${product.nombre} a la bolsa`);
+  add.addEventListener('click', () => addToBag(product, colors.get(product.id) ?? product.colores[0], pack, ''));
+  return fragment;
 }
 
-function armarPieza(pieza) {
-  const tarjeta = fichaPieza.content.firstElementChild.cloneNode(true);
-  const foto = tarjeta.querySelector(".product-photo");
-  const errorFoto = tarjeta.querySelector(".photo-unavailable");
-  const medida = tarjeta.querySelector("[data-measure]");
-  const stock = tarjeta.querySelector("[data-stock]");
-  const pestañas = tarjeta.querySelector(".photo-tabs");
-  const movimiento = tarjeta.querySelector(".motion-controls");
-  const tipoMovimiento = tarjeta.querySelector(".motion-caption");
-  const verGif = tarjeta.querySelector(".motion-toggle");
-  const ficha = tarjeta.querySelector(".product-facts");
-  const vistas = vistasDe(pieza);
-  const botones = [];
-  let vistaActiva;
-  let reproduciendo = false;
+function renderCatalog() {
+  const query = textoDeBusqueda(search.value);
+  const results = PRODUCTOS.filter((product) =>
+    (category === 'todos' || product.linea === category) &&
+    (!holiday || product.navidad) &&
+    textoDeBusqueda(`${product.nombre} ${CATEGORIAS[product.linea]}`).includes(query));
+  const pageCount = Math.max(1, Math.ceil(results.length / pageSize));
+  page = Math.min(pageCount - 1, Math.max(0, page));
+  grid.replaceChildren(...results.slice(page * pageSize, (page + 1) * pageSize).map(productCard));
+  $('#result-count').textContent = `${results.length} ${results.length === 1 ? 'pieza' : 'piezas'}`;
+  $('#empty-catalog').hidden = results.length !== 0;
+  $('#pagination').hidden = pageCount === 1;
+  $('#page-label').textContent = `${page + 1} de ${pageCount}`;
+  $('#page-prev').disabled = page === 0;
+  $('#page-next').disabled = page + 1 === pageCount;
+  for (const button of filters) button.setAttribute('aria-pressed', String(button.dataset.category === category));
+  $('#catalog-title').textContent = holiday ? 'Packs navideños' : 'Elegí tu pieza';
+}
 
-  tarjeta.querySelector("[data-title]").textContent = pieza.nombre;
-  tarjeta.querySelector("[data-price]").textContent = precioTxt(pieza.precio);
-  stock.textContent = pieza.stock === 1 ? "1 disponible" : pieza.stock > 1 ? `${pieza.stock} disponibles` : "Se imprime a pedido";
-  stock.classList.toggle("is-ready", pieza.stock > 0);
-  medida.textContent = pieza.medida;
-  medida.hidden = !pieza.medida;
-  pestañas.setAttribute("aria-label", `Vistas de ${pieza.nombre}`);
-  movimiento.hidden = !pieza.gif || !vistas.length;
+function setCategory(next, onlyHoliday = false) {
+  category = next;
+  holiday = onlyHoliday;
+  page = 0;
+  renderCatalog();
+}
 
-  foto.loading = "lazy";
+function focusCatalog() {
+  const heading = $('#catalog-title');
+  heading.focus({ preventScroll: true });
+  heading.scrollIntoView({ block: 'start' });
+}
 
-  function actualizarControlesDeVista() {
-    tipoMovimiento.hidden = !reproduciendo;
-    verGif.querySelector("span").textContent = reproduciendo ? "Detener GIF" : "Ver GIF";
-    verGif.querySelector("use").setAttribute("href", `#icon-${reproduciendo ? "stop" : "play"}`);
-    for (const { boton, indice } of botones) {
-      boton.setAttribute("aria-pressed", String(!reproduciendo && indice === vistaActiva.indice));
-    }
-  }
-
-  function mostrarVista(vista) {
-    vistaActiva = vista;
-    reproduciendo = false;
-    foto.alt = `${pieza.nombre}: ${vista.etiqueta.toLocaleLowerCase("es-AR")}`;
-    foto.src = vista.foto;
-    foto.hidden = false;
-    errorFoto.hidden = true;
-    actualizarControlesDeVista();
-  }
-
-  verGif.addEventListener("click", () => {
-    if (reproduciendo) {
-      mostrarVista(vistaActiva);
-      return;
-    }
-    reproduciendo = true;
-    foto.alt = `${pieza.nombre}: secuencia animada de fotos`;
-    foto.src = pieza.gif;
-    foto.hidden = false;
-    errorFoto.hidden = true;
-    actualizarControlesDeVista();
-  });
-
-  foto.addEventListener("error", () => {
-    if (reproduciendo) {
-      mostrarVista(vistaActiva);
-      movimiento.hidden = true;
-      pestañas.querySelector('[aria-pressed="true"]')?.focus();
-      return;
-    }
-    foto.hidden = true;
-    errorFoto.hidden = false;
-  });
-
-  if (vistas.length > 1) {
-    for (const vista of vistas) {
-      const boton = document.createElement("button");
-      boton.type = "button";
-      boton.className = "photo-tab";
-      boton.textContent = vista.etiqueta;
-      boton.addEventListener("click", () => {
-        if (reproduciendo || vista !== vistaActiva) mostrarVista(vista);
-      });
-      pestañas.append(boton);
-      botones.push({ boton, indice: vista.indice });
-    }
-    pestañas.hidden = false;
-  }
-  if (vistas.length) mostrarVista(vistas[0]);
+function setSearch(open, returnFocus = true) {
+  const toggle = $('#search-toggle');
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.setAttribute('aria-label', open ? 'Cerrar búsqueda' : 'Abrir búsqueda');
+  const panel = $('#search-panel');
+  panel.classList.toggle('is-open', open);
+  panel.inert = !open;
+  if (open) search.focus();
   else {
-    errorFoto.textContent = "Esta pieza aún no tiene foto.";
-    errorFoto.hidden = false;
-  }
-
-  const tiempo = horasTxt(pieza.horas);
-  agregarDato(ficha, "bulb", "¿Para qué sirve?", pieza.desc || LINEAS[lineaDe(pieza)].descripcion);
-  agregarDato(ficha, "ruler", "Tamaño real", pieza.medida);
-  agregarDato(ficha, "clock", "Tiempo de impresión", tiempo ? `Se imprime en ${tiempo}` : "");
-  agregarDato(ficha, "shield", "Material", "PLA, un bioplástico vegetal.");
-
-  registrarEnBolsa(pieza, tarjeta.querySelector(".order-button"));
-  return tarjeta;
-}
-
-function armarKit(kit) {
-  const tarjeta = fichaKit.content.firstElementChild.cloneNode(true);
-  const ahorro = tarjeta.querySelector("[data-kit-saving]");
-  const orden = tarjeta.querySelector(".order-button");
-  tarjeta.querySelector("[data-kit-line]").textContent = LINEAS[kit.linea].corto;
-  tarjeta.querySelector("[data-kit-title]").textContent = kit.nombre;
-  tarjeta.querySelector("[data-kit-description]").textContent = `${kit.piezas.join(" + ")}. ${kit.desc}`;
-  tarjeta.querySelector("[data-kit-separate]").textContent = precioTxt(kit.precioSeparado);
-  tarjeta.querySelector("[data-kit-price]").textContent = precioTxt(kit.precio);
-  ahorro.textContent = `Ahorrás ${precioTxt(kit.precioSeparado - kit.precio)}`;
-  ahorro.title = `${descuentoPct(kit)}% de descuento`;
-  registrarEnBolsa(kit, orden);
-  return tarjeta;
-}
-
-const secciones = new Map([...document.querySelectorAll("[data-shelf]")].map((seccion) => [
-  seccion.dataset.shelf, { seccion, mostrar: crearCarrusel(seccion, "Pieza", armarPieza), piezas: [] },
-]));
-const buscar = document.querySelector("#search-input");
-const borrar = document.querySelector("#clear-search");
-const estadoBusqueda = document.querySelector("#search-status");
-const sinResultados = document.querySelector("#no-results");
-const avisoNavidad = document.querySelector("#navidad-note");
-const seccionKits = document.querySelector("#kits");
-const cabecera = document.querySelector(".site-header");
-const navegacion = document.querySelector("#line-nav");
-const enlacesDeLinea = [...navegacion.querySelectorAll("a")];
-let cuadroNavegacion;
-
-function actualizarNavegacion() {
-  cuadroNavegacion = undefined;
-  const umbral = cabecera.offsetHeight + navegacion.offsetHeight + 16;
-  let activa;
-  for (const { seccion } of secciones.values()) {
-    if (seccion.hidden) continue;
-    if (!activa || seccion.getBoundingClientRect().top <= umbral) activa = seccion.id;
-  }
-  if (!seccionKits.hidden && seccionKits.getBoundingClientRect().top <= umbral) activa = seccionKits.id;
-  for (const enlace of enlacesDeLinea) {
-    if (enlace.hash === `#${activa}`) enlace.setAttribute("aria-current", "location");
-    else enlace.removeAttribute("aria-current");
-  }
-}
-
-function programarNavegacion() {
-  if (cuadroNavegacion === undefined) cuadroNavegacion = requestAnimationFrame(actualizarNavegacion);
-}
-
-function filtrarCatalogo() {
-  const consulta = textoDeBusqueda(buscar.value);
-  let resultados = 0;
-  for (const { seccion, mostrar, piezas } of secciones.values()) {
-    const coincidencias = consulta ? piezas.filter(({ nombre }) => nombre.includes(consulta)).map(({ pieza }) => pieza) : piezas.map(({ pieza }) => pieza);
-    seccion.hidden = Boolean(consulta) && coincidencias.length === 0;
-    mostrar(coincidencias);
-    resultados += coincidencias.length;
-  }
-
-  avisoNavidad.hidden = secciones.get("navidad").piezas.length > 0;
-  seccionKits.hidden = Boolean(consulta);
-  sinResultados.hidden = !consulta || resultados > 0;
-  borrar.hidden = !buscar.value;
-  estadoBusqueda.textContent = consulta ? (resultados === 1 ? "1 pieza encontrada" : `${resultados} piezas encontradas`) : "";
-  programarNavegacion();
-}
-
-function limpiarBusqueda() {
-  buscar.value = "";
-  filtrarCatalogo();
-  buscar.focus();
-}
-
-for (const pieza of PIEZAS) {
-  secciones.get(lineaDe(pieza)).piezas.push({ pieza, nombre: textoDeBusqueda(pieza.nombre) });
-}
-crearCarrusel(seccionKits, "Kit", armarKit)(KITS);
-
-for (const dialogo of document.querySelectorAll(".message-sheet")) {
-  dialogo.addEventListener("click", (evento) => {
-    if (evento.target === dialogo || evento.target.closest("[data-close-sheet]")) dialogo.close();
-  });
-}
-hoja.addEventListener("close", () => disparadorHoja?.focus({ preventScroll: true }));
-
-document.querySelector("#contact-button").addEventListener("click", (evento) => {
-  mostrarMensaje("¡Hola PlayMind 3D! Estoy mirando el catálogo y quería consultar por una pieza.", evento.currentTarget, "Escribinos por WhatsApp");
-});
-document.querySelector("#holiday-button").addEventListener("click", (evento) => {
-  mostrarMensaje("¡Hola PlayMind 3D! ¿Me avisan por acá cuando esté lista la línea Especial Navidad?", evento.currentTarget, "Aviso de Navidad");
-});
-
-document.querySelector("#search-form").addEventListener("submit", (evento) => evento.preventDefault());
-buscar.addEventListener("input", (evento) => {
-  if (!evento.isComposing) filtrarCatalogo();
-});
-buscar.addEventListener("compositionend", filtrarCatalogo);
-borrar.addEventListener("click", limpiarBusqueda);
-document.querySelector("#reset-search").addEventListener("click", limpiarBusqueda);
-
-for (const enlace of document.querySelectorAll("[data-shelf-link]")) {
-  enlace.addEventListener("click", (evento) => {
-    if (evento.ctrlKey || evento.metaKey || evento.altKey || evento.shiftKey) return;
-    const destino = document.getElementById(enlace.hash.slice(1));
-    if (destino?.hidden) {
-      buscar.value = "";
-      filtrarCatalogo();
+    if (search.value) {
+      search.value = '';
+      page = 0;
+      renderCatalog();
     }
+    if (returnFocus) toggle.focus();
+  }
+}
+
+for (const button of filters) button.addEventListener('click', () => setCategory(button.dataset.category));
+for (const link of document.querySelectorAll('[data-category-link]')) {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    setSearch(false, false);
+    setCategory(link.dataset.categoryLink, link.hasAttribute('data-holiday-link'));
+    focusCatalog();
+  });
+}
+$('#reset-catalog').addEventListener('click', () => {
+  search.value = '';
+  setCategory('todos');
+  focusCatalog();
+});
+for (const [id, delta] of [['#page-prev', -1], ['#page-next', 1]]) {
+  $(id).addEventListener('click', () => { page += delta; renderCatalog(); focusCatalog(); });
+}
+$('#search-toggle').addEventListener('click', () => setSearch($('#search-panel').inert));
+$('#search-close').addEventListener('click', () => setSearch(false));
+$('#search-form').addEventListener('submit', (event) => { event.preventDefault(); focusCatalog(); });
+search.addEventListener('input', () => { page = 0; renderCatalog(); });
+search.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !event.isComposing && event.keyCode !== 229) {
+    event.preventDefault();
+    setSearch(false);
+  }
+});
+
+function updateDetailPrice() {
+  const pack = PACKS.find(({ unidades }) => unidades === Number($('#detail-pack').value));
+  $('#detail-price').textContent = `${formatPrice(packPrice(activeProduct, pack))} ARS`;
+}
+
+function setDemo(playing) {
+  const button = $('#demo-toggle');
+  const photo = $('#detail-photo');
+  button.setAttribute('aria-pressed', String(playing));
+  $('span', button).textContent = playing ? 'Pausar demo' : 'Ver demo';
+  photo.src = image(playing ? activeProduct.demo : activeProduct.id);
+  photo.alt = playing ? `Demostración en bucle de ${activeProduct.nombre}` : activeProduct.nombre;
+}
+
+function openDetail(product, trigger) {
+  activeProduct = product;
+  detailTrigger = trigger;
+  detailColor = colors.get(product.id) ?? product.colores[0];
+  $('#detail-title').textContent = product.nombre;
+  $('#demo-toggle').hidden = !product.demo;
+  setDemo(false);
+  const specs = [
+    ['¿Para qué sirve?', product.uso], ['Tamaño real', product.medida],
+    ['Tiempo de impresión', product.tiempo], ['Material', 'PLA vegetal'],
+  ];
+  $('#detail-specs').replaceChildren(...specs.map(([label, value]) => {
+    const entry = element('div');
+    entry.append(element('dt', label), element('dd', value));
+    return entry;
+  }));
+  const label = element('div', `Color · ${detailColor.nombre}`, 'swatch-label');
+  $('#detail-colors').replaceChildren(label, swatches(product, detailColor, (color) => {
+    detailColor = color;
+    colors.set(product.id, color);
+    label.textContent = `Color · ${color.nombre}`;
+    const cardSwatches = grid.querySelector(`[data-product="${product.id}"] .swatches`);
+    if (cardSwatches) selectSwatch(cardSwatches, color.nombre);
+  }));
+  const select = $('#detail-pack');
+  select.replaceChildren(...PACKS.map((pack) => new Option(pack.etiqueta, String(pack.unidades))));
+  select.value = String(defaultPack(product).unidades);
+  $('#detail-name').value = '';
+  updateDetailPrice();
+  detail.showModal();
+  $('#detail-title').focus({ preventScroll: true });
+  detail.scrollTop = 0;
+}
+
+$('#detail-pack').addEventListener('change', updateDetailPrice);
+$('#demo-toggle').addEventListener('click', (event) => setDemo(event.currentTarget.getAttribute('aria-pressed') !== 'true'));
+$('#detail-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const pack = PACKS.find(({ unidades }) => unidades === Number($('#detail-pack').value));
+  if (!pack || !activeProduct) return;
+  addToBag(activeProduct, detailColor, pack, $('#detail-name').value.trim());
+  detail.close();
+});
+detail.addEventListener('close', () => { setDemo(false); detailTrigger?.focus({ preventScroll: true }); });
+
+function addToBag(product, color, pack, note) {
+  const row = bag.find((item) => item.product.id === product.id && item.color.nombre === color.nombre && item.pack.unidades === pack.unidades && item.note === note);
+  if (row) row.count += 1;
+  else bag.push({ product, color, pack, note, count: 1 });
+  renderBag();
+  const toast = $('#toast');
+  clearTimeout(toastTimer);
+  toast.textContent = `${product.nombre}: agregado a tu bolsa`;
+  toastTimer = setTimeout(() => { toast.textContent = ''; }, 2600);
+}
+
+const rowTotal = (item) => item.count * packPrice(item.product, item.pack);
+const subtotal = () => bag.reduce((total, item) => total + rowTotal(item), 0);
+const rowQuantity = (item) => item.pack.unidades === 1 ? `${item.count} ${item.count === 1 ? 'unidad' : 'unidades'}` : `${item.count} × Pack x${item.pack.unidades} (−${item.pack.descuento}%)`;
+
+function renderBag() {
+  const count = bag.reduce((total, item) => total + item.count * item.pack.unidades, 0);
+  $('#bag-count').textContent = count;
+  $('#bag-button').setAttribute('aria-label', `Bolsa, ${count} ${count === 1 ? 'artículo' : 'artículos'}`);
+  $('#bag-empty').hidden = Boolean(bag.length);
+  $('#bag-summary').hidden = !bag.length;
+  $('#bag-total').textContent = `${formatPrice(subtotal())} ARS`;
+  $('#bag-list').replaceChildren(...bag.map((item, index) => {
+    const row = element('li', undefined, 'bag-row');
+    const img = element('img');
+    img.src = image(item.product.id);
+    img.alt = '';
+    img.width = 56;
+    img.height = 56;
+    const info = element('div');
+    const remove = element('button', 'Quitar');
+    remove.type = 'button';
+    remove.setAttribute('aria-label', `Quitar ${item.product.nombre}`);
+    remove.addEventListener('click', () => {
+      bag.splice(index, 1);
+      renderBag();
+      ($('#bag-list button') ?? $('#bag-empty button')).focus();
+    });
+    info.append(element('h3', item.product.nombre), element('p', `${item.color.nombre} · ${rowQuantity(item)}`));
+    if (item.note) info.append(element('p', `Personalización: ${item.note}`));
+    info.append(remove);
+    row.append(img, info, element('strong', formatPrice(rowTotal(item))));
+    return row;
+  }));
+}
+
+function showOrderPreview(show) {
+  $('#order-preview').hidden = !show;
+  $('#bag-content').hidden = show;
+  $('#bag-summary').hidden = show || !bag.length;
+  if (show) {
+    const lines = bag.map((item) => `• ${item.product.nombre} — ${item.color.nombre} · ${rowQuantity(item)} — ${formatPrice(rowTotal(item))}${item.note ? `\n  Personalización: ${item.note}` : ''}`);
+    const message = ['¡Hola PlayMind 3D! Quiero consultar por este pedido:', '', ...lines, '', `Subtotal: ${formatPrice(subtotal())} ARS`, '¿Coordinamos el envío o retiro?'].join('\n');
+    $('#order-message').textContent = message;
+    $('#whatsapp-link').href = linkWA(message);
+    $('#preview-title').focus();
+  } else if (drawer.open) $('#preview-order').focus();
+}
+
+$('#bag-button').addEventListener('click', () => {
+  showOrderPreview(false);
+  renderBag();
+  drawer.showModal();
+  $('#bag-title').focus();
+});
+$('#preview-order').addEventListener('click', () => showOrderPreview(true));
+$('#back-to-bag').addEventListener('click', () => showOrderPreview(false));
+drawer.addEventListener('close', () => $('#bag-button').focus());
+for (const dialog of [detail, drawer]) {
+  for (const button of dialog.querySelectorAll('[data-close]')) button.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (event) => {
+    if (event.target !== dialog) return;
+    const { top, bottom, left, right } = dialog.getBoundingClientRect();
+    if (event.clientX < left || event.clientX > right || event.clientY < top || event.clientY > bottom) dialog.close();
   });
 }
 
-window.addEventListener("scroll", programarNavegacion, { passive: true });
-window.addEventListener("resize", programarNavegacion);
-window.addEventListener("hashchange", programarNavegacion);
-filtrarCatalogo();
+renderCatalog();
+renderBag();

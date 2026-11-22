@@ -2,389 +2,160 @@
 <html lang="es-AR" data-color-mode="light" data-light-theme="light">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#FBF8F2">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#FAF9F6">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Descubrí juguetes sensoriales, piezas de decoración y kits impresos en 3D en Pilar. Armá tu bolsa y mandá tu pedido por WhatsApp.">
-  <title>PlayMind 3D · Catálogo de piezas</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23D9ECEC'/%3E%3Cpath d='m12 4 8 4.5-8 4.5-8-4.5ZM4 12l8 4.5 8-4.5M4 15.5l8 4.5 8-4.5' fill='none' stroke='%231F5758' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <meta name="description" content="Juegos sensoriales, deco moderna y regalos personalizados impresos en 3D con PLA vegetal en Pilar, Argentina.">
+  <title>PlayMind 3D · Diseño e impresión en Pilar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://lh3.googleusercontent.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@800..900&amp;family=Plus+Jakarta+Sans:wght@400..800&amp;display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&amp;display=swap">
   <link rel="stylesheet" href="./primer-tokens.css">
   <link rel="stylesheet" href="./styles.css">
   <script type="module" src="./catalog.mjs"></script>
 </head>
 <body>
-  <svg class="symbol-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></symbol>
-    <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.4 0-2.6-.3-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 1 1 16.1-3.8Z"/></symbol>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></symbol>
-    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
-    <symbol id="icon-arrow-up-right" viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></symbol>
-    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="M12 2c1.2 6 3.8 8.6 10 10-6.2 1.4-8.8 4-10 10-1.2-6-3.8-8.6-10-10 6.2-1.4 8.8-4 10-10Z"/></symbol>
-    <symbol id="icon-bulb" viewBox="0 0 24 24"><path d="M9 18h6m-5 3h4M8.6 15.7a6 6 0 1 1 6.8 0c-.6.4-.9.7-.9 1.3h-5c0-.6-.3-.9-.9-1.3Z"/></symbol>
-    <symbol id="icon-ruler" viewBox="0 0 24 24"><path d="m2.5 16.5 14-14 5 5-14 14-5-5ZM7 12l2.5 2.5m1-6 2.5 2.5m1-6 2.5 2.5"/></symbol>
-    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
-    <symbol id="icon-shield" viewBox="0 0 24 24"><path d="m12 3 7 3v5c0 4.7-2.8 7.8-7 10-4.2-2.2-7-5.3-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
-    <symbol id="icon-gift" viewBox="0 0 24 24"><path d="M3 8h18v4H3zm2 4v9h14v-9m-7-4v13m0-13H8.5A2.5 2.5 0 1 1 11 5.5L12 8Zm0 0h3.5A2.5 2.5 0 1 0 13 5.5L12 8Z"/></symbol>
+    <symbol id="icon-bag" viewBox="0 0 24 24"><path d="M5 7h14l1 13H4L5 7ZM9 9V6a3 3 0 0 1 6 0v3"/></symbol>
     <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
-    <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.25"/></symbol>
-    <symbol id="icon-bag" viewBox="0 0 24 24"><path d="M5 7h14l1 13H4L5 7Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></symbol>
     <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-    <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
     <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
-    <symbol id="icon-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
-    <symbol id="octicon-location" viewBox="0 0 24 24"><path d="M12 13.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/><path d="M19.071 3.429h.001c3.905 3.905 3.905 10.237 0 14.142l-5.403 5.403a2.36 2.36 0 0 1-3.336 0l-5.375-5.375-.028-.028c-3.905-3.905-3.905-10.237 0-14.142 3.904-3.905 10.236-3.905 14.141 0ZM5.99 4.489v.001a8.5 8.5 0 0 0 0 12.02l.023.024.002.002 5.378 5.378a.859.859 0 0 0 1.214 0l5.403-5.404a8.5 8.5 0 0 0-.043-11.977A8.5 8.5 0 0 0 5.99 4.489Z"/></symbol>
-    <symbol id="octicon-stack" viewBox="0 0 24 24"><path d="M11.063 1.456a1.749 1.749 0 0 1 1.874 0l8.383 5.316a1.751 1.751 0 0 1 0 2.956l-8.383 5.316a1.749 1.749 0 0 1-1.874 0L2.68 9.728a1.751 1.751 0 0 1 0-2.956Zm1.071 1.267a.25.25 0 0 0-.268 0L3.483 8.039a.25.25 0 0 0 0 .422l8.383 5.316a.25.25 0 0 0 .268 0l8.383-5.316a.25.25 0 0 0 0-.422Z"/><path d="M1.867 12.324a.75.75 0 0 1 1.035-.232l8.964 5.685a.25.25 0 0 0 .268 0l8.964-5.685a.75.75 0 0 1 .804 1.267l-8.964 5.685a1.749 1.749 0 0 1-1.875 0l-8.964-5.685a.75.75 0 0 1-.232-1.035Z"/><path d="M1.867 16.324a.75.75 0 0 1 1.035-.232l8.964 5.685a.25.25 0 0 0 .268 0l8.964-5.685a.75.75 0 0 1 .804 1.267l-8.964 5.685a1.749 1.749 0 0 1-1.875 0l-8.964-5.685a.75.75 0 0 1-.232-1.035Z"/></symbol>
-    <symbol id="octicon-image" viewBox="0 0 24 24"><path d="M4.75 3h14.5c.966 0 1.75.784 1.75 1.75v14.5A1.75 1.75 0 0 1 19.25 21H4.75A1.75 1.75 0 0 1 3 19.25V4.75A1.75 1.75 0 0 1 4.75 3Zm14.5 1.5H4.75a.25.25 0 0 0-.25.25v14.5c0 .138.112.25.25.25h.19l9.823-9.823a1.75 1.75 0 0 1 2.475 0l2.262 2.262V4.75a.25.25 0 0 0-.25-.25Zm.25 9.56-3.323-3.323a.25.25 0 0 0-.354 0L7.061 19.5H19.25a.25.25 0 0 0 .25-.25ZM8.5 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Zm0-1.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></symbol>
-    <symbol id="octicon-comment-discussion" viewBox="0 0 24 24"><path d="M1.75 1h12.5c.966 0 1.75.784 1.75 1.75v9.5A1.75 1.75 0 0 1 14.25 14H8.061l-2.574 2.573A1.458 1.458 0 0 1 3 15.543V14H1.75A1.75 1.75 0 0 1 0 12.25v-9.5C0 1.784.784 1 1.75 1ZM1.5 2.75v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25Z"/><path d="M22.5 8.75a.25.25 0 0 0-.25-.25h-3.5a.75.75 0 0 1 0-1.5h3.5c.966 0 1.75.784 1.75 1.75v9.5A1.75 1.75 0 0 1 22.25 20H21v1.543a1.457 1.457 0 0 1-2.487 1.03L15.939 20H10.75A1.75 1.75 0 0 1 9 18.25v-1.465a.75.75 0 0 1 1.5 0v1.465c0 .138.112.25.25.25h5.5a.75.75 0 0 1 .53.22l2.72 2.72v-2.19a.75.75 0 0 1 .75-.75h2a.25.25 0 0 0 .25-.25Z"/></symbol>
-    <symbol id="octicon-arrow-right" viewBox="0 0 16 16"><path d="M8.22 2.97a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l2.97-2.97H3.75a.75.75 0 0 1 0-1.5h7.44L8.22 4.03a.75.75 0 0 1 0-1.06Z"/></symbol>
-    <symbol id="octicon-arrow-up" viewBox="0 0 16 16"><path d="M3.47 7.78a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0l4.25 4.25a.751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018L9 4.81v7.44a.75.75 0 0 1-1.5 0V4.81L4.53 7.78a.75.75 0 0 1-1.06 0Z"/></symbol>
-    <symbol id="shape-wave" viewBox="0 0 400 32" preserveAspectRatio="none"><path d="M0 24C56 7 115 0 177 7S305 36 400 19V32H0Z"/></symbol>
+    <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.25"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 16 16"><path d="M2.5 8h10m-4-4 4 4-4 4"/></symbol>
+    <symbol id="icon-up-right" viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></symbol>
+    <symbol id="icon-gift" viewBox="0 0 24 24"><path d="M3 8h18v4H3zm2 4v9h14v-9m-7-4v13m0-13H8.5A2.5 2.5 0 1 1 11 5.5L12 8Zm0 0h3.5A2.5 2.5 0 1 0 13 5.5L12 8Z"/></symbol>
   </svg>
-  <a class="skip-link" href="#contenido">Ir al contenido</a>
-  <div class="page" id="inicio">
-    <div class="store-note inset">
-      <span><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg>Hecho en Pilar</span>
-      <a href="#kits" data-shelf-link>Kits con 15% OFF<svg class="icon" aria-hidden="true"><use href="#icon-arrow-up-right"/></svg></a>
-    </div>
-    <header class="site-header inset">
-      <a class="brand" href="#inicio">
-        <span class="brand-mark" aria-hidden="true"><svg class="icon"><use href="#icon-layers"/></svg></span>
-        <span class="brand-lockup"><span>PlayMind <b>3D</b></span><span class="brand-caption">Impresión 3D en Pilar</span></span>
-      </a>
-      <button class="bag-button" id="bag-button" type="button" aria-haspopup="dialog" aria-controls="bag-sheet" aria-label="Ver bolsa, 0 artículos" disabled>
-        <svg class="icon" aria-hidden="true"><use href="#icon-bag"/></svg>
-        <span class="bag-label">Bolsa</span><span class="bag-count" id="bag-count" aria-hidden="true">0</span>
-      </button>
-    </header>
-    <p class="sr-only" id="bag-status" role="status"></p>
-
-    <main id="contenido" tabindex="-1">
-      <section class="hero inset" aria-labelledby="hero-title">
-        <p class="chip curation-chip"><svg class="icon" aria-hidden="true"><use href="#icon-spark"/></svg>Curado por Leti (10 años)</p>
-        <h1 id="hero-title">Objetos que <span>calman</span> y <span class="hero-deco">decoran.</span></h1>
-        <p class="hero-intro">Fidgets, deco y regalos en PLA vegetal. Piezas para jugar, regalar y sorprender sin pantallas.</p>
-      </section>
-
-      <section class="collections" aria-labelledby="collections-title">
-        <svg class="section-wave collections-wave-in" viewBox="0 0 400 32" preserveAspectRatio="none" aria-hidden="true" focusable="false"><use href="#shape-wave"/></svg>
-        <div class="collections-content inset">
-          <header class="section-intro">
-            <p class="eyebrow">Explorá el catálogo</p>
-            <h2 id="collections-title">Encontrá tu pieza</h2>
-          </header>
-          <ul class="collection-grid" role="list">
-            <li>
-              <a class="collection-tile" href="#sensartias" data-shelf-link aria-labelledby="collection-toys-title collection-toys-action">
-                <span class="collection-media"><img src="https://lh3.googleusercontent.com/d/1idi0xvDXIrKt7aGMLHKC8aI0_V0U51NG=w400" width="400" height="220" alt="" decoding="async"></span>
-                <h3 id="collection-toys-title">Juguetes &amp; Sensartias</h3>
-                <span class="button button-catalog collection-action" id="collection-toys-action">Ver piezas <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg></span>
-              </a>
-            </li>
-            <li>
-              <a class="collection-tile" href="#line-3corn" data-shelf-link aria-labelledby="collection-deco-title collection-deco-action">
-                <span class="collection-media"><img src="https://lh3.googleusercontent.com/d/1F2ehHYBGqWCWkkW7PAPyJ666TcneDC_u=w400" width="400" height="225" alt="" decoding="async"></span>
-                <h3 id="collection-deco-title">3corn &amp; Deco</h3>
-                <span class="button button-catalog collection-action" id="collection-deco-action">Ver deco <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg></span>
-              </a>
-            </li>
-            <li>
-              <a class="collection-tile" href="#navidad" data-shelf-link aria-labelledby="collection-holiday-title collection-holiday-action">
-                <span class="collection-media"><img src="./assets/christmas-editorial.webp" width="480" height="360" alt="" loading="lazy" decoding="async"></span>
-                <h3 id="collection-holiday-title">Especial Navidad</h3>
-                <span class="button button-catalog collection-action" id="collection-holiday-action">Ver anticipo <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg></span>
-              </a>
-            </li>
-            <li>
-              <a class="collection-tile" href="#kits" data-shelf-link aria-labelledby="collection-kits-title collection-kits-action">
-                <span class="collection-media collection-media-pair">
-                  <img src="https://lh3.googleusercontent.com/d/1kOQ1tAyireheFg6xSTe8zeqWmMQE-8M9=w240" width="240" height="426" alt="" loading="lazy" decoding="async">
-                  <img src="https://lh3.googleusercontent.com/d/1RcPOVJRa1jmbQRZHAYuN1t5Q23n2p_cE=w240" width="240" height="316" alt="" loading="lazy" decoding="async">
-                </span>
-                <h3 id="collection-kits-title">Kits para regalar</h3>
-                <span class="button button-catalog collection-action" id="collection-kits-action">Ver kits <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg></span>
-              </a>
-            </li>
-          </ul>
-        </div>
-        <svg class="section-wave collections-wave-out" viewBox="0 0 400 32" preserveAspectRatio="none" aria-hidden="true" focusable="false"><use href="#shape-wave"/></svg>
-      </section>
-
-      <nav class="line-nav inset" id="line-nav" aria-label="Líneas del catálogo">
-        <a href="#sensartias" class="line-link" data-shelf-link aria-current="location">Sensartias</a>
-        <a href="#line-3corn" class="line-link" data-shelf-link>3corn &amp; Deco</a>
-        <a href="#navidad" class="line-link" data-shelf-link>Navidad</a>
+  <a class="skip" href="#main">Ir al contenido</a>
+  <div class="announcement">Hecho en Pilar <span>•</span> Envíos y retiros <span>•</span> Packs navideños con descuento</div>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="#main">PlayMind <span>3D</span></a>
+      <nav class="header-links" aria-label="Navegación principal">
+        <a href="#catalogo" data-category-link="todos">Catálogo</a>
+        <a href="#catalogo" data-category-link="kits" data-holiday-link>Especial Navidad</a>
       </nav>
-
-      <div class="search-area inset">
-        <form class="search-box" id="search-form" role="search">
-          <svg class="icon" aria-hidden="true"><use href="#icon-search"/></svg>
-          <label class="sr-only" for="search-input">Buscar una pieza</label>
-          <input id="search-input" name="pieza" type="search" placeholder="Buscar una pieza…" autocomplete="off" spellcheck="false">
-          <button class="icon-button search-clear" id="clear-search" type="button" aria-label="Borrar búsqueda" hidden>
-            <svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg>
-          </button>
+      <div class="header-actions">
+        <button class="icon-button" id="search-toggle" type="button" aria-label="Abrir búsqueda" aria-controls="search-panel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#icon-search"/></svg></button>
+        <button class="bag-button" id="bag-button" type="button" aria-haspopup="dialog" aria-controls="bag-dialog" aria-label="Bolsa, 0 artículos"><svg class="icon" aria-hidden="true"><use href="#icon-bag"/></svg><span>Bolsa</span><span class="bag-count" id="bag-count" aria-hidden="true">0</span></button>
+      </div>
+    </div>
+    <div class="search-panel" id="search-panel" inert>
+      <div class="search-collapse">
+        <form class="container search-form" id="search-form" role="search">
+          <label class="sr-only" for="search-input">Buscá tu pieza</label>
+          <input id="search-input" type="search" placeholder="Buscá tu pieza..." autocomplete="off">
+          <button class="icon-button" id="search-close" aria-label="Cerrar búsqueda" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button>
         </form>
-        <p class="sr-only" id="search-status" role="status"></p>
       </div>
-
-      <div class="shelves inset">
-        <noscript><p class="notice">Activá JavaScript para ver las piezas del catálogo.</p></noscript>
-        <section class="shelf" id="sensartias" data-shelf="sensartias" aria-labelledby="sensartias-title" tabindex="-1">
-          <header class="shelf-heading">
-            <p class="eyebrow">Línea 1</p>
-            <h2 id="sensartias-title">Juguetes &amp; Sensartias</h2>
-            <p>Fidgets silenciosos y compañeros de foco y calma, sin pantallas.</p>
-          </header>
-          <div data-carousel></div>
-        </section>
-
-        <section class="shelf" id="line-3corn" data-shelf="3corn" aria-labelledby="deco-title" tabindex="-1">
-          <header class="shelf-heading">
-            <p class="eyebrow">Línea 2</p>
-            <h2 id="deco-title">3corn &amp; Deco</h2>
-            <p>Para decorar el cuarto, la estantería y ordenar el escritorio.</p>
-          </header>
-          <div data-carousel></div>
-        </section>
-
-        <section class="shelf" id="navidad" data-shelf="navidad" aria-labelledby="navidad-title" tabindex="-1">
-          <header class="shelf-heading">
-            <p class="eyebrow">Línea 3</p>
-            <h2 id="navidad-title">Especial Navidad</h2>
-            <p>Piezas para darle un toque distinto a las fiestas.</p>
-          </header>
-          <div data-carousel></div>
-          <article class="notice season-note" id="navidad-note">
-            <div class="season-note-top">
-              <span class="fact-icon" aria-hidden="true"><svg class="icon"><use href="#icon-gift"/></svg></span>
-              <span class="chip chip-gold">Próximamente</span>
-            </div>
-            <p>Adornos cinéticos, esferas con figuras adentro y regalos listos para colgar o regalar.</p>
-            <button class="button button-outline" id="holiday-button" type="button">Avisame cuando esté lista</button>
-          </article>
-        </section>
-
-        <section class="notice empty-state" id="no-results" aria-labelledby="no-results-title" hidden>
-          <h2 id="no-results-title">No encontramos esa pieza</h2>
-          <p>Probá otro nombre o volvé a ver todo el catálogo.</p>
-          <button class="button button-outline" id="reset-search" type="button">Ver todas las piezas</button>
-        </section>
-
-        <section class="shelf" id="kits" aria-labelledby="kits-title" tabindex="-1">
-          <header class="shelf-heading">
-            <p class="eyebrow">Para regalar</p>
-            <h2 id="kits-title">Kits con 15% OFF</h2>
-            <p>Elegí una combinación y sumala a tu bolsa.</p>
-          </header>
-          <div data-carousel></div>
-        </section>
+    </div>
+  </header>
+  <main id="main" tabindex="-1" class="container">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="signal"></span> Taller de impresión 3D <span class="hero-location">/ Pilar, AR</span></p>
+        <h1 id="hero-title">Objetos que <span>calman, decoran</span> y sorprenden.</h1>
+        <p class="hero-description">Diseño e impresión 3D en PLA vegetal. Piezas táctiles, deco moderna y regalos personalizados.</p>
+        <a class="button primary" href="#catalogo" data-category-link="todos">Explorá el catálogo <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
       </div>
+      <figure class="hero-media">
+        <img src="./assets/studio-hero.webp" width="1200" height="800" alt="Cubo terracota, cono verde petróleo y tortuga articulada en PLA sobre una base crema" fetchpriority="high">
+        <figcaption><span><i></i> PLA VEGETAL</span><span>COLECCIÓN 01</span></figcaption>
+      </figure>
+    </section>
 
-      <section class="purchase-guide inset" id="como-pedir" aria-labelledby="purchase-guide-title">
-        <header class="section-intro">
-          <p class="eyebrow">De Pilar a tus manos</p>
-          <h2 id="purchase-guide-title">Elegí sin vueltas</h2>
-        </header>
-        <ul class="benefit-grid" role="list">
-          <li id="entrega">
-            <span class="benefit-icon" aria-hidden="true"><svg class="icon octicon"><use href="#octicon-location"/></svg></span>
-            <h3>Hecho en Pilar</h3>
-            <p>Coordinamos el retiro o la entrega en Pilar.</p>
-          </li>
-          <li>
-            <span class="benefit-icon" aria-hidden="true"><svg class="icon octicon"><use href="#octicon-stack"/></svg></span>
-            <h3>PLA vegetal</h3>
-            <p>Piezas impresas en 3D con bioplástico.</p>
-          </li>
-          <li>
-            <span class="benefit-icon" aria-hidden="true"><svg class="icon octicon"><use href="#octicon-image"/></svg></span>
-            <h3>Fotos y medidas</h3>
-            <p>Mirá las vistas y medidas que figuran en cada ficha.</p>
-          </li>
-          <li>
-            <span class="benefit-icon" aria-hidden="true"><svg class="icon octicon"><use href="#octicon-comment-discussion"/></svg></span>
-            <h3>Un solo pedido</h3>
-            <p>Armá tu bolsa y mandá todo junto por WhatsApp.</p>
-          </li>
-        </ul>
+    <section class="holiday" aria-labelledby="holiday-title">
+      <div class="holiday-copy">
+        <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#icon-gift"/></svg> Edición de temporada</p>
+        <h2 id="holiday-title">Especial Navidad</h2>
+        <p>Regalos personalizados sin gastar una fortuna. Armá tu Pack x3, x5 o x10 con tag personalizada.</p>
+      </div>
+      <a class="button holiday-button" href="#catalogo" data-category-link="kits" data-holiday-link>Ver Packs Navideños <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
+    </section>
+
+    <section class="catalog" id="catalogo" aria-labelledby="catalog-title">
+      <div class="section-heading">
+        <div><p class="eyebrow"><span class="signal"></span> Diseñado en Pilar</p><h2 id="catalog-title" tabindex="-1">Elegí tu pieza</h2></div>
+        <p class="result-count" id="result-count" role="status"></p>
+      </div>
+      <div class="filters" role="group" aria-label="Categorías del catálogo">
+        <button type="button" data-category="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-category="sensoriales" aria-pressed="false">Juegos Sensoriales</button>
+        <button type="button" data-category="deco" aria-pressed="false">D3cor</button>
+        <button type="button" data-category="kits" aria-pressed="false">Kits para Regalo</button>
+      </div>
+      <div class="product-grid" id="product-grid"></div>
+      <div class="empty-catalog" id="empty-catalog" hidden><h3>No encontramos piezas</h3><p>Probá con otro nombre o volvé a ver todo el catálogo.</p><button type="button" class="button secondary" id="reset-catalog">Ver todo</button></div>
+      <nav class="pagination" id="pagination" aria-label="Páginas del catálogo" hidden>
+        <button id="page-prev" class="button secondary" type="button">Anterior</button><span id="page-label"></span><button id="page-next" class="button secondary" type="button">Siguiente</button>
+      </nav>
+      <noscript><p>Activá JavaScript para explorar los productos y armar tu bolsa.</p></noscript>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container footer-row">
+      <div><a class="brand" href="#main">PlayMind <span>3D</span></a><p>Diseño local, hecho capa por capa.</p></div>
+      <p><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg> Pilar, Buenos Aires · Envíos y retiros</p>
+    </div>
+  </footer>
+  <p class="toast" id="toast" role="status"></p>
+
+  <dialog class="product-dialog" id="product-dialog" aria-labelledby="detail-title">
+    <div class="dialog-top"><p class="eyebrow">Ficha de producto</p><button class="icon-button" data-close type="button" aria-label="Cerrar ficha del producto"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
+    <div class="detail-layout">
+      <div class="detail-media">
+        <img id="detail-photo" width="480" height="480" alt="">
+        <button class="button secondary demo-button" id="demo-toggle" type="button" aria-pressed="false" hidden><svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg><span>Ver demo</span></button>
+      </div>
+      <form class="detail-form" id="detail-form">
+        <h2 id="detail-title" tabindex="-1"></h2>
+        <p class="detail-price" id="detail-price"></p>
+        <dl class="specs" id="detail-specs"></dl>
+        <div class="detail-colors" id="detail-colors"></div>
+        <label class="field" for="detail-pack">Elegí la cantidad<select id="detail-pack" name="pack"></select></label>
+        <label class="field" for="detail-name">Nombre para la tag / personalización <input type="text" id="detail-name" maxlength="60" placeholder="Opcional · Ej.: Para Sofi"></label>
+        <button class="button primary" type="submit"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Sumar a la bolsa</button>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog class="bag-dialog" id="bag-dialog" aria-labelledby="bag-title">
+    <div class="drawer">
+      <div class="drawer-heading"><div><p class="eyebrow">Tu pedido</p><h2 id="bag-title" tabindex="-1">Tu bolsa</h2></div><button class="icon-button" data-close type="button" aria-label="Cerrar bolsa"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
+      <div class="bag-content" id="bag-content">
+        <div class="bag-empty" id="bag-empty"><svg class="icon" aria-hidden="true"><use href="#icon-bag"/></svg><h3>Tu bolsa está vacía</h3><p>Encontrá algo que te guste y sumalo a tu pedido.</p><button class="button secondary" data-close type="button">Seguir explorando</button></div>
+        <ul class="bag-list" id="bag-list" aria-label="Artículos de tu bolsa"></ul>
+      </div>
+      <div class="drawer-summary" id="bag-summary" hidden>
+        <p class="subtotal">Subtotal <strong id="bag-total"></strong></p>
+        <p class="bag-note">Coordinamos disponibilidad, envío o retiro en Pilar por WhatsApp.</p>
+        <button class="button primary" id="preview-order" type="button">Enviar pedido por WhatsApp <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></button>
+      </div>
+      <section class="order-preview" id="order-preview" aria-labelledby="preview-title" hidden>
+        <h3 id="preview-title" tabindex="-1">Revisá el mensaje</h3>
+        <pre id="order-message"></pre>
+        <p class="bag-note">Catálogo de prueba: el número de WhatsApp es de demostración.</p>
+        <a class="button primary" id="whatsapp-link" target="_blank" rel="noopener noreferrer">Abrir WhatsApp <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
+        <button class="button secondary" id="back-to-bag" type="button">Volver a la bolsa</button>
       </section>
-    </main>
-
-    <footer class="site-footer">
-      <svg class="section-wave footer-wave" viewBox="0 0 400 32" preserveAspectRatio="none" aria-hidden="true" focusable="false"><use href="#shape-wave"/></svg>
-      <div class="footer-content inset">
-        <div class="footer-lead">
-          <p class="eyebrow">Hablemos</p>
-          <h2>¿Tenés alguna duda?</h2>
-          <p>Consultanos por colores, disponibilidad o entregas en Pilar.</p>
-          <button class="button footer-contact" id="contact-button" type="button" aria-haspopup="dialog" aria-controls="message-sheet">
-            Escribinos por WhatsApp
-            <span aria-hidden="true"><svg class="icon octicon"><use href="#octicon-arrow-right"/></svg></span>
-          </button>
-        </div>
-        <nav class="footer-nav" aria-label="Enlaces del pie de página">
-          <div>
-            <h3>Explorá</h3>
-            <ul role="list">
-              <li><a href="#sensartias" data-shelf-link>Juguetes &amp; Sensartias</a></li>
-              <li><a href="#line-3corn" data-shelf-link>3corn &amp; Deco</a></li>
-              <li><a href="#navidad" data-shelf-link>Especial Navidad</a></li>
-              <li><a href="#kits" data-shelf-link>Kits con 15% OFF</a></li>
-            </ul>
-          </div>
-          <div>
-            <h3>Te ayudamos</h3>
-            <ul role="list">
-              <li><a href="#como-pedir">Cómo hacer un pedido</a></li>
-              <li><a href="#entrega">Entrega y retiro</a></li>
-            </ul>
-          </div>
-        </nav>
-        <div class="footer-signoff">
-          <p class="footer-wordmark">PlayMind <b>3D</b></p>
-          <p>Diseñado e impreso en Pilar, Argentina</p>
-          <a class="back-to-top" href="#inicio">Volver arriba <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-up"/></svg></a>
-        </div>
-      </div>
-    </footer>
-  </div>
-
-  <dialog class="message-sheet bag-sheet" id="bag-sheet" aria-labelledby="bag-title" aria-describedby="bag-caption">
-    <div class="sheet-panel bag-panel">
-      <div class="sheet-handle" aria-hidden="true"></div>
-      <div class="sheet-heading bag-heading">
-        <div>
-          <p class="eyebrow">Tu pedido</p>
-          <h2 id="bag-title" tabindex="-1">Tu bolsa</h2>
-        </div>
-        <button class="icon-button sheet-close" type="button" data-close-sheet aria-label="Cerrar bolsa">
-          <svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg>
-        </button>
-      </div>
-      <p class="sheet-caption" id="bag-caption">Revisá tus piezas y mandá todo junto.</p>
-      <p class="sr-only" id="bag-detail-status" role="status"></p>
-      <div class="bag-scroll">
-        <div class="bag-empty" id="bag-empty">
-          <span class="bag-empty-icon" aria-hidden="true"><svg class="icon"><use href="#icon-bag"/></svg></span>
-          <h3>Tu bolsa está vacía</h3>
-          <p>Sumá las piezas o kits que más te gusten.</p>
-          <button class="button button-outline" type="button" data-close-sheet>Seguir mirando</button>
-        </div>
-        <ul class="bag-items" id="bag-items" aria-label="Artículos del pedido" hidden></ul>
-      </div>
-      <div class="bag-footer" id="bag-footer" hidden>
-        <dl class="bag-total"><dt>Total estimado</dt><dd class="price" id="bag-total"></dd></dl>
-        <p class="bag-delivery">Sin pago online · Entrega a coordinar en Pilar</p>
-        <a class="button button-primary send-order" id="send-order" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#icon-chat"/></svg>Pedir por WhatsApp<svg class="icon" aria-hidden="true"><use href="#icon-arrow-up-right"/></svg></a>
-        <p class="demo-note">Vista previa: el número de WhatsApp es de prueba.</p>
-      </div>
     </div>
   </dialog>
-
-  <template id="bag-row-template">
-    <li class="bag-row">
-      <span class="bag-thumb" aria-hidden="true">
-        <svg class="icon"><use href="#icon-gift"/></svg>
-        <img width="56" height="56" alt="" decoding="async" loading="lazy" hidden>
-      </span>
-      <div class="bag-line">
-        <h3 data-bag-name></h3>
-        <p class="bag-unit" data-bag-unit></p>
-        <div class="bag-row-actions">
-          <div class="quantity-control" role="group">
-            <button type="button" data-minus><svg class="icon" aria-hidden="true"><use href="#icon-minus"/></svg></button>
-            <span data-bag-quantity></span>
-            <button type="button" data-plus><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg></button>
-          </div>
-          <button class="bag-remove" type="button" data-remove>Quitar</button>
-          <strong class="bag-subtotal" data-bag-subtotal></strong>
-        </div>
-      </div>
-    </li>
-  </template>
-
-  <dialog class="message-sheet" id="message-sheet" aria-labelledby="message-title" aria-describedby="message-note">
-    <div class="sheet-panel">
-      <div class="sheet-handle" aria-hidden="true"></div>
-      <div class="sheet-heading">
-        <h2 id="message-title" tabindex="-1">Escribinos por WhatsApp</h2>
-        <button class="icon-button sheet-close" type="button" data-close-sheet aria-label="Cerrar vista previa">
-          <svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg>
-        </button>
-      </div>
-      <p class="sheet-caption">Revisá cómo va a quedar tu mensaje.</p>
-      <p class="message-bubble" id="message-text"></p>
-      <p class="demo-note" id="message-note">Vista previa: el número de WhatsApp es de prueba.</p>
-      <div class="sheet-actions">
-        <a class="button button-primary" id="whatsapp-link" target="_blank" rel="noopener noreferrer">Abrir WhatsApp<svg class="icon" aria-hidden="true"><use href="#icon-arrow-up-right"/></svg></a>
-        <button class="button button-outline" type="button" data-close-sheet>Seguir mirando</button>
-      </div>
-    </div>
-  </dialog>
-
-  <template id="shelf-carousel-template">
-    <div class="shelf-carousel" role="group" aria-roledescription="carrusel" hidden>
-      <div class="carousel-toolbar" data-carousel-toolbar hidden>
-        <div class="carousel-choice">
-          <p class="carousel-count" data-carousel-count role="status"></p>
-          <div class="carousel-picker">
-            <select data-carousel-picker></select>
-            <svg class="icon" aria-hidden="true"><use href="#icon-chevron"/></svg>
-          </div>
-        </div>
-        <div class="carousel-controls">
-          <button class="icon-button carousel-step carousel-prev" type="button" data-carousel-prev>
-            <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg>
-          </button>
-          <button class="icon-button carousel-step carousel-next" type="button" data-carousel-next>
-            <svg class="icon octicon" aria-hidden="true"><use href="#octicon-arrow-right"/></svg>
-          </button>
-        </div>
-      </div>
-      <div class="carousel-track" data-carousel-track role="group"></div>
-    </div>
-  </template>
 
   <template id="product-template">
     <article class="product-card">
-      <div class="product-media">
-        <img class="product-photo" width="800" height="800" alt="" decoding="async" hidden>
-        <p class="photo-unavailable" hidden>No se pudo cargar la foto.</p>
-        <div class="media-badges">
-          <p class="chip measure-chip" data-measure hidden></p>
-          <p class="chip stock-chip" data-stock></p>
-        </div>
-        <div class="motion-controls" hidden>
-          <span class="chip motion-caption" hidden>Secuencia de fotos</span>
-          <button class="button motion-toggle" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg><span>Ver GIF</span></button>
+      <button class="product-media" type="button" data-detail aria-haspopup="dialog">
+        <img width="480" height="480" alt="" decoding="async">
+        <span class="media-tag" data-badge hidden></span>
+      </button>
+      <div class="product-info">
+        <p class="product-category" data-product-category></p>
+        <h3><button type="button" data-detail aria-haspopup="dialog"></button></h3>
+        <p class="product-price" data-price></p>
+        <div class="card-actions">
+          <div data-colors></div>
+          <button class="button add-button" type="button" data-add><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Sumar</button>
         </div>
       </div>
-      <div class="photo-tabs" role="group" hidden></div>
-      <div class="card-body">
-        <header class="product-heading"><h3 data-title></h3><p class="price" data-price></p></header>
-        <dl class="product-facts"></dl>
-        <button class="button button-catalog order-button" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg>Sumar al pedido<span class="added-quantity" data-added-quantity aria-hidden="true" hidden></span></button>
-      </div>
-    </article>
-  </template>
-
-  <template id="kit-template">
-    <article class="kit-card card-body">
-      <span class="chip chip-teal" data-kit-line></span>
-      <h3 data-kit-title></h3>
-      <p class="kit-description" data-kit-description></p>
-      <div class="kit-pricing">
-        <div>
-          <p class="kit-separate">Por separado <s data-kit-separate></s></p>
-          <p class="price" data-kit-price></p>
-        </div>
-        <span class="chip chip-gold" data-kit-saving></span>
-      </div>
-      <button class="button button-catalog order-button" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg>Sumar al pedido<span class="added-quantity" data-added-quantity aria-hidden="true" hidden></span></button>
     </article>
   </template>
 </body>
