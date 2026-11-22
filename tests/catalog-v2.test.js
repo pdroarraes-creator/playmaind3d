@@ -87,3 +87,75 @@ test("ignora tildes, mayúsculas y espacios al buscar por nombre", async () => {
   const [{ textoDeBusqueda }] = await modulos;
   assert.equal(textoDeBusqueda("  TÓRTUGA  "), "tortuga");
 });
+
+const api = import("../catalog-v2/catalog-api.mjs");
+
+const CATALOGO = {
+  wa: "+54 9 11 5555-0000",
+  colores: [{ nome: "Azul", hex: "#00f" }, { nome: "Azul" }, { nome: "" }],
+  packs: [
+    { tipo: "descuento", nome: "Llevá 3", off: 10, desde: 3, piezas: "" },
+    { tipo: "descuento", nome: "Cubos", off: 20, desde: 2, piezas: "Fidget Cube Toy" },
+    { tipo: "fijo", nome: "Kit Regalo", precio: 15300, incluye: "Cubo + cono" },
+  ],
+  piezas: [
+    { nome: "Soporte de colitas", precio: 8000, stock: 1, libre: true, horas: 3, fotos: [] },
+    { nome: "Fidget Cube Toy", precio: 4999, stock: 0, vendidas: 5, horas: 1.5, tags: "bolsillo, clásico", fotos: ["https://lh3.googleusercontent.com/d/a=w800", "javascript:alert(1)"] },
+    { nome: "Fidget Cube Toy", precio: 5000, cat: "Personalizados", desc: "Con tu nombre", horas: 7, fotos: [] },
+    { nome: "", precio: 100 },
+  ],
+};
+
+test("adapta las piezas reales: precio, stock, color, fotos y orden del servidor", async () => {
+  const { adaptarCatalogo } = await api;
+  const { productos, colores, whatsapp } = adaptarCatalogo(CATALOGO);
+  assert.deepEqual(productos.map(({ id }) => id), ["fidget-cube-toy", "fidget-cube-toy-2", "soporte-de-colitas", "kit-regalo"]);
+  const [cubo, personalizado, soporte, kit] = productos;
+  assert.equal(cubo.precio, 4999);
+  assert.deepEqual(cubo.fotos, ["https://lh3.googleusercontent.com/d/a=w800"]);
+  assert.deepEqual(cubo.tags, ["Más pedido", "bolsillo", "clásico"]);
+  assert.equal(cubo.rasgo, "Hecha a pedido, una por una.");
+  assert.equal(cubo.disponibilidad, "Se imprime a pedido");
+  assert.equal(cubo.tiempo, "~1 h 30 min");
+  assert.equal(personalizado.linea, "personalizados");
+  assert.equal(personalizado.rasgo, "Con tu nombre");
+  assert.equal(soporte.linea, "deco");
+  assert.equal(soporte.disponibilidad, "Hay 1 lista para entregar");
+  assert.deepEqual(soporte.tags, ["Lista para llevar", "Elegís el color"]);
+  assert.equal(soporte.rasgo, "Se imprime a pedido, en el color que elijas.");
+  assert.deepEqual([kit.linea, kit.precio, kit.detalle], ["kits", 15300, "Incluye: Cubo + cono"]);
+  assert.deepEqual(colores, ["Azul"]);
+  assert.equal(whatsapp, "5491155550000");
+  assert.deepEqual(adaptarCatalogo(undefined), { productos: [], reglas: [], colores: [], whatsapp: "" });
+});
+
+test("aplica la regla que más descuenta y avisa cuánto falta", async () => {
+  const { adaptarCatalogo, totalesPedido } = await api;
+  const { reglas } = adaptarCatalogo(CATALOGO);
+  const cubo = { nombre: "Fidget Cube Toy", precio: 5000 };
+  const otro = { nombre: "Tortuga", precio: 2000 };
+  assert.deepEqual(totalesPedido([], reglas), { unidades: 0, bruto: 0, descuento: 0, regla: null, falta: null, total: 0 });
+  const uno = totalesPedido([{ ...cubo, cantidad: 1 }], reglas);
+  assert.deepEqual([uno.descuento, uno.falta], [0, { unidades: 1, off: 20 }]);
+  const dos = totalesPedido([{ ...cubo, cantidad: 2 }, { ...otro, cantidad: 1 }], reglas);
+  assert.deepEqual([dos.bruto, dos.descuento, dos.regla.off, dos.total], [12000, 2000, 20, 10000]);
+  const sinReglas = totalesPedido([{ ...cubo, cantidad: 9 }], []);
+  assert.deepEqual([sinReglas.descuento, sinReglas.total], [0, 45000]);
+});
+
+test("arma el enlace de WhatsApp sólo si hay número cargado", async () => {
+  const { linkWhatsApp } = await api;
+  assert.equal(linkWhatsApp("", "hola"), "");
+  const enlace = new URL(linkWhatsApp("+54 9 11 5555-0000", "hola ¿qué tal?"));
+  assert.equal(enlace.pathname, "/5491155550000");
+  assert.equal(enlace.searchParams.get("text"), "hola ¿qué tal?");
+});
+
+test("pide el catálogo al servidor y rechaza una respuesta sin datos", async () => {
+  const { pedirCatalogo, SERVIDOR_CATALOGO } = await api;
+  const pedidas = [];
+  const ok = await pedirCatalogo(async (url) => { pedidas.push(url); return { json: async () => ({ ok: true, catalogo: CATALOGO }) }; });
+  assert.equal(ok, CATALOGO);
+  assert.deepEqual(pedidas, [SERVIDOR_CATALOGO]);
+  await assert.rejects(pedirCatalogo(async () => ({ json: async () => ({ ok: false }) })));
+});

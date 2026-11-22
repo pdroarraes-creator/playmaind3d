@@ -202,6 +202,11 @@ dialog::backdrop { background: #181a1b80; }
 .detail-layout { display: grid; gap: 1rem; padding: 1rem; }
 .detail-media { position: relative; align-self: start; aspect-ratio: 1; overflow: hidden; border-radius: .375rem; background: var(--warm); }
 .demo-button { position: absolute; inset: auto .6rem .6rem auto; }
+.detail-gallery { display: grid; gap: .5rem; align-self: start; min-width: 0; }
+.detail-thumbs { display: flex; flex-wrap: wrap; gap: .5rem; }
+.detail-thumbs button { width: 3.5rem; aspect-ratio: 1; overflow: hidden; padding: 0; border: 2px solid transparent; border-radius: .375rem; background: var(--warm); }
+.detail-thumbs button[aria-pressed='true'] { border-color: var(--petrol); }
+.detail-thumbs img { width: 100%; height: 100%; object-fit: cover; }
 .detail-form { display: flex; flex-direction: column; gap: .7rem; }
 .detail-form h2, .drawer-heading h2 { font-size: clamp(1.45rem, 5vw, 2.2rem); }
 .detail-price { color: var(--petrol); font-size: 1.3rem; font-weight: 800; }

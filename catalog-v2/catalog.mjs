@@ -1,24 +1,32 @@
-import { CATEGORIAS, PRODUCTOS, PACKS } from './storefront-data.mjs';
-import { linkWA, textoDeBusqueda } from './catalog-logic.mjs';
+import { CATEGORIAS, adaptarCatalogo, linkWhatsApp, pedirCatalogo, totalesPedido } from './catalog-api.mjs';
+import { textoDeBusqueda } from './catalog-logic.mjs';
 import { introFinished } from './intro.mjs';
 import { mountGlobe } from './globe.mjs';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const money = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0, minimumGroupingDigits: 1 });
 const formatPrice = (value) => `$${money.format(value)}`;
-const image = (name) => `./assets/${name}.webp`;
-const defaultPack = (product) => PACKS.find(({ unidades }) => unidades === (product.pack ?? 1));
-const packPrice = (product, pack) => Math.round(product.precio * pack.unidades * (100 - pack.descuento) / 100);
+const fallbackImage = './assets/logo-mark.webp';
+const image = (product, index = 0) => product.fotos[index] ?? fallbackImage;
+const cacheKey = 'pm3d-catalogo-v2';
 const pageSize = 16;
 const maxCount = 99;
 const bag = [];
 const filters = [...document.querySelectorAll('[data-category]')];
+const stockFilter = $('#stock-filter');
 const grid = $('#product-grid');
 const detail = $('#product-dialog');
 const drawer = $('#bag-dialog');
 const search = $('#search-input');
+let productos = [];
+let colores = [];
+let reglas = [];
+let whatsapp = '';
+let loaded = false;
+let lastCatalog = '';
 let category = 'todos';
 let holiday = false;
+let onlyStock = false;
 let page = 0;
 let activeProduct;
 let detailTrigger;
@@ -50,6 +58,12 @@ function iconButton(name, label, className, onClick) {
   return button;
 }
 
+function setPhoto(img, src) {
+  img.referrerPolicy = 'no-referrer';
+  img.addEventListener('error', () => { img.src = fallbackImage; }, { once: true });
+  img.src = src;
+}
+
 function pulse(node) {
   if (!node) return;
   node.classList.remove('is-pulsing');
@@ -58,7 +72,7 @@ function pulse(node) {
 }
 
 function tagList(product, root) {
-  const tags = [...(product.navidad ? ['Navidad'] : []), ...product.tags, ...(product.demo ? ['Video'] : [])];
+  const tags = [...(product.navidad ? ['Navidad'] : []), ...product.tags, ...(product.video ? ['Video'] : [])];
   root.replaceChildren(...tags.map((tag) => element('span', tag, `tag${tag === 'Navidad' ? ' holiday-tag' : ''}${tag === 'Video' ? ' video-tag' : ''}`)));
 }
 
@@ -101,7 +115,7 @@ function refreshCards(product, focus) {
 }
 
 function changeFromCard(product, delta, focus) {
-  if (delta > 0) addToBag(product, defaultPack(product), '', focus);
+  if (delta > 0) addToBag(product, '', '', focus);
   else {
     const index = bag.findLastIndex((item) => item.product.id === product.id);
     if (index !== -1) changeRow(index, -1, focus);
@@ -115,7 +129,7 @@ function productCard(product, index) {
   card.style.setProperty('--i', String(index % 4));
   const img = $('img', card);
   if (index > 3) img.loading = 'lazy';
-  img.src = image(product.id);
+  setPhoto(img, image(product));
   const media = $('.product-media', card);
   media.setAttribute('aria-label', `Ver detalles: ${product.nombre}`);
   const title = $('h3 button', card);
@@ -124,17 +138,21 @@ function productCard(product, index) {
   tagList(product, $('[data-tags]', card));
   $('[data-trait]', card).textContent = product.rasgo;
   $('[data-product-category]', card).textContent = CATEGORIAS[product.linea];
-  $('[data-price]', card).textContent = `${formatPrice(packPrice(product, defaultPack(product)))}${product.pack ? ` · x${product.pack}` : ''}`;
+  $('[data-price]', card).textContent = formatPrice(product.precio);
   renderControl(card, product);
   return fragment;
 }
 
 function renderCatalog() {
   const query = textoDeBusqueda(search.value);
-  const results = PRODUCTOS.filter((product) =>
+  for (const button of filters) button.setAttribute('aria-pressed', String(button.dataset.category === category));
+  stockFilter.setAttribute('aria-pressed', String(onlyStock));
+  if (!loaded) return;
+  const results = productos.filter((product) =>
     (category === 'todos' || product.linea === category) &&
     (!holiday || product.navidad) &&
-    textoDeBusqueda(`${product.nombre} ${CATEGORIAS[product.linea]} ${product.tags.join(' ')} ${product.rasgo}`).includes(query));
+    (!onlyStock || product.stock > 0) &&
+    textoDeBusqueda(`${product.nombre} ${CATEGORIAS[product.linea]} ${product.tags.join(' ')} ${product.busqueda} ${product.rasgo}`).includes(query));
   const pageCount = Math.max(1, Math.ceil(results.length / pageSize));
   page = Math.min(pageCount - 1, Math.max(0, page));
   grid.replaceChildren(...results.slice(page * pageSize, (page + 1) * pageSize).map(productCard));
@@ -145,8 +163,7 @@ function renderCatalog() {
   $('#page-label').textContent = `${page + 1} de ${pageCount}`;
   $('#page-prev').disabled = page === 0;
   $('#page-next').disabled = page + 1 === pageCount;
-  for (const button of filters) button.setAttribute('aria-pressed', String(button.dataset.category === category));
-  $('#catalog-title').textContent = holiday ? 'Packs navideños' : 'Elegí tu pieza';
+  $('#catalog-title').textContent = holiday ? 'Especial Navidad' : 'Elegí tu pieza';
 }
 
 function setCategory(next, onlyHoliday = false) {
@@ -181,6 +198,7 @@ function setSearch(open, returnFocus = true) {
 }
 
 for (const button of filters) button.addEventListener('click', () => setCategory(button.dataset.category));
+stockFilter.addEventListener('click', () => { onlyStock = !onlyStock; page = 0; renderCatalog(); });
 for (const link of document.querySelectorAll('[data-category-link]')) {
   link.addEventListener('click', (event) => {
     event.preventDefault();
@@ -191,6 +209,7 @@ for (const link of document.querySelectorAll('[data-category-link]')) {
 }
 $('#reset-catalog').addEventListener('click', () => {
   search.value = '';
+  onlyStock = false;
   setCategory('todos');
   focusCatalog();
 });
@@ -208,18 +227,12 @@ search.addEventListener('keydown', (event) => {
   }
 });
 
-function updateDetailPrice() {
-  const pack = PACKS.find(({ unidades }) => unidades === Number($('#detail-pack').value));
-  $('#detail-price').textContent = `${formatPrice(packPrice(activeProduct, pack))} ARS`;
-}
-
-function setDemo(playing) {
-  const button = $('#demo-toggle');
+function showPhoto(index) {
   const photo = $('#detail-photo');
-  button.setAttribute('aria-pressed', String(playing));
-  $('span', button).textContent = playing ? 'Pausar demo' : 'Ver demo';
-  photo.src = image(playing ? activeProduct.demo : activeProduct.id);
-  photo.alt = playing ? `Demostración en bucle de ${activeProduct.nombre}` : activeProduct.nombre;
+  const total = activeProduct.fotos.length;
+  setPhoto(photo, image(activeProduct, index));
+  photo.alt = total > 1 ? `${activeProduct.nombre}, foto ${index + 1} de ${total}` : activeProduct.nombre;
+  for (const [i, thumb] of [...$('#detail-thumbs').children].entries()) thumb.setAttribute('aria-pressed', String(i === index));
 }
 
 function openDetail(product, trigger) {
@@ -227,38 +240,54 @@ function openDetail(product, trigger) {
   detailTrigger = trigger;
   $('#detail-title').textContent = product.nombre;
   $('#detail-trait').textContent = product.rasgo;
+  $('#detail-price').textContent = `${formatPrice(product.precio)} ARS`;
   tagList(product, $('#detail-tags'));
-  $('#demo-toggle').hidden = !product.demo;
-  setDemo(false);
+  const video = $('#video-link');
+  video.hidden = !product.video;
+  if (product.video) video.href = product.video;
+  else video.removeAttribute('href');
+  const thumbs = $('#detail-thumbs');
+  thumbs.hidden = product.fotos.length < 2;
+  thumbs.replaceChildren(...product.fotos.map((foto, index) => {
+    const thumb = element('button');
+    thumb.type = 'button';
+    thumb.setAttribute('aria-label', `Ver foto ${index + 1} de ${product.fotos.length}`);
+    const img = element('img');
+    img.alt = '';
+    img.width = 56;
+    img.height = 56;
+    setPhoto(img, foto);
+    thumb.append(img);
+    thumb.addEventListener('click', () => showPhoto(index));
+    return thumb;
+  }));
+  showPhoto(0);
   const specs = [
-    ['¿Para qué sirve?', product.uso], ['Tamaño real', product.medida],
-    ['Tiempo de impresión', product.tiempo], ['Material', 'PLA vegetal'],
-  ];
+    ['Detalle', product.detalle], ['Disponibilidad', product.disponibilidad],
+    ['Tamaño real', product.medida], ['Tiempo de impresión', product.tiempo], ['Material', 'PLA vegetal'],
+  ].filter(([, value]) => value);
   $('#detail-specs').replaceChildren(...specs.map(([label, value]) => {
     const entry = element('div');
     entry.append(element('dt', label), element('dd', value));
     return entry;
   }));
-  const select = $('#detail-pack');
-  select.replaceChildren(...PACKS.map((pack) => new Option(pack.etiqueta, String(pack.unidades))));
-  select.value = String(defaultPack(product).unidades);
+  const color = $('#detail-color');
+  color.replaceChildren(new Option('El que quieras', ''), ...colores.map((nombre) => new Option(nombre, nombre)));
+  $('#detail-color-field').hidden = !product.libre || colores.length === 0;
   $('#detail-name').value = '';
-  updateDetailPrice();
   detail.showModal();
   $('#detail-title').focus({ preventScroll: true });
   detail.scrollTop = 0;
 }
 
-$('#detail-pack').addEventListener('change', updateDetailPrice);
-$('#demo-toggle').addEventListener('click', (event) => setDemo(event.currentTarget.getAttribute('aria-pressed') !== 'true'));
 $('#detail-form').addEventListener('submit', (event) => {
   event.preventDefault();
-  const pack = PACKS.find(({ unidades }) => unidades === Number($('#detail-pack').value));
-  if (!pack || !activeProduct) return;
-  addToBag(activeProduct, pack, $('#detail-name').value.trim());
+  if (!activeProduct) return;
+  const color = $('#detail-color-field').hidden ? '' : $('#detail-color').value;
+  addToBag(activeProduct, color, $('#detail-name').value.trim());
   detail.close();
 });
-detail.addEventListener('close', () => { setDemo(false); detailTrigger?.focus({ preventScroll: true }); });
+detail.addEventListener('close', () => detailTrigger?.focus({ preventScroll: true }));
 
 function announce(text) {
   const toast = $('#toast');
@@ -269,10 +298,10 @@ function announce(text) {
   toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2200);
 }
 
-function addToBag(product, pack, note, focus) {
-  const row = bag.find((item) => item.product.id === product.id && item.pack.unidades === pack.unidades && item.note === note);
+function addToBag(product, color, note, focus) {
+  const row = bag.find((item) => item.product.id === product.id && item.color === color && item.note === note);
   if (row) row.count = Math.min(maxCount, row.count + 1);
-  else bag.push({ product, pack, note, count: 1 });
+  else bag.push({ product, color, note, count: 1 });
   afterBagChange(product, focus);
   announce(`${product.nombre}: agregado a tu bolsa`);
 }
@@ -294,10 +323,9 @@ function afterBagChange(product, focus) {
   pulse($('#bag-button'));
 }
 
-const rowTotal = (item) => item.count * packPrice(item.product, item.pack);
-const subtotal = () => bag.reduce((total, item) => total + rowTotal(item), 0);
-const packLabel = (item) => item.pack.unidades === 1 ? 'Unidad' : `Pack x${item.pack.unidades} (−${item.pack.descuento}%)`;
-const rowQuantity = (item) => item.pack.unidades === 1 ? `${item.count} ${item.count === 1 ? 'unidad' : 'unidades'}` : `${item.count} × Pack x${item.pack.unidades} (−${item.pack.descuento}%)`;
+const rowTotal = (item) => item.count * item.product.precio;
+const totals = () => totalesPedido(bag.map((item) => ({ nombre: item.product.nombre, precio: item.product.precio, cantidad: item.count })), reglas);
+const colorLabel = (item) => item.color || (item.product.libre && colores.length ? 'el que quieras' : '');
 
 function focusBagRow(index, selector) {
   const rows = $('#bag-list').children;
@@ -306,17 +334,22 @@ function focusBagRow(index, selector) {
 }
 
 function renderBag() {
-  const count = bag.reduce((total, item) => total + item.count * item.pack.unidades, 0);
+  const order = totals();
+  const count = order.unidades;
+  const discount = $('#bag-discount');
+  discount.hidden = !order.descuento && !order.falta;
+  if (order.descuento) discount.textContent = `Descuento ${order.regla.off}%: −${formatPrice(order.descuento)}`;
+  else if (order.falta) discount.textContent = `Sumá ${order.falta.unidades} más y tenés ${order.falta.off}% de descuento.`;
   $('#bag-count').textContent = count;
   $('#bag-button').setAttribute('aria-label', `Bolsa, ${count} ${count === 1 ? 'artículo' : 'artículos'}`);
   $('#bag-button').classList.toggle('has-items', count > 0);
   $('#bag-empty').hidden = Boolean(bag.length);
   $('#bag-summary').hidden = !bag.length || !$('#order-preview').hidden;
-  $('#bag-total').textContent = `${formatPrice(subtotal())} ARS`;
+  $('#bag-total').textContent = `${formatPrice(order.total)} ARS`;
   $('#bag-list').replaceChildren(...bag.map((item, index) => {
     const row = element('li', undefined, 'bag-row');
     const img = element('img');
-    img.src = image(item.product.id);
+    setPhoto(img, image(item.product));
     img.alt = '';
     img.width = 64;
     img.height = 64;
@@ -328,8 +361,9 @@ function renderBag() {
       announce(`${item.product.nombre}: quitado de tu bolsa`);
       focusBagRow(index, '.remove-button');
     }));
-    info.append(top, element('p', packLabel(item), 'bag-meta'));
-    if (item.note) info.append(element('p', `Personalización: ${item.note}`, 'bag-meta'));
+    info.append(top);
+    if (colorLabel(item)) info.append(element('p', `Color: ${colorLabel(item)}`, 'bag-meta'));
+    if (item.note) info.append(element('p', `Aclaración: ${item.note}`, 'bag-meta'));
     const bottom = element('div', undefined, 'bag-row-bottom');
     bottom.append(
       stepper(item.count, item.product.nombre, () => {
@@ -353,10 +387,15 @@ function showOrderPreview(show) {
   $('#bag-content').hidden = show;
   $('#bag-summary').hidden = show || !bag.length;
   if (show) {
-    const lines = bag.map((item) => `• ${item.product.nombre} — ${rowQuantity(item)} — ${formatPrice(rowTotal(item))}${item.note ? `\n  Personalización: ${item.note}` : ''}`);
-    const message = ['¡Hola PlayMind 3D! Quiero consultar por este pedido:', '', ...lines, '', `Subtotal: ${formatPrice(subtotal())} ARS`, '¿Coordinamos el envío o retiro?'].join('\n');
+    const order = totals();
+    const lines = bag.map((item) => `• ${item.count}x ${item.product.nombre}${colorLabel(item) ? ` (${colorLabel(item)})` : ''} — ${formatPrice(rowTotal(item))}${item.note ? `\n  Aclaración: ${item.note}` : ''}`);
+    const message = [
+      '¡Hola PlayMind 3D! Quiero hacer este pedido:', '', ...lines, '',
+      ...(order.descuento ? [`Descuento (${order.regla.off}%): −${formatPrice(order.descuento)}`] : []),
+      `Total: ${formatPrice(order.total)} ARS`, '¿Coordinamos el envío o retiro?',
+    ].join('\n');
     $('#order-message').textContent = message;
-    $('#whatsapp-link').href = linkWA(message);
+    setLink($('#whatsapp-link'), linkWhatsApp(whatsapp, message));
     $('#preview-title').focus();
   } else if (drawer.open) $('#preview-order').focus();
 }
@@ -379,8 +418,59 @@ for (const dialog of [detail, drawer]) {
   });
 }
 
-const contactHref = linkWA('¡Hola PlayMind 3D! Tengo una consulta sobre el catálogo.');
-for (const link of [$('#contact-link'), $('#whatsapp-float')]) link.href = contactHref;
+function setLink(link, href) {
+  link.hidden = !href;
+  if (href) link.href = href;
+  else link.removeAttribute('href');
+}
+
+function applyCatalog(raw) {
+  ({ productos, reglas, colores, whatsapp } = adaptarCatalogo(raw));
+  loaded = true;
+  const byId = new Map(productos.map((product) => [product.id, product]));
+  for (let index = bag.length - 1; index >= 0; index--) {
+    const current = byId.get(bag[index].product.id);
+    if (current) bag[index].product = current;
+    else bag.splice(index, 1);
+  }
+  stockFilter.hidden = !productos.some((product) => product.stock > 0);
+  if (stockFilter.hidden) onlyStock = false;
+  const hasHoliday = productos.some((product) => product.navidad);
+  if (!hasHoliday) holiday = false;
+  $('#holiday-section').hidden = !hasHoliday;
+  for (const link of document.querySelectorAll('[data-holiday-link]')) (link.closest('li') ?? link).hidden = !hasHoliday;
+  const contactHref = linkWhatsApp(whatsapp, '¡Hola PlayMind 3D! Tengo una consulta sobre el catálogo.');
+  for (const link of [$('#contact-link'), $('#whatsapp-float')]) setLink(link, contactHref);
+  renderCatalog();
+  renderBag();
+}
+
+async function loadCatalog() {
+  $('#catalog-error').hidden = true;
+  if (!loaded) {
+    try {
+      const saved = localStorage.getItem(cacheKey);
+      if (saved) {
+        applyCatalog(JSON.parse(saved));
+        lastCatalog = saved;
+      }
+    } catch {}
+  }
+  if (!loaded) $('#result-count').textContent = 'Cargando piezas…';
+  try {
+    const raw = await pedirCatalogo();
+    const fresh = JSON.stringify(raw);
+    if (fresh === lastCatalog) return;
+    lastCatalog = fresh;
+    applyCatalog(raw);
+    try { localStorage.setItem(cacheKey, fresh); } catch {}
+  } catch {
+    if (loaded) return;
+    $('#result-count').textContent = '';
+    $('#catalog-error').hidden = false;
+  }
+}
+$('#retry-catalog').addEventListener('click', loadCatalog);
 
 function splitWords(root) {
   let index = 0;
@@ -450,5 +540,5 @@ introFinished.then(() => {
 });
 syncVideoToggle();
 
-renderCatalog();
 renderBag();
+loadCatalog();

@@ -42,7 +42,7 @@
     <button class="intro-skip" type="button">Saltar intro</button>
   </div>
   <a class="skip" href="#main">Ir al contenido</a>
-  <div class="announcement" id="inicio">Hecho en Pilar <span>•</span> Envíos y retiros <span>•</span> Packs navideños con descuento</div>
+  <div class="announcement" id="inicio">Hecho en Pilar <span>•</span> Envíos y retiros <span>•</span> Impreso a pedido</div>
   <header class="site-header">
     <div class="container header-row">
       <a class="brand" href="#inicio">
@@ -51,7 +51,7 @@
       </a>
       <nav class="header-links" aria-label="Navegación principal">
         <a href="#catalogo" data-category-link="todos">Catálogo</a>
-        <a href="#catalogo" data-category-link="kits" data-holiday-link>Especial Navidad</a>
+        <a href="#catalogo" data-category-link="todos" data-holiday-link>Especial Navidad</a>
         <a href="#como-pedir">Cómo pedir</a>
       </nav>
       <div class="header-actions">
@@ -87,13 +87,13 @@
       </figure>
     </section>
 
-    <section class="holiday" aria-labelledby="holiday-title">
+    <section class="holiday" id="holiday-section" aria-labelledby="holiday-title" hidden>
       <div class="holiday-copy">
         <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#icon-gift"/></svg> Edición de temporada</p>
         <h2 id="holiday-title" data-reveal>Especial Navidad</h2>
-        <p>Regalos personalizados sin gastar una fortuna. Armá tu Pack x3, x5 o x10 con tag personalizada.</p>
+        <p>Piezas para decorar y regalar durante las fiestas, impresas a pedido.</p>
       </div>
-      <a class="button holiday-button" href="#catalogo" data-category-link="kits" data-holiday-link>Ver Packs Navideños <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
+      <a class="button holiday-button" href="#catalogo" data-category-link="todos" data-holiday-link>Ver Especial Navidad <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
     </section>
 
     <section class="catalog" id="catalogo" aria-labelledby="catalog-title">
@@ -105,10 +105,13 @@
         <button type="button" data-category="todos" aria-pressed="true">Todos</button>
         <button type="button" data-category="sensoriales" aria-pressed="false">Juegos Sensoriales</button>
         <button type="button" data-category="deco" aria-pressed="false">D3cor</button>
+        <button type="button" data-category="personalizados" aria-pressed="false">Personalizados</button>
         <button type="button" data-category="kits" aria-pressed="false">Kits para Regalo</button>
+        <button type="button" id="stock-filter" aria-pressed="false" hidden>Listas para llevar</button>
       </div>
       <div class="product-grid" id="product-grid"></div>
       <div class="empty-catalog" id="empty-catalog" hidden><h3>No encontramos piezas</h3><p>Probá con otro nombre o volvé a ver todo el catálogo.</p><button type="button" class="button secondary" id="reset-catalog">Ver todo</button></div>
+      <div class="empty-catalog" id="catalog-error" role="alert" hidden><h3>No pudimos traer las piezas</h3><p>Revisá tu conexión y probá de nuevo en un rato.</p><button type="button" class="button secondary" id="retry-catalog">Reintentar</button></div>
       <nav class="pagination" id="pagination" aria-label="Páginas del catálogo" hidden>
         <button id="page-prev" class="button secondary" type="button">Anterior</button><span id="page-label"></span><button id="page-next" class="button secondary" type="button">Siguiente</button>
       </nav>
@@ -120,7 +123,7 @@
       <ul class="benefits" role="list">
         <li id="entrega"><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg></span><h3>Hecho en Pilar</h3><p>Coordinamos el retiro o la entrega en Pilar y alrededores.</p></li>
         <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg></span><h3>PLA vegetal</h3><p>Piezas impresas en 3D con bioplástico de origen vegetal.</p></li>
-        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-ruler"/></svg></span><h3>Fotos y medidas</h3><p>Cada ficha muestra el tamaño real y el tiempo de impresión.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-ruler"/></svg></span><h3>Fotos y medidas</h3><p>Cada ficha muestra las fotos, la disponibilidad y el tiempo de impresión.</p></li>
         <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></span><h3>Un solo pedido</h3><p>Armá tu bolsa y mandá todo junto por WhatsApp.</p></li>
       </ul>
     </section>
@@ -140,8 +143,9 @@
           <ul role="list">
             <li><a href="#catalogo" data-category-link="sensoriales">Juegos Sensoriales</a></li>
             <li><a href="#catalogo" data-category-link="deco">D3cor</a></li>
+            <li><a href="#catalogo" data-category-link="personalizados">Personalizados</a></li>
             <li><a href="#catalogo" data-category-link="kits">Kits para Regalo</a></li>
-            <li><a href="#catalogo" data-category-link="kits" data-holiday-link>Especial Navidad</a></li>
+            <li><a href="#catalogo" data-category-link="todos" data-holiday-link>Especial Navidad</a></li>
           </ul>
         </div>
         <div>
@@ -166,9 +170,12 @@
   <dialog class="product-dialog" id="product-dialog" aria-labelledby="detail-title">
     <div class="dialog-top"><p class="eyebrow">Ficha de producto</p><button class="icon-button" data-close type="button" aria-label="Cerrar ficha del producto"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
     <div class="detail-layout">
-      <div class="detail-media">
-        <img id="detail-photo" width="480" height="480" alt="">
-        <button class="button secondary demo-button" id="demo-toggle" type="button" aria-pressed="false" hidden><svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg><span>Ver demo</span></button>
+      <div class="detail-gallery">
+        <div class="detail-media">
+          <img id="detail-photo" width="480" height="480" alt="">
+          <a class="button secondary demo-button" id="video-link" target="_blank" rel="noopener noreferrer" hidden><svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg><span>Ver video</span></a>
+        </div>
+        <div class="detail-thumbs" id="detail-thumbs" role="group" aria-label="Fotos de la pieza" hidden></div>
       </div>
       <form class="detail-form" id="detail-form">
         <div class="tags" id="detail-tags"></div>
@@ -176,8 +183,8 @@
         <p class="detail-trait" id="detail-trait"></p>
         <p class="detail-price" id="detail-price"></p>
         <dl class="specs" id="detail-specs"></dl>
-        <label class="field" for="detail-pack">Elegí la cantidad<select id="detail-pack" name="pack"></select></label>
-        <label class="field" for="detail-name">Nombre para la tag / personalización <input type="text" id="detail-name" maxlength="60" placeholder="Opcional · Ej.: Para Sofi"></label>
+        <label class="field" id="detail-color-field" for="detail-color" hidden>Elegí el color<select id="detail-color" name="color"></select></label>
+        <label class="field" for="detail-name">Aclaración o personalización <input type="text" id="detail-name" maxlength="60" placeholder="Opcional · Ej.: con el nombre Sofi"></label>
         <button class="button primary" type="submit"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Sumar a la bolsa</button>
       </form>
     </div>
@@ -191,14 +198,14 @@
         <ul class="bag-list" id="bag-list" aria-label="Artículos de tu bolsa"></ul>
       </div>
       <div class="drawer-summary" id="bag-summary" hidden>
-        <p class="subtotal">Subtotal <strong id="bag-total"></strong></p>
+        <p class="bag-note" id="bag-discount" role="status" hidden></p>
+        <p class="subtotal">Total <strong id="bag-total"></strong></p>
         <p class="bag-note">Coordinamos disponibilidad, envío o retiro en Pilar por WhatsApp.</p>
         <button class="button whatsapp" id="preview-order" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Enviar pedido por WhatsApp</button>
       </div>
       <section class="order-preview" id="order-preview" aria-labelledby="preview-title" hidden>
         <h3 id="preview-title" tabindex="-1">Revisá el mensaje</h3>
         <pre id="order-message"></pre>
-        <p class="bag-note">Catálogo de prueba: el número de WhatsApp es de demostración.</p>
         <a class="button whatsapp" id="whatsapp-link" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Abrir WhatsApp</a>
         <button class="button secondary" id="back-to-bag" type="button">Volver a la bolsa</button>
       </section>
