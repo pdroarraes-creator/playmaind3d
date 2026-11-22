@@ -1,57 +1,67 @@
 const STORAGE_KEY = 'pm3d-intro-seen';
-const GRID = 5;
-const BUILD_MS = 1900;
-const HOLD_MS = 650;
+const PRINT_MS = 2800;
+const LIFT_MS = 520;
+const FLY_MS = 950;
 const LEAVE_MS = 650;
+const GLOBE_SHARE = 0.51;
+const GLOBE_CENTER_Y = 0.455;
 
 const root = document.documentElement;
 const screen = document.getElementById('intro');
 
-function buildPieces(stage) {
-  const fragment = document.createDocumentFragment();
-  const center = (GRID - 1) / 2;
-  for (let row = 0; row < GRID; row += 1) {
-    for (let column = 0; column < GRID; column += 1) {
-      const piece = document.createElement('span');
-      const angle = Math.atan2(row - center, column - center) + (Math.random() - 0.5) * 0.9;
-      const distance = 38 + Math.random() * 30;
-      piece.className = 'intro-piece';
-      piece.style.setProperty('--col', column);
-      piece.style.setProperty('--row', row);
-      piece.style.setProperty('--dx', `${(Math.cos(angle) * distance).toFixed(1)}vmin`);
-      piece.style.setProperty('--dy', `${(Math.sin(angle) * distance).toFixed(1)}vmin`);
-      piece.style.setProperty('--r', `${Math.round((Math.random() - 0.5) * 220)}deg`);
-      piece.style.setProperty('--delay', `${Math.round(Math.random() * 520 + Math.hypot(row - center, column - center) * 90)}ms`);
-      fragment.append(piece);
-    }
-  }
-  stage.append(fragment);
+function flightKeyframes(build, mark) {
+  const from = build.getBoundingClientRect();
+  const to = mark.getBoundingClientRect();
+  const scale = to.width / (from.width * GLOBE_SHARE);
+  const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+  const dy = to.top + to.height / 2 - (from.top + from.height / 2) + (0.5 - GLOBE_CENTER_Y) * from.height * scale;
+  return [{ transform: 'none' }, { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${scale.toFixed(4)})` }];
 }
 
 function runIntro(resolve) {
   let finished = false;
+  let skipping = false;
   const timers = [];
-  const finish = () => {
+  const after = (ms, fn) => timers.push(setTimeout(fn, ms));
+
+  const cleanup = () => {
     if (finished) return;
     finished = true;
     timers.forEach(clearTimeout);
     try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch {}
-    screen.classList.add('is-leaving');
-    timers.push(setTimeout(() => {
-      root.classList.remove('intro');
-      screen.remove();
-      document.removeEventListener('keydown', onKey);
-      resolve();
-    }, LEAVE_MS));
+    root.classList.remove('intro', 'intro-landing');
+    screen.remove();
+    document.removeEventListener('keydown', onKey);
+    resolve();
   };
-  const onKey = (event) => { if (event.key === 'Escape') finish(); };
 
-  buildPieces(screen.querySelector('.intro-stage'));
-  screen.querySelector('.intro-skip').addEventListener('click', finish);
+  const skip = () => {
+    if (finished || skipping) return;
+    skipping = true;
+    timers.forEach(clearTimeout);
+    root.classList.add('intro-landing');
+    screen.classList.add('is-leaving');
+    after(LEAVE_MS, cleanup);
+  };
+
+  const flyToHeader = () => {
+    const build = screen.querySelector('.intro-build');
+    const mark = document.getElementById('brand-globe');
+    if (!build || !mark || !build.animate) { skip(); return; }
+    screen.classList.add('is-flying');
+    const flight = build.animate(flightKeyframes(build, mark), { duration: FLY_MS, easing: 'cubic-bezier(.65, 0, .2, 1)', fill: 'forwards' });
+    after(FLY_MS * 0.72, () => root.classList.add('intro-landing'));
+    flight.finished.then(() => after(160, cleanup), skip);
+  };
+
+  const onKey = (event) => { if (event.key === 'Escape') skip(); };
+
+  screen.querySelector('.intro-skip').addEventListener('click', skip);
   document.addEventListener('keydown', onKey);
-  requestAnimationFrame(() => screen.classList.add('is-building'));
-  timers.push(setTimeout(() => screen.classList.add('is-built'), BUILD_MS));
-  timers.push(setTimeout(finish, BUILD_MS + HOLD_MS));
+  window.scrollTo(0, 0);
+  requestAnimationFrame(() => screen.classList.add('is-printing'));
+  after(PRINT_MS, () => screen.classList.add('is-printed'));
+  after(PRINT_MS + LIFT_MS, flyToHeader);
 }
 
 export const introFinished = new Promise((resolve) => {
