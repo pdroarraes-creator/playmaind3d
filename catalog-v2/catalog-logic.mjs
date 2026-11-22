@@ -4,11 +4,10 @@ export const LINEAS = {
   navidad: { titulo: "Especial Navidad", corto: "Navidad", descripcion: "Para decorar y regalar durante las fiestas." },
 };
 
-const NOMBRES_DE_VISTA = ["Limpia", "En mano", "En uso"];
+const NOMBRES_DE_VISTA = ["Vista principal", "Otra vista", "Vista en uso"];
+export const MAX_UNIDADES_POR_ARTICULO = 99;
 const PESOS = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0, useGrouping: "always" });
 const WHATSAPP_DE_PRUEBA = "5491100000000";
-const SALUDO = "Hola PlayMind 3D! Quiero pedir:";
-const ENTREGA = "¿Coordinamos la entrega en Pilar?";
 
 export function lineaDe(pieza) {
   if (pieza.linea) return pieza.linea;
@@ -20,7 +19,7 @@ export function lineaDe(pieza) {
 export function vistasDe(pieza) {
   return NOMBRES_DE_VISTA.flatMap((nombre, indice) => {
     const foto = pieza.fotos?.[indice];
-    return foto ? [{ foto, nombre, indice, etiqueta: `${indice + 1}. ${nombre}` }] : [];
+    return foto ? [{ foto, indice, etiqueta: pieza.nombresDeVista?.[indice] || nombre }] : [];
   });
 }
 
@@ -37,28 +36,40 @@ export function precioTxt(precio) {
   return `$${PESOS.format(precio)}`;
 }
 
-export function mensajeWA(pieza, vistaActiva = 0) {
-  const vistas = vistasDe(pieza);
-  const vista = vistas.find(({ indice }) => indice === vistaActiva) ?? vistas[0];
-  return [
-    SALUDO,
-    `Línea: ${LINEAS[lineaDe(pieza)].titulo}`,
-    `Pieza: ${pieza.nombre}`,
-    vistas.length > 1 ? `Vista: ${vista.etiqueta}` : null,
-    pieza.medida ? `Tamaño: ${pieza.medida}` : null,
-    `Precio: ${precioTxt(pieza.precio)}`,
-    ENTREGA,
-  ].filter(Boolean).join("\n");
+export function ajustarPedido(pedido, articulo, cambio) {
+  if (!Number.isInteger(cambio)) return pedido;
+  const anterior = pedido.get(articulo) ?? 0;
+  const cantidad = Math.max(0, Math.min(MAX_UNIDADES_POR_ARTICULO, anterior + cambio));
+  if (cantidad === anterior) return pedido;
+  const actualizado = new Map(pedido);
+  if (cantidad > 0) actualizado.set(articulo, cantidad);
+  else actualizado.delete(articulo);
+  return actualizado;
 }
 
-export function mensajeKitWA(kit) {
+export function resumenPedido(pedido) {
+  let unidades = 0;
+  let total = 0;
+  for (const [articulo, cantidad] of pedido) {
+    unidades += cantidad;
+    total += articulo.precio * cantidad;
+  }
+  return { unidades, total };
+}
+
+export function mensajePedidoWA(pedido) {
+  const items = [...pedido].flatMap(([articulo, cantidad]) => [
+    `${cantidad} × ${articulo.nombre} · ${precioTxt(articulo.precio * cantidad)}`,
+    ...(articulo.medida ? [`   Tamaño: ${articulo.medida}`] : []),
+    ...(articulo.piezas ? [`   Incluye: ${articulo.piezas.join(" + ")}`] : []),
+  ]);
   return [
-    SALUDO,
-    `Línea: ${LINEAS[kit.linea].corto}`,
-    `Kit: ${kit.nombre}`,
-    `Incluye: ${kit.piezas.join(" + ")}`,
-    `Precio: ${precioTxt(kit.precio)}`,
-    ENTREGA,
+    "¡Hola PlayMind 3D! Quiero hacer este pedido:",
+    "",
+    ...items,
+    "",
+    `Total estimado: ${precioTxt(resumenPedido(pedido).total)}`,
+    "¿Me confirman la disponibilidad y la entrega en Pilar?",
   ].join("\n");
 }
 

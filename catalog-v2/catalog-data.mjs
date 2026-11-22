@@ -1,9 +1,19 @@
 export const PIEZAS = [
-  { nombre: "Fidget Cube Toy", precio: 4999, stock: 0, horas: 1.5, medida: "~5 cm de lado · cabe en el bolsillo", desc: "", fotos: [
-    "https://lh3.googleusercontent.com/d/1kOQ1tAyireheFg6xSTe8zeqWmMQE-8M9=w800",
-    "https://lh3.googleusercontent.com/d/1k0fovu5EGseUjzXfzrAhbVS2apziqy2D=w800",
-    "https://lh3.googleusercontent.com/d/1S9lzFTuaEiUkG0GfI5Yky5v7Y2eVexhZ=w800",
-  ] },
+  {
+    nombre: "Fidget Cube Toy",
+    precio: 4999,
+    stock: 0,
+    horas: 1.5,
+    medida: "~5 cm de lado · cabe en el bolsillo",
+    desc: "",
+    nombresDeVista: ["Frente", "Detalles", "Perspectiva"],
+    gif: "./assets/fidget-cube-views.gif",
+    fotos: [
+      "https://lh3.googleusercontent.com/d/1kOQ1tAyireheFg6xSTe8zeqWmMQE-8M9=w800",
+      "https://lh3.googleusercontent.com/d/1k0fovu5EGseUjzXfzrAhbVS2apziqy2D=w800",
+      "https://lh3.googleusercontent.com/d/1S9lzFTuaEiUkG0GfI5Yky5v7Y2eVexhZ=w800",
+    ],
+  },
   { nombre: "Cono fidget toy", precio: 5000, stock: 0, horas: 1.6, medida: "", desc: "", fotos: [
     "https://lh3.googleusercontent.com/d/1RcPOVJRa1jmbQRZHAYuN1t5Q23n2p_cE=w800",
     "https://lh3.googleusercontent.com/d/1a6lPG0QzyHAZtc3YbQ9rwy_qwY1jnxy6=w800",

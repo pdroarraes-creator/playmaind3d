@@ -17,8 +17,8 @@ test("clasifica las diez piezas y respeta la línea explícita", async () => {
 
 test("solo expone las vistas que tienen una foto", async () => {
   const [{ vistasDe }, { PIEZAS }] = await modulos;
-  assert.deepEqual(vistasDe(PIEZAS[0]).map(({ etiqueta }) => etiqueta), ["1. Limpia", "2. En mano", "3. En uso"]);
-  assert.deepEqual(vistasDe(PIEZAS[1]).map(({ etiqueta }) => etiqueta), ["1. Limpia", "2. En mano"]);
+  assert.deepEqual(vistasDe(PIEZAS[0]).map(({ etiqueta }) => etiqueta), ["Frente", "Detalles", "Perspectiva"]);
+  assert.deepEqual(vistasDe(PIEZAS[1]).map(({ etiqueta }) => etiqueta), ["Vista principal", "Otra vista"]);
   assert.equal(vistasDe(PIEZAS[3]).length, 1);
   assert.deepEqual(vistasDe({ fotos: ["a", "", "c"] }).map(({ indice, foto }) => [indice, foto]), [[0, "a"], [2, "c"]]);
   assert.deepEqual(vistasDe({}), []);
@@ -43,30 +43,40 @@ test("formatea pesos argentinos y respeta los precios de los kits", async () => 
   assert.deepEqual(KITS.map(({ precio, precioSeparado }) => precioTxt(precioSeparado - precio)), ["$1.799", "$2.700"]);
 });
 
-test("arma el mensaje con la vista activa y omite los datos ausentes", async () => {
-  const [{ mensajeWA }, { PIEZAS }] = await modulos;
-  assert.equal(mensajeWA(PIEZAS[0], 1), [
-    "Hola PlayMind 3D! Quiero pedir:",
-    "Línea: Juguetes & Sensartias",
-    "Pieza: Fidget Cube Toy",
-    "Vista: 2. En mano",
-    "Tamaño: ~5 cm de lado · cabe en el bolsillo",
-    "Precio: $4.999",
-    "¿Coordinamos la entrega en Pilar?",
-  ].join("\n"));
-  assert.equal(mensajeWA(PIEZAS[3]), [
-    "Hola PlayMind 3D! Quiero pedir:",
-    "Línea: Juguetes & Sensartias",
-    "Pieza: Tortuga Articulada",
-    "Precio: $5.000",
-    "¿Coordinamos la entrega en Pilar?",
-  ].join("\n"));
+test("agrupa unidades, calcula el total y quita artículos sin cambiar el pedido anterior", async () => {
+  const [{ ajustarPedido, resumenPedido }, { PIEZAS, KITS }] = await modulos;
+  const pieza = PIEZAS[0];
+  const kit = KITS[1];
+  const vacio = new Map();
+  const primero = ajustarPedido(ajustarPedido(vacio, pieza, 1), kit, 1);
+  const segundo = ajustarPedido(primero, pieza, 1);
+  assert.equal(vacio.size, 0);
+  assert.equal(primero.get(pieza), 1);
+  assert.equal(segundo.get(pieza), 2);
+  assert.equal(segundo.size, 2);
+  assert.deepEqual(resumenPedido(segundo), { unidades: 3, total: 25298 });
+  const ultimo = ajustarPedido(ajustarPedido(segundo, kit, -1), pieza, -2);
+  assert.deepEqual(resumenPedido(ultimo), { unidades: 0, total: 0 });
 });
 
-test("codifica el pedido completo para el número de prueba", async () => {
-  const [{ linkWA, mensajeKitWA }, { KITS }] = await modulos;
-  const mensaje = mensajeKitWA(KITS[1]);
-  assert.match(mensaje, /Kit: Kit Regalo & Deco\nIncluye: Soporte para Lentes Gato \+ Soporte de colitas\nPrecio: \$15\.300/);
+test("ignora cantidades no válidas y limita el máximo por artículo", async () => {
+  const [{ ajustarPedido, MAX_UNIDADES_POR_ARTICULO }, { PIEZAS }] = await modulos;
+  const pieza = PIEZAS[0];
+  const vacio = new Map();
+  assert.equal(ajustarPedido(vacio, pieza, 0.5), vacio);
+  assert.equal(ajustarPedido(vacio, pieza, -1), vacio);
+  const pedido = ajustarPedido(vacio, pieza, MAX_UNIDADES_POR_ARTICULO + 1);
+  assert.equal(pedido.get(pieza), MAX_UNIDADES_POR_ARTICULO);
+  assert.equal(ajustarPedido(pedido, pieza, 1), pedido);
+});
+
+test("codifica piezas, kits y el total en un único mensaje para el número de prueba", async () => {
+  const [{ linkWA, mensajePedidoWA }, { PIEZAS, KITS }] = await modulos;
+  const mensaje = mensajePedidoWA(new Map([[PIEZAS[0], 2], [KITS[1], 1]]));
+  assert.match(mensaje, /2 × Fidget Cube Toy · \$9\.998\n   Tamaño: ~5 cm de lado/);
+  assert.match(mensaje, /1 × Kit Regalo & Deco · \$15\.300\n   Incluye: Soporte para Lentes Gato \+ Soporte de colitas/);
+  assert.match(mensaje, /Total estimado: \$25\.298/);
+  assert.match(mensaje, /disponibilidad y la entrega en Pilar/);
   const enlace = new URL(linkWA(mensaje));
   assert.equal(enlace.origin, "https://wa.me");
   assert.equal(enlace.pathname, "/5491100000000");
