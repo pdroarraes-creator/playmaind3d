@@ -1,7 +1,7 @@
 import { CATEGORIAS, adaptarCatalogo, linkWhatsApp, pedirCatalogo, totalesPedido } from './catalog-api.mjs';
 import { textoDeBusqueda } from './catalog-logic.mjs';
-import { introFinished } from './intro.mjs';
 import { renderShowcase } from './showcase.mjs';
+import './float-icons.mjs';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const money = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0, minimumGroupingDigits: 1 });
@@ -113,7 +113,9 @@ function renderControl(card, product, focus) {
 
 function refreshCards(product, focus) {
   const card = grid.querySelector(`[data-product="${product.id}"]`);
-  if (card) pulse(renderControl(card, product, focus));
+  const slide = $(`#showcase-track [data-product="${product.id}"]`);
+  if (card) pulse(renderControl(card, product, card.contains(document.activeElement) ? focus : undefined));
+  if (slide) pulse(renderControl(slide, product, slide.contains(document.activeElement) ? focus : undefined));
 }
 
 function changeFromCard(product, delta, focus) {
@@ -478,7 +480,7 @@ function applyCatalog(raw) {
   for (const link of document.querySelectorAll('[data-holiday-link]')) (link.closest('li') ?? link).hidden = !hasHoliday;
   const contactHref = linkWhatsApp(whatsapp, '¡Hola PlayMind 3D! Tengo una consulta sobre el catálogo.');
   for (const link of [$('#contact-link'), $('#whatsapp-float')]) setLink(link, contactHref);
-  renderShowcase(productos, { openDetail, formatPrice, setPhoto, icon });
+  renderShowcase(productos, { openDetail, formatPrice, setPhoto, renderControl, categoryOf: (product) => CATEGORIAS[product.linea] });
   renderCatalog();
   renderBag();
 }
@@ -547,10 +549,9 @@ if (revealObserver) {
   document.documentElement.classList.add('motion');
   for (const heading of document.querySelectorAll('[data-reveal]')) {
     splitWords(heading);
-    if (heading.closest('.hero')) introFinished.then(() => revealObserver.observe(heading));
-    else revealObserver.observe(heading);
+    revealObserver.observe(heading);
   }
-  for (const node of document.querySelectorAll('.benefits li, .showcase')) revealObserver.observe(node);
+  for (const node of document.querySelectorAll('.benefits li, .showcase, .float-field')) revealObserver.observe(node);
 }
 
 const heroVideo = document.getElementById('hero-video');
@@ -568,11 +569,6 @@ heroVideoToggle.addEventListener('click', () => {
   else heroVideo.pause();
 });
 if (!motionOk) heroVideo.pause();
-introFinished.then(() => {
-  if (!motionOk) return;
-  heroVideo.currentTime = 0;
-  heroVideo.play().catch(() => {});
-});
 syncVideoToggle();
 
 renderBag();
