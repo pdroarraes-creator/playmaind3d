@@ -64,6 +64,7 @@ import {
 } from "./pos.js";
 import { aplicarVenta, cerrarSheet, migrarStockVentas, iniciarVentas } from "./ventas.js";
 import { renderVit, compartirVitrina, bajarVitrina } from "./vitrina.js";
+import { alternarClave, mostrarEntrada, entrar, claveVencida, salir } from "./entrada.js";
 import {
   MODO_VENTA,
   renderRad,
@@ -106,99 +107,6 @@ iniciarRadar();
 iniciarChat();
 
 iniciarVentas();
-
-/* ---------- entrada ---------- */
-function alternarClave() {
-  const i = $("#entClave"),
-    b = $("#bVerClave");
-  const mostrar = i.type === "password";
-  i.type = mostrar ? "text" : "password";
-  b.textContent = mostrar ? "Ocultar" : "Ver";
-}
-async function probarLogin(email, clave) {
-  try {
-    const r = await fetch(SERVIDOR, {
-      method: "POST",
-      body: JSON.stringify({ action: "login", email: email, clave: clave }),
-    });
-    const j = await r.json();
-    // La clave viaja una sola vez, acá. Después se usa el token de sesión.
-    return j && j.ok
-      ? { ok: true, usuario: j.usuario || "", token: j.token || "" }
-      : { ok: false, error: (j && j.error) || "clave" };
-  } catch (e) {
-    return { ok: false, error: "red" };
-  }
-}
-function mostrarEntrada() {
-  const lg = $("#entLogo");
-  if (D.cfg.logo) lg.src = D.cfg.logo;
-  else lg.removeAttribute("src");
-  $("#entrada").hidden = false;
-  $("#entMail").value = D.cfg.email || "";
-  setTimeout(() => {
-    (D.cfg.email ? $("#entClave") : $("#entMail")).focus();
-  }, 150);
-}
-async function entrar() {
-  const email = $("#entMail").value.trim(),
-    clave = $("#entClave").value.trim();
-  const err = $("#entErr"),
-    btn = $("#entBtn");
-  err.hidden = true;
-  if (!clave) {
-    err.textContent = "Falta la clave.";
-    err.hidden = false;
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = "Entrando…";
-  const r = await probarLogin(email, clave);
-  btn.disabled = false;
-  btn.textContent = "Entrar";
-  if (!r.ok) {
-    err.textContent =
-      r.error === "red"
-        ? "No pude conectar. Probá de nuevo en un momento."
-        : "Ese mail o esa clave no coinciden.";
-    err.hidden = false;
-    return;
-  }
-  D.cfg.email = email;
-  D.cfg.usuario = r.usuario || ""; // el nombre lindo, para que la Mind salude
-  D.cfg.token = r.token; // token de sesión: la clave no se guarda en el equipo
-  D.cfg.api = SERVIDOR;
-  await local.set(D);
-  $("#entrada").hidden = true;
-  await sincronizarAlAbrir();
-}
-/** La clave guardada dejó de servir (la cambiaron en el servidor). */
-function claveVencida() {
-  setSync("err", "Hay que entrar de nuevo");
-  D.cfg.token = "";
-  local.set(D);
-  listoParaSubir = false;
-  const err = $("#entErr");
-  mostrarEntrada();
-  if (err) {
-    err.textContent = "La clave cambió. Entrá otra vez.";
-    err.hidden = false;
-  }
-}
-function salir() {
-  if (!confirm("¿Cerrar sesión en este equipo? Los datos siguen en la nube.")) return;
-  // avisamos al servidor para que ese token deje de servir aunque quede copiado
-  try {
-    pedir({ action: "logout", token: D.cfg.token || "" });
-  } catch (e) {}
-  D.cfg.token = "";
-  local.set(D);
-  try {
-    localStorage.removeItem("pm3d_admin");
-    localStorage.removeItem("pm3d_clave");
-  } catch (e) {}
-  location.reload();
-}
 
 /* ---------- nube ---------- */
 /* Servidor nuevo del estado (Worker + D1). Hasta el corte, todo sigue yendo al
@@ -243,7 +151,7 @@ export async function pedir(cuerpo) {
   return await r.json();
 }
 let syncTimer = null;
-function setSync(state, txt) {
+export function setSync(state, txt) {
   const b = $("#syncBox");
   b.className = "sync" + (state ? " " + state : "");
   $("#syncTxt").textContent = txt;
@@ -468,7 +376,7 @@ async function bajarDeLaNube() {
  * no llegó a la nube (por ej. una venta con el celular sin señal), lo sube
  * primero: bajar de la nube en ese momento pisaría eso sin avisar.
  */
-async function sincronizarAlAbrir() {
+export async function sincronizarAlAbrir() {
   listoParaSubir = false;
   if (D._sucio) {
     setSync("", "Subiendo cambios pendientes…");
@@ -488,6 +396,10 @@ async function sincronizarAlAbrir() {
   revisarLinkCadastroMW();
 }
 var listoParaSubir = false; // recién true cuando ya bajamos lo que hay en la nube
+/** Lo usa la entrada (y el arranque) para volver a trabar la subida. */
+export function setListoParaSubir(v) {
+  listoParaSubir = v;
+}
 export function save() {
   D._sucio = true;
   local.set(D);
