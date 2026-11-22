@@ -12,7 +12,7 @@ export function origenPermitido(origin, env) {
 
 export function encabezadosCors(origin, env) {
   const permitido = origenPermitido(origin, env);
-  if (!permitido) return {};
+  if (!permitido) return { Vary: "Origin" };
   return {
     "Access-Control-Allow-Origin": permitido,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",

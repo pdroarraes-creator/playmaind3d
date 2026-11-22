@@ -6,6 +6,13 @@ compatibility_date = "2026-08-20"
 [vars]
 # Orígenes extra para CORS, separados por coma (ej. "http://localhost:8000")
 ORIGENES_EXTRA = ""
+# Apps Script (URL pública, no es un secreto): verifica sesiones y recibe el snapshot
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec"
+# "on" manda una copia de seguridad al Apps Script después de cada save
+# En staging SNAPSHOT queda siempre en off: este Worker apunta al Apps Script de producción y, con la chave d1:migrado encendida, un snapshot de staging pisaría la celda de rollback real.
+SNAPSHOT = "off"
+# "solo-lectura" rechaza las acciones que graban (save, editarPieza, agregarPieza, agregarFilamento) con error "revertido"
+MODO = "escritura"
 
 # Configuración de arriba = staging
 [[d1_databases]]
@@ -19,6 +26,9 @@ name = "playmind3d-api-prod"
 
 [env.prod.vars]
 ORIGENES_EXTRA = ""
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec"
+SNAPSHOT = "off"
+MODO = "escritura"
 
 [[env.prod.d1_databases]]
 binding = "DB"

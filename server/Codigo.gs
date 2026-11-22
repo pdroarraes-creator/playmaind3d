@@ -94,7 +94,18 @@ function doGet(e) {
 
   // El catálogo es público a propósito: lo lee la página de ventas.
   // Sale sólo nombre, foto, descripción y precio. Nunca costos ni ventas.
-  if (p.action === 'catalogo') return json_({ ok: true, catalogo: catalogoCacheado_() });
+  if (p.action === 'catalogo') {
+    // Con la migración a D1 activa, el catálogo lo arma el Worker: se reenvía
+    // lo que él entrega. Si falla NO se cae al cache ni a la celda, porque ahí
+    // los datos quedaron viejos desde la migración. Sin dirección guardada no
+    // hay a dónde reenviar, así que se mantiene el camino de siempre.
+    // Si no se puede leer la chave se sirve el camino viejo: catálogo posiblemente
+    // viejo, pero nada se corrompe (es una lectura pública).
+    var urlCat = '';
+    try { if (migrado_()) urlCat = props_().getProperty(PROP_D1_CATALOGO) || ''; } catch (e) {}
+    if (urlCat) return json_(catalogoDesdeWorker_(urlCat));
+    return json_({ ok: true, catalogo: catalogoCacheado_() });
+  }
 
   // Todo lo demás es privado y viaja por POST, para que ni la clave ni el
   // token queden escritos en la URL (las URLs se guardan en los registros).
@@ -125,6 +136,35 @@ function doPost(e) {
     // De acá para abajo hace falta un token de sesión válido.
     var u = porSesion_(body.token);
     if (!u) return json_({ ok: false, error: 'clave' });
+
+    // Con la migración a D1 activa el estado vive en el Worker: estas acciones
+    // ya no leen ni escriben la planilla (así una copia vieja de la app no
+    // pisa nada).
+    if (ACCIONES_BLOQUEADAS.indexOf(body.action) !== -1 && migrado_()) {
+      return json_({ ok: false, error: 'migrado' });
+    }
+
+    // Las llama el Worker de D1 con el token de quien está guardando.
+    // subirFotos es inocua (sólo sube a Drive): no depende de la chave.
+    if (body.action === 'subirFotos') {
+      if (!datosValidos_(body.data)) return json_({ ok: false, error: 'datos invalidos' });
+      return json_({ ok: true, data: moverFotosADrive_(body.data) });
+    }
+    if (body.action === 'guardarSnapshot') {
+      // El snapshot sólo tiene sentido después del corte a D1: antes de eso
+      // pisaría la celda viva (sin versión, fusión ni fotos) con estado ajeno.
+      if (!migrado_()) return json_({ ok: false, error: 'no migrado' });
+      if (!datosValidos_(body.data)) return json_({ ok: false, error: 'datos invalidos' });
+      var vSnap = versionSnapshot_(body.v);
+      if (vSnap === null) return json_({ ok: false, error: 'falta v' });
+      return json_(guardarSnapshot_(body.data, vSnap));
+    }
+    // Entrega el estado vivo de la celda para exportarlo a D1. Sólo lee y no
+    // consulta la chave: tiene que servir antes y después del corte.
+    if (body.action === 'exportarEstado') {
+      var ex = leerEstadoYV_();
+      return json_({ ok: true, data: ex.data, v: ex.v });
+    }
 
     if (body.action === 'load') {
       var l = leerEstadoYV_();
@@ -168,6 +208,122 @@ function doPost(e) {
    ===================================================================== */
 
 function props_() { return PropertiesService.getScriptProperties(); }
+
+/* ============ MIGRACIÓN A D1 ============
+   Mientras 'd1:migrado' no valga '1' nada de esto cambia el comportamiento. */
+
+var PROP_D1_MIGRADO  = 'd1:migrado';
+var PROP_D1_CATALOGO = 'd1:catalogoUrl';
+var ACCIONES_BLOQUEADAS = ['load', 'save', 'editarPieza', 'agregarPieza',
+                           'agregarFilamento', 'resumenNegocio'];
+
+/** Estricta a propósito: si la propiedad no se puede leer, tira el error. En
+    doPost el catch de afuera responde ok:false (falla cerrado), así una copia
+    vieja de la app no graba en la celda abandonada por un error de cuota. */
+function migrado_() { return props_().getProperty(PROP_D1_MIGRADO) === '1'; }
+
+function activarModoD1_(activo) {
+  if (activo) props_().setProperty(PROP_D1_MIGRADO, '1');
+  else props_().deleteProperty(PROP_D1_MIGRADO);
+}
+
+/** Dirección del catálogo en el Worker. Tiene que ser https. */
+function guardarUrlWorker_(url) {
+  var u = typeof url === 'string' ? url.trim() : '';
+  if (u.indexOf('https://') !== 0) throw new Error('La dirección tiene que empezar con https://');
+  props_().setProperty(PROP_D1_CATALOGO, u);
+}
+
+function datosValidos_(data) {
+  return !!data && typeof data === 'object' && !Array.isArray(data);
+}
+
+/** Pide el catálogo al Worker. Devuelve lo recibido si vino ok:true; en
+    cualquier otro caso un error, nunca datos viejos. */
+function catalogoDesdeWorker_(url) {
+  var falla = { ok: false, error: 'catalogo no disponible' };
+  try {
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) return falla;
+    var parsed = JSON.parse(resp.getContentText());
+    return parsed && parsed.ok === true ? parsed : falla;
+  } catch (err) {
+    return falla;
+  }
+}
+
+var PROP_D1_SNAPSHOT_V = 'd1:snapshotV';
+
+/** Versión del snapshot como número: entero >= 0, o texto de sólo dígitos.
+    Devuelve null si no sirve. */
+function versionSnapshot_(v) {
+  // sólo enteros seguros: más allá de 2^53 se pierde precisión y un valor
+  // enorme bloquearía todos los snapshots siguientes
+  if (typeof v === 'number') return (Number.isSafeInteger(v) && v >= 0) ? v : null;
+  if (typeof v === 'string' && /^\d+$/.test(v)) {
+    var n = Number(v);
+    return Number.isSafeInteger(n) ? n : null;
+  }
+  return null;
+}
+
+/** Copia de respaldo del estado en la celda, mandada por el Worker. Sólo se
+    graba si cabe en la celda; no regraba las hojas espejo ni mueve fotos
+    (el Worker ya las subió con subirFotos). `v` es la versión del estado en
+    D1: si no es más nueva que la última grabada (d1:snapshotV) se descarta,
+    así un snapshot que llega tarde no pisa a uno más reciente. */
+function guardarSnapshot_(data, v) {
+  var copia = JSON.parse(JSON.stringify(data));
+  if (copia.cfg) { copia.cfg.token = ''; copia.cfg.key = ''; }
+  delete copia._v;
+  var txt = JSON.stringify(copia);
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    // el orden se decide adentro del lock, junto con la grabación
+    var ultima = props_().getProperty(PROP_D1_SNAPSHOT_V);
+    var ultimaN = (ultima === null || ultima === undefined || ultima === '') ? -1 : Number(ultima);
+    if (Number(v) <= ultimaN) return { ok: true, guardado: false, motivo: 'vieja' };
+
+    var med = medirEstado_(txt);
+    var medida = JSON.stringify({ chars: med.chars, pct: med.pct, cuando: new Date().toISOString() });
+    if (txt.length >= CELDA_MAX) {
+      // no se graba, pero el medidor ("Ver cuánto espacio queda") muestra el desborde
+      try { props_().setProperty('medida:estado', medida); } catch (e) {}
+      return { ok: true, guardado: false, motivo: 'excede' };
+    }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var h = ss.getSheetByName(HOJA_DATOS) || hoja_(ss, HOJA_DATOS, ['clave', 'json', 'actualizado']);
+    var filas = Math.max(h.getLastRow() - 1, 1);
+    var vals = h.getRange(2, 1, filas, 1).getValues();
+    var fila = 0;
+    vals.forEach(function (row, i) { if (row[0] === CLAVE && !fila) fila = i + 2; });
+    if (!fila) fila = h.getLastRow() + 1;
+    // Invariante: d1:snapshotV >= versión de la celda, siempre. Por eso la
+    // versión se anota ANTES de grabar; si grabar falla se restaura. Una celda
+    // atrasada es inofensiva (el próximo snapshot más nuevo la repara); una
+    // celda adelantada de d1:snapshotV dejaría pasar un snapshot viejo.
+    // Si esta línea falla, la celda no se tocó y se responde ok:false.
+    props_().setProperty(PROP_D1_SNAPSHOT_V, String(v));
+    try {
+      h.getRange(fila, 1, 1, 3).setValues([[CLAVE, txt, new Date()]]);
+    } catch (err) {
+      try {
+        if (ultima === null || ultima === undefined) props_().deleteProperty(PROP_D1_SNAPSHOT_V);
+        else props_().setProperty(PROP_D1_SNAPSHOT_V, String(ultima));
+      } catch (e) {}
+      throw err;
+    }
+    invalidarCatalogo_(); // restricción 10: justo después de grabar la celda
+    // guardar el estado importa más que el medidor
+    try { props_().setProperty('medida:estado', medida); } catch (e) {}
+    return { ok: true, guardado: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
 
 function normMail_(x) { return String(x || '').trim().toLowerCase(); }
 
@@ -254,6 +410,10 @@ function onOpen() {
     .addSeparator()
     .addItem('Cerrar todas las sesiones', 'menuCerrarSesiones')
     .addItem('Ver cuánto espacio queda', 'menuVerEspacio')
+    .addSeparator()
+    .addItem('D1: activar modo migrado', 'menuD1Activar')
+    .addItem('D1: desactivar modo migrado', 'menuD1Desactivar')
+    .addItem('D1: dirección del catálogo en el Worker', 'menuD1Url')
     .addToUi();
 }
 
@@ -308,6 +468,40 @@ function menuCerrarSesiones() {
     if (k.indexOf(PROP_SESION) === 0) { props_().deleteProperty(k); n++; }
   });
   SpreadsheetApp.getUi().alert('Cerré ' + n + ' sesión(es). Todos tienen que entrar de nuevo.');
+}
+
+function menuD1Activar() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.alert('Activar modo migrado',
+    'Atención: con el modo migrado activo, las copias viejas de la app dejan de guardar ' +
+    '(la planilla ya no recibe cambios) y el catálogo sale del Worker.' +
+    (props_().getProperty(PROP_D1_CATALOGO) ? '' :
+      '\n\nOJO: todavía no cargaste la dirección del catálogo en el Worker; ' +
+      'el catálogo seguiría saliendo de la planilla.') +
+    '\n\n¿Activar?',
+    ui.ButtonSet.YES_NO);
+  if (r !== ui.Button.YES) return;
+  activarModoD1_(true);
+  ui.alert('Modo migrado activado.');
+}
+
+function menuD1Desactivar() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.alert('Desactivar modo migrado',
+    'Atención: las copias viejas de la app vuelven a escribir en la planilla (la celda vieja) ' +
+    'y el catálogo vuelve al camino anterior.\n\n¿Desactivar?',
+    ui.ButtonSet.YES_NO);
+  if (r !== ui.Button.YES) return;
+  activarModoD1_(false);
+  ui.alert('Modo migrado desactivado.');
+}
+
+function menuD1Url() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt('Dirección del catálogo en el Worker (https://...)', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  try { guardarUrlWorker_(r.getResponseText()); ui.alert('Dirección guardada.'); }
+  catch (err) { ui.alert(String(err.message || err)); }
 }
 
 function json_(obj) {

@@ -465,13 +465,38 @@
   </div>
 </div>
 
+<script src="app/protocolo.js"></script>
+<script>
+/* ==========================================================
+   Pegá acá la dirección del servidor (Apps Script, /exec).
+   El catálogo se arma solo con lo que se carga desde el app.
+   ========================================================== */
+var SERVIDOR_APPS = "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec";
+/* Worker que reemplaza al Apps Script para las acciones sobre el estado.
+   El catálogo (?action=catalogo) sigue leyéndose del Apps Script. */
+var SERVIDOR_WORKER = "https://playmind3d-api-prod.pdroarraes.workers.dev/";
+
+/** Edita una pieza en el servidor vigente (Apps Script o Worker). Si el Apps
+    Script avisa que ya migró, repite en el Worker y recuerda el modo.
+    Devuelve el JSON de la respuesta; propaga la excepción si falla la red. */
+function enviarEdicionPieza(nombre, campos, clave){
+  var almacen = null;
+  try{ almacen = window.localStorage; }catch(e){}
+  return Protocolo.pedirEstado({
+    modo: almacen ? Protocolo.leerModo(almacen) : 'apps',
+    cuerpo: {action:'editarPieza', key:clave, token:clave, pieza:nombre, campos:campos},
+    enviar: function(servidor, cuerpo){
+      return fetch(servidor==='worker'?SERVIDOR_WORKER:SERVIDOR_APPS,
+        {method:'POST', body:JSON.stringify(cuerpo)})
+        .then(function(r){ return r.json(); });
+    },
+    alCambiarModo: function(m){ if(almacen) Protocolo.guardarModo(almacen, m); }
+  }).then(function(r){ return r.respuesta; });
+}
+</script>
 <script>
 (function(){
-  /* ==========================================================
-     Pegá acá la dirección del servidor (Apps Script, /exec).
-     El catálogo se arma solo con lo que se carga desde el app.
-     ========================================================== */
-  var SERVIDOR = "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec";
+  var SERVIDOR = SERVIDOR_APPS;
 
   var WSP = "";        // se completa con el número que está en el app
   var COLORES = [];
@@ -842,8 +867,7 @@
       };
       var b=document.getElementById('edGuardar'), err=document.getElementById('edErr');
       b.disabled=true; b.textContent='Guardando…'; err.hidden=true;
-      fetch(SERVIDOR,{method:'POST',body:JSON.stringify({action:'editarPieza',key:clave,token:clave,pieza:p.nome,campos:campos})})
-        .then(function(r){return r.json();})
+      enviarEdicionPieza(p.nome,campos,clave)
         .then(function(j){
           b.disabled=false; b.textContent='Guardar';
           if(!j||!j.ok){

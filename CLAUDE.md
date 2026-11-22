@@ -25,7 +25,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `app/index.html` | Shell da app: markup das abas. Sem CSS e sem JS inline. |
 | `app/app.css` | Todo o estilo. Design tokens em `:root`. |
 | `app/js/*.js` | Toda a lógica da app, em módulos ES (`<script type="module" src="js/main.js">`). Ver a tabela de módulos abaixo. |
-| `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy.** |
+| `app/sw.js` | Service worker. **Subir a versão do `CACHE` a cada deploy** e a linha "Versión de la app" em `app/index.html` (Ajustes) junto. Atual: `playmind3d-v43`. |
 | `app/manifest.json` | PWA. `scope` e `start_url` = `/app/`. |
 | `index.html` (raiz) | Catálogo público. Consome `?action=catalogo`, não faz login. |
 | `vender/index.html` | Página curta de venda. |
@@ -34,10 +34,16 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
 | `.nojekyll` | Desliga o Jekyll, que pularia arquivos e pastas começados com `_`. |
 | `app/calculo.js` | Cálculo de custo e preço como módulo puro (Node e navegador); base do Worker novo. |
-| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), esqueleto da migração: CORS e `/salud`, sem lógica de estado ainda. Só aqui vale `wrangler`. |
+| `app/protocolo.js` | Protocolo de dois servidores como módulo puro (sem DOM nem rede; Node e navegador): decide se cada ação vai ao Apps Script ou ao Worker e como reagir a `migrado`, `revertido`, `clave` e `auth_no_disponible`. Testado em `tests/protocolo.test.js`; o `cadastro-worker` também o usa. |
+| `api-worker/` | Worker `playmind3d-api` (Cloudflare + D1), migração do Sheets em andamento: implementa a API POST completa do estado (load/save com merge e versão otimista, editarPieza/agregarPieza/agregarFilamento/resumenNegocio), o catálogo público e a validação de sessão via Apps Script. Publicado em staging (o D1 de staging guarda o estado real do dono) e em produção: `playmind3d-api-prod` (banco `playmind-prod`, vazio), no ar em `MODO=solo-lectura`, com a migração 0002 aplicada nos dois bancos; em `solo-lectura` o Worker recusa com `revertido` toda ação de estado (`load` incluído), só o catálogo e `/salud` respondem. O código do app (`app/js/main.js` com `SERVIDOR_ESTADO`, e `app/protocolo.js`) já sabe trocar para o Worker de produção quando o Apps Script responde `migrado`; enquanto a chave `d1:migrado` estiver desligada o app só fala com o Apps Script. `wrangler` e npm só aqui e em `cadastro-worker/`. |
+| `scripts/migracion-d1.js` | Gera o SQL de carga do estado no D1 e compara contagens e hash. Usa só arquivos de `datos-privados/` (ignorada pelo git: estado real nunca vai para o repositório). |
+| `docs/migracion-d1*.md` | Estado da migração, limites medidos do D1 e o que a próxima etapa precisa saber. |
 | `cadastro-worker/` | Worker da Cloudflare com Gemini para cadastro por chat; chama o Apps Script. |
 | `scripts/medir-catalogo.js` | Mede o tempo do catálogo e o peso das fotos. `node scripts/medir-catalogo.js` |
-| `tests/` | Testes `node:test` (13 arquivos). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js`. |
+| `scripts/ensayo-protocolo.js` | Ensaio do protocolo de dois servidores no navegador, com o Playwright do ambiente (nada é instalado no repo) e todas as chamadas aos dois servidores interceptadas. `node scripts/ensayo-protocolo.js` |
+| `cadastro-worker/test/` | Teste `node:test` do cliente do Apps Script do `cadastro-worker` (1 arquivo: `appsscript.test.js`). |
+| `docs/migracion-d1-corte.md` | Roteiro do dia do corte do Apps Script/Sheets para o Worker/D1 e do rollback (Etapa 1b). |
+| `tests/` | Testes `node:test` (15 arquivos aqui, 10 em `api-worker/test/` e 1 em `cadastro-worker/test/`). Rodar com `node --test tests/*.test.js api-worker/test/*.test.js cadastro-worker/test/*.test.js`. Precisa de Node 22.13 ou mais novo (os de `api-worker/` usam `node:sqlite`). |
 | `docs/superpowers/` | Specs e planos de trabalho. |
 | `docs/calculo-de-custo.md` | Explicação em português da fórmula de preço, pra humanos — não é lida pelo app. Cópia dela vive também no Drive, pasta `2brain-compartilhado-Pedro&Raquel/Playmind`, pra Raquel usar com o Claude dela. |
 
@@ -75,6 +81,8 @@ Regras dos módulos:
   `main.js` chama numa ordem fixa. Exceções inofensivas: `main.js` ainda mantém no topo
   os listeners de `nube`/`plumbing`, e `radar.js` mantém no topo o IIFE somente-leitura
   `PIEZA_PENDIENTE`.
+- `window.PM_ENSAYO` (fim de `main.js`) existe só para `scripts/ensayo-protocolo.js`, que precisa
+  ler `D`, `listoParaSubir` e o reintento e chamar `subirALaNube()`/`save()`. Não use em código da app.
 - Há ciclos de import deliberados com `main.js`; só são seguros porque nada roda na
   avaliação dos módulos. **Não adicione leituras de topo de bindings de outro módulo.**
 
@@ -95,8 +103,10 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    (`moverFotosADrive_` no servidor); logos são arquivos em `/assets/`. No
    catálogo público (`catalogoPublico_`), as fotos do Drive saem redimensionadas
    (`=w800`) por `fotoChica_`.
-2. **Sem build step.** Nada de npm, bundler ou framework. O que está no repo é
-   exatamente o que vai pro ar. Prettier é a única ferramenta, e é opcional.
+2. **Sem build step no app.** Em `app/` nada de npm, bundler ou framework. O que
+   está no repo é exatamente o que vai pro ar. Prettier é a única ferramenta, e é
+   opcional. (Os Workers `api-worker/` e `cadastro-worker/` usam npm e `wrangler`,
+   isolados em suas pastas; o `wrangler.toml` da raiz é o da restrição 8.)
 3. **Não quebrar o formato do JSON salvo.** Mudou o shape de `D`? Escreva migração
    em `init()` (`app/js/main.js`, o IIFE de arranque) ou nas funções `migrar*` que ele
    chama (os carregadores como `bajarDeLaNube` também as chamam), como a que trata logo
@@ -106,6 +116,10 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
 5. **Deploy do Apps Script:** salvar não basta. `Implementar > Administrar
    implementaciones > lápis > Versão: NUEVA`. Se alterou `server/Codigo.gs`, lembre
    o usuário disso.
+   Vale também para as chaves da migração no Apps Script: Script Properties
+   `d1:migrado` e `d1:catalogoUrl`, os três itens "D1:" do menu "PlayMind 3d" e as
+   actions novas `subirFotos`, `guardarSnapshot` e `exportarEstado`. Ligar `d1:migrado` **é** o corte
+   (as cópias antigas do app deixam de salvar); não ligar antes de o plano 1b entrar.
 6. **`sw.js`:** qualquer arquivo novo em `app/` precisa entrar em `ARCHIVOS` e o
    `CACHE` precisa mudar de versão, senão os usuários ficam com a versão antiga (inclui `app/js/*.js`;
    `tests/sw-archivos.test.js` confere a lista).
@@ -123,9 +137,13 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    no Wix). `.assetsignore` exclui `.git/`, `.wrangler/` e `wrangler.toml` do
    deploy: sem isso, o Wrangler sobe a pasta `.git/` inteira como arquivo
    estático público.
-9. **O cálculo de preço existe duas vezes: `Calculo.calcular` em `app/calculo.js` (`calc()` em `app/js/calculo.js` só delega) e
-   `calcular_()` em `server/Codigo.gs`.** Mexeu em uma, mexa na outra na mesma
-   hora. Não é preferência de estilo: o preço do catálogo público sai do
+9. **O cálculo de preço existe duas vezes: `Calculo.calcular` em `app/calculo.js`
+   (o `calc()` de `app/js/calculo.js` só delega a ele) e `calcular_()` em
+   `server/Codigo.gs`.** Mexeu em uma, mexa na outra na mesma
+   hora; `tests/calculo-paridad.test.js` (217 casos dourados, mais ids duplicados)
+   falha se divergirem. Quando o catálogo passar para o Worker (Etapa 1 da
+   migração), o `calcular_` deixa de existir e sobra uma cópia só. Não é
+   preferência de estilo: o preço do catálogo público sai do
    servidor e o que vocês veem sai do app, então divergir significa cobrar do
    cliente um valor diferente do que aparece na tela. Em ago/2026 elas estavam
    divergentes em quatro pontos — o pior era a peça apontando para um filamento
@@ -133,7 +151,7 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
    concordar: fallback para o primeiro filamento/impressora quando o id não
    existe mais, arredondamento dos gramas a uma casa, `merma` assumindo 12
    quando não houver valor, e preço manual só valendo se for maior que zero.
-10. **Toda função que grava a célula `estado` (hoje `guardarEstado_` e
+10. **Toda função que grava a célula `estado` (hoje `guardarEstado_`, `guardarSnapshot_` e
    `editarPieza_`) deve chamar `invalidarCatalogo_()` logo após o `setValues`
    bem-sucedido.** O catálogo público é servido de um cache de 15 minutos
    (`CATALOGO_TTL_S`); sem isso, os visitantes veriam preço e estoque velhos. O cache também usa uma
@@ -166,9 +184,11 @@ Persistência: `local` (IndexedDB/localStorage) no cliente + sync com o servidor
   Agora dá para ver o espaço em uso no menu da planilha: "PlayMind 3d > Ver cuánto
   espacio queda". Gatilho proposto para revisitar a decisão do banco: 70% =
   35.000 caracteres.
-- Cobertura de testes pequena: há `tests/` com 13 arquivos `node:test`, rodados com
-  `node --test tests/*.test.js api-worker/test/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
-  o diretório como módulo e falha. Os módulos de `app/js/` só têm testes de `estado`, `stock`, delegadores do cálculo e handlers; interface só é coberta pelo `scripts/humo.js`.
+- Um token de sessão revogado pode continuar valendo no Worker por até 10 minutos
+  (cache por isolate de `validarSesion`).
+- Cobertura de testes pequena: há 26 arquivos `node:test` (15 em `tests/`, 10 em `api-worker/test/`, 1 em `cadastro-worker/test/`), rodados com
+  `node --test tests/*.test.js api-worker/test/*.test.js cadastro-worker/test/*.test.js`. Não use `node --test tests/` — no Node 22 ele trata
+  o diretório como módulo e falha. Os módulos de `app/js/` só têm testes de `estado`, `stock`, delegadores do cálculo e handlers; a interface é coberta pelo `scripts/humo.js` e o protocolo de dois servidores pelo `scripts/ensayo-protocolo.js`.
 - `copy(...)` é chamada em `radar.js` (duas vezes) e em `ajustes.js` (uma), mas nenhuma
   função `copy` está definida em lugar nenhum: esses botões lançam ReferenceError ao
   clicar. Vem de antes da modularização; não foi corrigido.

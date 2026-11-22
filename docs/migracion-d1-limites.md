@@ -49,6 +49,14 @@ contam. Um índice soma uma linha escrita por escrita.
 O tempo de CPU não conta a espera por rede nem por consultas ao D1, só a
 execução do código (inclui serializar JSON e calcular preços).
 
+## Cache API em workers.dev
+
+Verificado em 2026-11-19 em https://developers.cloudflare.com/workers/runtime-apis/cache/ (e conferido https://developers.cloudflare.com/workers/platform/limits/, que só trata dos limites de chamadas da Cache API).
+
+Frase exata da página do Cache: "Workers deployed to custom domains have access to functional `cache` operations. So do Pages functions, whether attached to custom domains or `*.pages.dev` domains."; logo depois: "However, any Cache API operations in the Cloudflare Workers dashboard editor and Playground previews will have no impact."
+
+Conclusão: a documentação **não menciona `*.workers.dev`** de forma explícita. A frase "will have no impact" vale para o editor do painel e o Playground, não para workers.dev. Mas só garante `cache` funcional em Workers com domínio próprio (e em Pages, inclusive `*.pages.dev`), o que sugere por omissão que em `*.workers.dev` pode não funcionar. Ou seja: confirma só em parte, por implicação; a lembrança do revisor não está escrita assim. O cache do catálogo no Worker é inofensivo (se for um no-op, o catálogo é só recalculado a cada leitura, ~0,03 ms de CPU) e não foi alterado.
+
 ## Verificação do bundle (2026-11-19)
 
 O `wrangler deploy --dry-run` da fase A não provava nada sobre o cálculo, porque

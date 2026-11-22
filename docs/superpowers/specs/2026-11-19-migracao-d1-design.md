@@ -112,7 +112,14 @@ concordar. Comentários e textos novos em espanhol.
   cópias: até o cutover são duas (`calculo.js` e `calcular_()`), depois uma.
 - Nada disso muda o que a família usa.
 
-### Etapa 1 — Cutover do A (depois do pico do Natal)
+### Etapa 1 — Cutover do A (sem trava de Natal; data a decidir)
+
+> **Revisão de 19/11/2026 (tarde).** O Pedro decidiu que **não é preciso esperar o
+> Natal** e escolheu planejar e construir a Etapa 1 já, deixando a data do cutover para
+> depois. A Etapa 1 se divide em dois planos: **1a** (a API do Worker e as ações novas do
+> Apps Script, tudo testado e publicado só no staging, sem tocar a produção) e **1b** (o
+> cutover: app e página da raiz, ensaio de rollback e roteiro do dia). Ver "Revisões da
+> Etapa 1" no fim deste documento para as escolhas do redator.
 
 - O Worker implementa o mesmo contrato do Apps Script para `load` e `save`: o cliente
   só troca `D.cfg.api` e entende o novo `v` numérico. `fusionar_` é portado para JS
@@ -135,7 +142,8 @@ concordar. Comentários e textos novos em espanhol.
   passa a repassar a resposta do Worker. Desligar a chave é parte do rollback.
   `vender/index.html` não usa o Apps Script (conferido).
 - **Fotos:** continuam no Drive. Quando um save traz `data:image`, o Worker chama uma
-  ação nova do Apps Script (`subirFotos`, protegida por segredo compartilhado) que
+  ação nova do Apps Script (`subirFotos`, autenticada com o **mesmo token de sessão** do
+  usuário que está salvando, sem segredo compartilhado; ver "Revisões da Etapa 1") que
   devolve o estado com os links. Só acontece em save com foto nova.
 - **Catálogo público:** passa a ser servido pelo Worker (`GET /catalogo`, com cache
   curto e invalidação ao gravar). `index.html` da raiz aponta para ele. **Sem fallback para
@@ -157,10 +165,12 @@ concordar. Comentários e textos novos em espanhol.
   família só usa o app, nunca a planilha.** Deixam de ser regravadas a cada save e
   viram uma exportação sob demanda no menu da planilha (opcional, baixa prioridade).
 - **Janela:** **decidido pelo Pedro (19/11/2026): a data não importa; ele estará de
-  férias mas online** (viagem de 27/01 a 10/02/2027 não restringe o cutover). Segue a
-  regra do Natal: só depois do pico. Observação de ≥ 2 semanas com o Pedro disponível
-  para testar e desligar a chave de migração. Fora do horário de pico, com a versão
-  atual do Apps Script anotada.
+  férias mas online** (viagem de 27/01 a 10/02/2027 não restringe o cutover).
+  **Decidido pelo Pedro (19/11/2026, tarde): não precisa esperar o Natal**; a data do
+  cutover se decide quando a Etapa 1a estiver pronta e ensaiada no staging. Continuam
+  valendo: observação de ≥ 2 semanas com o Pedro disponível para testar e desligar a
+  chave de migração, cutover fora do horário de venda e a versão atual do Apps Script
+  anotada.
 - **Pré-Natal, rede de segurança:** se antes do cutover o estado passar de ~42.000
   caracteres (84%), o Pedro decide se aplica a poda barata (vendas antigas para aba
   própria) só para chegar ao cutover.
@@ -233,3 +243,134 @@ Fotos ficam no Drive; auth fica no Apps Script na etapa 1; catálogo sem fallbac
 Apps Script; espelho de segurança temporário na célula; prazo de 4 semanas para a etapa 2;
 cutover logo depois do pico do Natal. (Abas espelho e janela do cutover já são decisões do
 Pedro, acima.)
+
+## Revisões da Etapa 1 (19/11/2026, tarde)
+
+**Decisões do Pedro:** não esperar o Natal; planejar e construir a Etapa 1 já; a data do
+cutover se decide depois, com o staging ensaiado.
+
+**Escolhas do redator (conferir):**
+
+- **Sem segredo compartilhado.** O Worker reaproveita o token de sessão do usuário que está
+  salvando (que ele já valida com `validarSesion`) para chamar `subirFotos` e
+  `guardarSnapshot` no Apps Script. Assim não há segredo para guardar em dois lugares nem
+  para passar pelo chat. Custo: essas ações exigem sessão válida, e sempre há uma num save.
+- **Catálogo calculado na leitura, com cache chaveado pela versão `v` da linha.** A medição
+  mostrou folga larga de CPU no escopo medido; com a chave do cache contendo `v`, qualquer
+  gravação invalida o catálogo sozinha (restrição 10 satisfeita sem apagar nada). A decisão
+  "pré-calcular no save" do desenho original continua pendente de o Pedro confirmar a troca.
+- **O app passa a falar com dois endereços:** Apps Script (`login`, `logout`, `foto`,
+  `mundo`) e Worker (`load`, `save` e as rotas que hoje gravam a célula). No plano 1b, o
+  `pedir()` do app roteia por ação.
+- **`v` do Worker é inteiro, devolvido como texto.** O app guarda `D._v` como string; uma
+  versão desconhecida do cliente (carimbo de hora do Sheets, vazia ou lixo) é tratada como
+  atrasada e cai na fusão, nunca em erro.
+- **`clave` só para token inválido.** Se o Apps Script estiver fora do ar, o Worker devolve
+  `auth_no_disponible`, porque o app chama `claveVencida()` para o erro `clave` e
+  deslogaria a família inteira por uma indisponibilidade.
+- **Etapa 1 em dois planos:** 1a (API do Worker, ações novas do Apps Script, staging) e 1b
+  (cutover, app, página da raiz, rollback ensaiado). Só o 1b muda o que a família usa.
+- **Clientes antigos:** um cliente antigo não tem o código para mostrar "Actualizá la app"; o que ele faz com `migrado` é mostrar uma mensagem enganosa e continuar tentando; a saída é a atualização do service worker (ver docs/migracion-d1.md).
+
+## Etapa 1b — desenho do cutover (proposta de 19/11/2026, a aprovar pelo Pedro)
+
+Escrito depois de a 1a estar publicada e revisada. É o único passo que muda o que a família
+usa. As escolhas abaixo são do redator e estão marcadas para conferência.
+
+### Intenção e o que NÃO pode acontecer
+
+Passar o estado da família do Apps Script/Sheets para o Worker/D1, de forma reversível e sem
+perder nenhuma venda. Anti-objetivos: perder ou duplicar uma venda; deslogar a família por uma
+indisponibilidade; ficar com duas verdades gravando ao mesmo tempo; um rollback que não
+funciona quando for preciso.
+
+### Abordagem escolhida: o app se autocorrige pelo erro que recebe (proposta)
+
+- **A (escolhida): roteamento por resposta.** O app entra no ar **dias antes** do cutover,
+  inerte, sabendo falar com os dois servidores. Cada servidor responde "este não é o lugar
+  certo" quando o estado não está com ele: o Apps Script responde `migrado` (chave ligada) e o
+  Worker responde `revertido` (modo só leitura, usado no rollback). O app guarda em memória e no
+  `localStorage` em qual servidor está, e ao receber um desses erros troca de servidor e repete
+  a mesma requisição. O cutover vira "ligar a chave" e o rollback "desligar a chave", sem
+  lançamento de app no dia, e os celulares já estão com o código novo.
+- B (descartada): app com o Worker fixo no código, lançado no dia do corte. Obriga a coincidir
+  o lançamento com a migração, deixa muitos aparelhos com a versão antiga na hora H e o
+  rollback exige outro lançamento.
+- C (descartada): endereço lido de um arquivo de configuração. É A com uma peça a mais para
+  manter, sem ganho.
+
+### O protocolo no app (mudanças em `app/app.js` e `app/sw.js`)
+
+- Dois endereços: `SERVIDOR` (Apps Script: `login`, `logout`, `foto`, `mundo`, e `load`/`save`
+  enquanto o modo for `apps`) e `SERVIDOR_ESTADO` (Worker, para `load`/`save` no modo
+  `worker`). `pedir()` escolhe pelo modo e pela ação.
+- Tabela de reações: `migrado` (Apps Script) → modo `worker` e repete; `revertido` (Worker) →
+  modo `apps` e repete; `clave` → `claveVencida()` como hoje; `auth_no_disponible` → estado de
+  erro "o servidor de acesso não responde", **sem deslogar**, reintento a cada 20 s;
+  `conflicto` ou `fotos: …` → aviso e reintento; falha de rede → como hoje (`_sucio` fica e
+  reenvia). `fusionado` continua baixando de novo.
+- O texto "El servidor todavía no tiene datos" não pode aparecer por qualquer erro que não seja
+  "sem dados de verdade": o app passa a distinguir.
+- `sw.js`: `CACHE` sobe; é isso que atualiza os celulares antigos (rede primeiro).
+
+### Outros chamadores (mesma regra: erro `migrado` → tenta no Worker)
+
+- Página da raiz (`index.html`): `editarPieza` tenta o Apps Script e, se vier `migrado`, o
+  Worker. O catálogo continua lendo o Apps Script, que encaminha ao Worker com a chave
+  ligada (nenhuma mudança na leitura).
+- `cadastro-worker`: chama o Apps Script e, se vier `migrado`, o Worker (nova variável
+  `API_WORKER_URL`).
+
+### Segurança dos dados na virada
+
+- **Congelar antes de copiar.** No cutover, a primeira coisa é ligar a chave (todas as
+  gravações no Apps Script passam a ser recusadas). Só então se lê o estado final da célula por
+  uma ação nova do Apps Script, `exportarEstado` (exige sessão, funciona com a chave ligada ou
+  desligada, só lê), e se carrega no D1. Assim não há janela em que alguém grava numa célula que
+  já foi copiada.
+- **Versão do D1 nunca repete.** A carga define `v` inicial a partir do relógio (segundos,
+  10 dígitos), muito acima de qualquer versão já emitida pelo D1 (contam de 1) e distinta dos
+  carimbos do Sheets (13 dígitos), e usa um insert que **recusa** sobrescrever uma linha
+  existente (`scripts/migracion-d1.js` troca `INSERT OR REPLACE … v=1`). A fonte é a ação do
+  servidor, não uma exportação do navegador.
+- **Snapshot confiável antes de ligar `SNAPSHOT`:** cada snapshot leva `v` e o Apps Script
+  ignora os de versão menor ou igual à última gravada (`d1:snapshotV`); todas as rotas que
+  gravam (`save`, `editarPieza`, `agregarPieza`, `agregarFilamento`) mandam snapshot; `excede` e
+  falhas ficam registradas e visíveis; `guardarSnapshot_` atualiza `medida:estado` (o "Ver
+  cuánto espacio queda" é o medidor do limite de 45.000); timeout no envio.
+- **Rollback.** O Worker ganha `MODO` (`escritura` ou `solo-lectura`; em `solo-lectura` as
+  rotas que gravam respondem `revertido`). Roteiro: (1) `MODO=solo-lectura` (os apps passam ao
+  Apps Script); (2) conferir que o último snapshot é de uma versão igual à do D1; (3) desligar a
+  chave. O que o D1 recebeu depois do último snapshot e antes do passo 1 é o único risco, e o
+  snapshot por gravação o reduz a segundos. Prazo de validade honesto: o rollback só é prometido
+  enquanto o estado couber na célula (< ~45.000 caracteres; hoje ~34.500).
+
+### Verificação e ensaio
+
+- Ensaio automatizado do protocolo no navegador (Playwright, estilo `scripts/humo.js` da outra
+  sessão): `fetch` simulado dos dois servidores, cobrindo `migrado`, `revertido`, `clave`,
+  `auth_no_disponible`, falha de rede, `fusionado` e a troca de modo em sessão aberta.
+- Ensaio de ida e volta **no dia**, com o Pedro online, fora do horário de venda: ligar, conferir,
+  desligar, ligar de novo. Não há como ensaiar a chave de verdade antes sem uma cópia da planilha
+  e do Apps Script (a chave é global); o ensaio simulado e o roteiro reversível cobrem isso.
+- Critérios de sucesso: contagens e hash iguais entre a célula e o D1 depois da carga; nenhuma
+  venda perdida num ciclo ida e volta; nenhum aparelho preso em erro depois de 5 minutos;
+  catálogo público igual antes e depois.
+
+### O que muda de arquivo (resumo)
+
+`app/app.js` e `app/sw.js` (protocolo), `index.html` da raiz, `cadastro-worker/`,
+`api-worker/` (`MODO`, snapshots por rota), `server/Codigo.gs` (`exportarEstado`,
+`d1:snapshotV`, `medida:estado`), `scripts/migracion-d1.js` (insert recusando sobrescrita, `v`
+inicial), documentos. Duas implantações do Apps Script (**Versão: NUEVA**): a nova ação junto
+com tudo o que ainda não foi publicado, e nenhuma no dia do corte (o dia só liga a chave).
+
+### Coordenação e decisões do Pedro
+
+- As edições de `app/` entram na `main` sobre o `app.js` monolítico (decisão de ordem do
+  Pedro: o cutover vem primeiro); a outra sessão, que modulariza `app/`, faz `git merge
+  origin/main` e porta as linhas tocadas (`SERVIDOR`, `pedir`, `subirALaNube`,
+  `bajarDeLaNube`, boot e login). Aviso antes de tocar em `app/`.
+- Decisões do Pedro necessárias: (1) a abordagem A; (2) uma ação nova no Apps Script
+  (`exportarEstado`) e a publicação dela; (3) o dia e a hora do corte, com ele online; (4) o
+  período de observação (≥ 2 semanas) antes de desligar o espelho de segurança.
