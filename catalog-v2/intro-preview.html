@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Prévia · Animación de carga PlayMind 3D</title>
+  <link rel="preload" href="./assets/logo-intro.webp" as="image" type="image/webp">
+  <style>
+    :root {
+      --petrol: #0F4C45;
+      --petrol-dark: #0A3833;
+      --mint: #00B493;
+      --paper: #FAF9F6;
+      --terracotta: #C86D51;
+      --tile: clamp(1.9rem, 7.4vw, 3.9rem);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: var(--petrol-dark); }
+    .site { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: var(--paper); transform-origin: 50% 50%; }
+
+    .stage { position: fixed; inset: 0; z-index: 10; overflow: hidden; pointer-events: all; }
+    .stage[hidden] { display: none; }
+    .half { position: absolute; inset-inline: 0; height: 50.2%; background: linear-gradient(170deg, var(--petrol-dark) 0%, var(--petrol) 55%, #18705F 100%); background-size: 100% 200%; will-change: transform; }
+    .half.top { top: 0; background-position: 0 0; }
+    .half.bottom { bottom: 0; background-position: 0 100%; }
+    .half.bottom::before { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: rgb(255 255 255 / 14%); }
+
+    .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(1rem, 3.5vh, 1.75rem); padding: 1rem; will-change: transform, opacity; }
+    .mark { width: clamp(6.5rem, 22vw, 9.5rem); height: auto; filter: drop-shadow(0 10px 28px rgb(0 0 0 / 28%)); opacity: 0; }
+
+    .word { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: clamp(.18rem, .8vw, .35rem); margin: 0; transition: gap 420ms cubic-bezier(.2, .8, .2, 1); }
+    .word .space { width: clamp(.5rem, 2.4vw, 1.1rem); transition: width 420ms cubic-bezier(.2, .8, .2, 1); }
+    .tile { display: grid; place-items: center; width: var(--tile); height: calc(var(--tile) * 1.18); border-radius: .5rem; background: var(--paper); color: var(--petrol); font-size: calc(var(--tile) * .78); font-weight: 800; line-height: 1; letter-spacing: -.04em; box-shadow: 0 6px 18px rgb(0 0 0 / 24%), inset 0 -3px 0 rgb(15 76 69 / 14%); opacity: 0; transition: background-color 420ms ease, color 420ms ease, box-shadow 420ms ease, border-radius 420ms ease; will-change: transform; }
+    .tile.alt { background: var(--terracotta); color: #fff; box-shadow: 0 6px 18px rgb(0 0 0 / 24%), inset 0 -3px 0 rgb(0 0 0 / 16%); }
+    .tile.accent { background: var(--mint); color: var(--petrol-dark); }
+    .word.joined { gap: 0; }
+    .word.joined .space { width: clamp(.35rem, 1.6vw, .7rem); }
+    .word.joined .tile { width: auto; border-radius: 0; background: transparent; color: #fff; box-shadow: none; }
+    .word.joined .tile.accent { color: var(--mint); }
+
+    .print { position: relative; width: min(16rem, 60vw); height: .5rem; overflow: hidden; border-radius: 999px; background: rgb(255 255 255 / 14%); opacity: 0; }
+    .print i { position: absolute; inset: 0; width: 100%; transform: scaleX(0); transform-origin: 0 50%; border-radius: inherit; background: repeating-linear-gradient(90deg, var(--mint) 0 6px, #5FD3B8 6px 8px); }
+    .tag { margin: 0; color: #D7E4E1; font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: 0; }
+
+    .replay { position: fixed; z-index: 20; inset: auto auto max(1rem, env(safe-area-inset-bottom)) 1rem; display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: 0 1.1rem; border: 0; border-radius: 999px; background: var(--petrol); color: #fff; font: 800 .85rem/1 inherit; box-shadow: 0 6px 24px rgb(24 26 27 / 30%); cursor: pointer; transition: background-color 150ms ease, scale 150ms ease; }
+    .replay:hover { background: var(--petrol-dark); scale: 1.03; }
+    .replay:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .replay[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <iframe class="site" id="site" src="./index.html" title="Catálogo PlayMind 3D"></iframe>
+
+  <div class="stage" id="stage" role="status" aria-label="Cargando PlayMind 3D">
+    <div class="half top"></div>
+    <div class="half bottom"></div>
+    <div class="center" id="center">
+      <img class="mark" id="mark" src="./assets/logo-intro.webp" width="560" height="561" alt="">
+      <h1 class="word" id="word" aria-label="PlayMind 3D"></h1>
+      <div class="print" id="print" aria-hidden="true"><i></i></div>
+      <p class="tag" id="tag">Armando tus piezas</p>
+    </div>
+  </div>
+
+  <button class="replay" id="replay" type="button" hidden>Repetir animación</button>
+
+  <script>
+    const stage = document.getElementById('stage');
+    const site = document.getElementById('site');
+    const word = document.getElementById('word');
+    const center = document.getElementById('center');
+    const mark = document.getElementById('mark');
+    const print = document.getElementById('print');
+    const tag = document.getElementById('tag');
+    const replay = document.getElementById('replay');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const TEXT = 'PlayMind 3D';
+    const SPRING = 'cubic-bezier(.34, 1.56, .64, 1)';
+    const SMOOTH = 'cubic-bezier(.77, 0, .18, 1)';
+    const rand = (seed) => { const v = Math.sin(seed * 127.1) * 43758.5453; return v - Math.floor(v); };
+
+    function build() {
+      word.replaceChildren();
+      [...TEXT].forEach((char, i) => {
+        if (char === ' ') {
+          const space = document.createElement('span');
+          space.className = 'space';
+          word.append(space);
+          return;
+        }
+        const tile = document.createElement('span');
+        tile.className = 'tile' + (i > 8 ? ' accent' : i % 3 === 1 ? ' alt' : '');
+        tile.setAttribute('aria-hidden', 'true');
+        tile.textContent = char;
+        word.append(tile);
+      });
+      word.classList.remove('joined');
+    }
+
+    function run() {
+      stage.hidden = false;
+      replay.hidden = true;
+      build();
+      const tiles = [...word.querySelectorAll('.tile')];
+      const tops = stage.querySelectorAll('.half.top');
+      const bottoms = stage.querySelectorAll('.half.bottom');
+
+      if (reduced) {
+        tiles.forEach((t) => { t.style.opacity = 1; });
+        mark.style.opacity = 1; tag.style.opacity = 1;
+        word.classList.add('joined');
+        setTimeout(() => { stage.hidden = true; replay.hidden = false; }, 900);
+        return;
+      }
+
+      center.getAnimations().forEach((a) => a.cancel());
+      [site, mark, print, tag, ...tiles, ...tops, ...bottoms].forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+      mark.style.opacity = 0; print.style.opacity = 0; tag.style.opacity = 0;
+      site.animate([{ transform: 'scale(1.05)' }, { transform: 'scale(1.05)' }], { duration: 2400, fill: 'forwards' });
+
+      mark.animate([
+        { opacity: 0, transform: 'translateY(-48px) scale(.5) rotate(-24deg)' },
+        { opacity: 1, transform: 'none' }
+      ], { duration: 850, easing: SPRING, fill: 'forwards' });
+
+      let lastLanding = 0;
+      tiles.forEach((tile, i) => {
+        const angle = rand(i + 1) * Math.PI * 2;
+        const dist = 160 + rand(i + 9) * 260;
+        const delay = 380 + i * 75;
+        lastLanding = delay + 800;
+        tile.animate([
+          { opacity: 0, transform: `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px) rotate(${(rand(i + 4) - .5) * 220}deg) scale(.4)` },
+          { opacity: 1, transform: 'none' }
+        ], { duration: 800, delay, easing: SPRING, fill: 'both' });
+      });
+
+      print.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 500, fill: 'forwards' });
+      print.firstElementChild.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: lastLanding - 400, delay: 500, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' });
+      tag.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 400, delay: 700, fill: 'forwards' });
+
+      setTimeout(() => {
+        word.classList.add('joined');
+        word.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 380, easing: 'ease-out' });
+      }, lastLanding);
+
+      const exitAt = lastLanding + 700;
+      setTimeout(() => {
+        center.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.08)' }], { duration: 420, easing: 'ease-in', fill: 'forwards' });
+        tops.forEach((el) => el.animate([{ transform: 'none' }, { transform: 'translateY(-101%)' }], { duration: 850, delay: 160, easing: SMOOTH, fill: 'forwards' }));
+        bottoms.forEach((el) => el.animate([{ transform: 'none' }, { transform: 'translateY(101%)' }], { duration: 850, delay: 160, easing: SMOOTH, fill: 'forwards' }));
+        site.animate([{ transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 1100, delay: 100, easing: 'cubic-bezier(.2, .8, .2, 1)', fill: 'forwards' });
+      }, exitAt);
+
+      setTimeout(() => { stage.hidden = true; replay.hidden = false; }, exitAt + 1050);
+    }
+
+    replay.addEventListener('click', run);
+    const start = () => document.fonts.ready.then(run);
+    if (document.readyState === 'complete') start(); else addEventListener('load', start);
+  </script>
+</body>
+</html>
