@@ -13,8 +13,9 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&amp;display=swap">
   <link rel="stylesheet" href="./primer-tokens.css">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./motion-showcase.css">
   <link rel="preload" href="./assets/logo-intro.webp" as="image" type="image/webp">
-  <script>try { if (!sessionStorage.getItem('pm3d-intro-seen') && matchMedia('(prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('intro'); } catch {}</script>
+  <script>try { if (!sessionStorage.getItem('pm3d-assembly-seen') && matchMedia('(prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('intro'); } catch {}</script>
   <script type="module" src="./catalog.mjs"></script>
 </head>
 <body>
@@ -37,30 +38,12 @@
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path class="fill" d="M12.04 2a9.9 9.9 0 0 0-8.5 14.96L2.1 22l5.2-1.37A9.9 9.9 0 1 0 12.04 2Zm0 18.1a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.09.81.83-3.01-.2-.31a8.2 8.2 0 1 1 6.94 3.83Zm4.5-6.14c-.25-.12-1.46-.72-1.69-.8-.22-.09-.39-.13-.55.12-.16.25-.63.8-.78.96-.14.17-.29.19-.53.06a6.7 6.7 0 0 1-1.98-1.22 7.4 7.4 0 0 1-1.37-1.7c-.14-.25 0-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.16.04-.31-.02-.43-.06-.13-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47a.9.9 0 0 0-.65.3 2.75 2.75 0 0 0-.86 2.04c0 1.2.88 2.37 1 2.53.13.17 1.73 2.64 4.19 3.7.59.25 1.04.4 1.4.52.59.18 1.12.16 1.55.1.47-.07 1.46-.6 1.66-1.18.21-.58.21-1.07.15-1.18-.06-.1-.22-.16-.47-.29Z"/></symbol>
   </svg>
   <div class="intro-screen" id="intro">
-    <div class="printer" aria-hidden="true">
-      <div class="scene-env">
-        <span class="env-wall"></span><span class="env-glow"></span><span class="env-shelf"></span>
-        <span class="env-piece piece-cube"></span><span class="env-piece piece-cone"></span><span class="env-piece piece-ball"></span><span class="env-piece piece-spool"></span>
-        <span class="env-floor"></span><span class="env-floor-shadow"></span><span class="env-top"></span><span class="env-shadow"></span><span class="env-apron"></span>
-        <span class="env-leg" style="--x:-10.6rem;--z:-6.4rem"></span><span class="env-leg" style="--x:9.7rem;--z:-6.4rem"></span>
-        <span class="env-leg" style="--x:-10.6rem;--z:6.4rem"></span><span class="env-leg" style="--x:9.7rem;--z:6.4rem"></span>
-        <span class="table-cube"></span><span class="table-cone"></span>
-      </div>
-      <span class="printer-rail rail-l is-back"></span><span class="printer-rail rail-r is-back"></span>
-      <span class="printer-rail rail-l"></span><span class="printer-rail rail-r"></span>
-      <span class="printer-top"></span><span class="printer-spool"></span>
-      <span class="printer-bed"></span>
-      <div class="intro-build">
-        <img class="intro-ghost" src="./assets/logo-intro.webp" width="560" height="561" alt="">
-        <img class="intro-logo" src="./assets/logo-intro.webp" width="560" height="561" alt="">
-        <span class="intro-layers"></span>
-      </div>
-      <div class="printer-gantry">
-        <span class="gantry-beam"></span><span class="gantry-front"></span><span class="gantry-carriage"></span>
-      </div>
+    <div class="assembly-grid" aria-hidden="true"></div>
+    <div class="assembly-label" aria-hidden="true"><span>PLAYMIND® STUDIO</span><span>01 / 3D</span></div>
+    <div class="intro-build" aria-hidden="true">
+      <img class="assembly-logo" src="./assets/logo-intro.webp" width="560" height="561" alt="">
     </div>
-    <p class="intro-tagline" aria-hidden="true">Diseño e impresión 3D <span>•</span> Pilar</p>
-    <button class="intro-skip" type="button">Saltar intro</button>
+    <button class="intro-skip" type="button">Pular abertura <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
   </div>
   <a class="skip" href="#main">Ir al contenido</a>
   <div class="announcement" id="inicio">Hecho en Pilar <span>•</span> Envíos y retiros <span>•</span> Impreso a pedido</div>
@@ -68,7 +51,7 @@
     <div class="container header-row">
       <a class="brand" href="#inicio">
         <img class="brand-mark" id="brand-logo" src="./assets/logo-intro.webp" width="560" height="561" alt="">
-        <span class="brand-lockup"><span class="brand-name">PlayMind <span>3D</span></span><span class="brand-caption">Impresión 3D en Pilar</span></span>
+        <span class="brand-name">PlayMind <span>3D</span></span>
       </a>
       <nav class="header-links" aria-label="Navegación principal">
         <a href="#catalogo" data-category-link="todos">Catálogo</a>
@@ -115,6 +98,21 @@
         <p>Piezas para decorar y regalar durante las fiestas, impresas a pedido.</p>
       </div>
       <a class="button holiday-button" href="#catalogo" data-category-link="todos" data-holiday-link>Ver Especial Navidad <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
+    </section>
+
+    <section class="showcase" id="showcase" aria-labelledby="showcase-title" hidden>
+      <div class="showcase-top">
+        <div>
+          <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg> Seleção do estúdio</p>
+          <h2 id="showcase-title">Peças em destaque<span>.</span></h2>
+        </div>
+        <div class="showcase-nav" role="group" aria-label="Navegação dos destaques">
+          <button type="button" id="showcase-prev" aria-label="Peça anterior" aria-controls="showcase-track"><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+          <button type="button" id="showcase-next" aria-label="Próxima peça" aria-controls="showcase-track"><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+        </div>
+      </div>
+      <ul id="showcase-track" class="showcase-track" role="list"></ul>
+      <p class="showcase-counter" id="showcase-counter" aria-live="polite"></p>
     </section>
 
     <section class="catalog" id="catalogo" aria-labelledby="catalog-title">

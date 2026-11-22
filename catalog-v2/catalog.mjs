@@ -1,6 +1,7 @@
 import { CATEGORIAS, adaptarCatalogo, linkWhatsApp, pedirCatalogo, totalesPedido } from './catalog-api.mjs';
 import { textoDeBusqueda } from './catalog-logic.mjs';
 import { introFinished } from './intro.mjs';
+import { renderShowcase } from './showcase.mjs';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const money = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0, minimumGroupingDigits: 1 });
@@ -477,6 +478,7 @@ function applyCatalog(raw) {
   for (const link of document.querySelectorAll('[data-holiday-link]')) (link.closest('li') ?? link).hidden = !hasHoliday;
   const contactHref = linkWhatsApp(whatsapp, '¡Hola PlayMind 3D! Tengo una consulta sobre el catálogo.');
   for (const link of [$('#contact-link'), $('#whatsapp-float')]) setLink(link, contactHref);
+  renderShowcase(productos, { openDetail, formatPrice, setPhoto, icon });
   renderCatalog();
   renderBag();
 }
@@ -548,7 +550,7 @@ if (revealObserver) {
     if (heading.closest('.hero')) introFinished.then(() => revealObserver.observe(heading));
     else revealObserver.observe(heading);
   }
-  for (const node of document.querySelectorAll('.benefits li')) revealObserver.observe(node);
+  for (const node of document.querySelectorAll('.benefits li, .showcase')) revealObserver.observe(node);
 }
 
 const heroVideo = document.getElementById('hero-video');
