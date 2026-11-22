@@ -143,7 +143,7 @@ button:disabled { cursor: default; opacity: .5; }
 .whatsapp { background: #1F8A5B; color: var(--card); }
 .whatsapp:hover { background: #18734B; }
 .whatsapp .icon { width: 1.1rem; height: 1.1rem; }
-.site-footer { border-top: 1px solid var(--border); background: var(--petrol); color: var(--card); }
+.site-footer { overflow: hidden; border-top: 1px solid var(--border); background: linear-gradient(170deg, var(--petrol-dark) 0%, var(--petrol) 48%, #18705F 100%); color: var(--card); }
 .site-footer :focus-visible { outline-color: var(--card); }
 .footer-grid { display: grid; gap: 2rem; padding-block: clamp(2.25rem, 6vw, 4.5rem) 2rem; }
 .footer-lead { display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; }
@@ -151,6 +151,13 @@ button:disabled { cursor: default; opacity: .5; }
 .footer-lead h2 { font-size: clamp(1.8rem, 4.5vw, 3rem); font-weight: 800; }
 .footer-lead p { max-width: 34ch; color: #D7E4E1; font-size: .9rem; text-wrap: pretty; }
 .footer-lead .button { margin-top: .4rem; }
+.footer-social { margin-top: 1.25rem; }
+.footer-social h3 { margin-bottom: .6rem; color: #F0BAA8; font-size: .65rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.footer-social ul { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+.footer-social a { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: #E3EEEB; color: var(--petrol); transition: background-color 150ms ease, scale 150ms ease; }
+.footer-social a:hover { background: var(--card); scale: 1.06; }
+.footer-social .icon { width: 1.3rem; height: 1.3rem; }
+.footer-wordmark { margin: 0; padding-inline: var(--gutter); font-size: clamp(3rem, 17.2vw, 16rem); font-weight: 800; letter-spacing: -.06em; line-height: 1.12; white-space: nowrap; text-align: center; background: linear-gradient(180deg, #7FE0C8 0%, #00B493 55%, #0F8F78 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; user-select: none; }
 .footer-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
 .footer-nav h3 { margin-bottom: .6rem; color: #F0BAA8; font-size: .65rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .footer-nav ul { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
