@@ -160,6 +160,10 @@ button:disabled { cursor: default; opacity: .5; }
 .footer-signoff p, .footer-signoff a { display: flex; align-items: center; gap: .375rem; }
 .footer-signoff a { min-height: 2.75rem; font-weight: 800; color: var(--card); }
 .footer-signoff .icon { width: 1rem; height: 1rem; }
+.footer-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding-right: 4rem; }
+.footer-version { color: #AFC5BF; font-size: .68rem; }
+.footer-signoff a.footer-admin { min-height: auto; color: #AFC5BF; font-size: .68rem; font-weight: 600; }
+.footer-signoff a.footer-admin:hover { color: var(--card); }
 .whatsapp-float { position: fixed; z-index: 6; inset: auto max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) auto; display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #1F8A5B; color: var(--card); box-shadow: 0 6px 24px rgb(24 26 27 / 28%); transition: scale 150ms ease, background-color 150ms ease; }
 .whatsapp-float:hover { background: #18734B; scale: 1.06; }
 .whatsapp-float .icon { width: 1.75rem; height: 1.75rem; }

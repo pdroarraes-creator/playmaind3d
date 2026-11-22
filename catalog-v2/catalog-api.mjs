@@ -1,9 +1,9 @@
 import { horasTxt } from "./catalog-logic.mjs";
 
-// Mismo origen que el catálogo actual (index.html de la raíz): el precio y el
-// stock salen siempre del servidor, nunca se escriben acá.
+// Worker de staging compartido con el sistema actual. Producción sigue vacía
+// durante la migración; el precio y el stock siempre salen del servidor.
 export const SERVIDOR_CATALOGO =
-  "https://script.google.com/macros/s/AKfycbyiHVXBAnYzs_CBnIuURgBWuTQS0HFFrKExcPiyxviLDAZiLmsgZ0a-9wE8Y2c1yzDy/exec?action=catalogo";
+  "https://playmind3d-api.pdroarraes.workers.dev/catalogo";
 
 export const CATEGORIAS = {
   todos: "Todos",
