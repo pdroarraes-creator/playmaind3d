@@ -4,7 +4,7 @@ import { toast, showTab, renderAll } from "./ui.js";
 import { calc, prod } from "./calculo.js";
 import { consumoDe, aplicarConsumo, alertasStock } from "./stock.js";
 import { thumb } from "./fotos.js";
-import { save } from "./main.js";
+import { save } from "./nube.js";
 
 /* ---------- ventas ---------- */
 /** Devuelve al inventario todo lo que esta venta había sacado. */

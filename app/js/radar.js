@@ -6,7 +6,7 @@ import { calc } from "./calculo.js";
 import { leerFoto } from "./fotos.js";
 import { cargarPieza, renderCalc } from "./editor.js";
 import { cerrarSheet } from "./ventas.js";
-import { save, pedir } from "./main.js";
+import { save, pedir } from "./nube.js";
 
 /* ---------- radar ---------- */
 var ORIGENES = [

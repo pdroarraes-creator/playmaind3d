@@ -5,7 +5,7 @@ import { toast, renderAll, renderLight } from "./ui.js";
 import { calc, unitario, proximoNumFil } from "./calculo.js";
 import { pintarMarca } from "./fotos.js";
 import { fillSel } from "./editor.js";
-import { save } from "./main.js";
+import { save } from "./nube.js";
 
 /* ---------- ajustes ---------- */
 var CFG_ATADO = false;

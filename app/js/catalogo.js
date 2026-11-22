@@ -4,7 +4,7 @@ import { toast, showTab, renderAll } from "./ui.js";
 import { calc, gramosCon } from "./calculo.js";
 import { consumoDe, aplicarConsumo, alertasStock } from "./stock.js";
 import { thumb } from "./fotos.js";
-import { save } from "./main.js";
+import { save } from "./nube.js";
 import { renderPed } from "./pedido.js";
 import { cargarPieza } from "./editor.js";
 

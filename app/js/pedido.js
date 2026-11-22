@@ -5,7 +5,7 @@ import { calc, gramosCon } from "./calculo.js";
 import { consumoDe, aplicarConsumo, alertasStock } from "./stock.js";
 import { thumb } from "./fotos.js";
 import { chgQty } from "./catalogo.js";
-import { save, pedir } from "./main.js";
+import { save, pedir } from "./nube.js";
 
 /* ---------- pedido ---------- */
 /** Con qué filamento se va a imprimir esta pieza en este pedido. */

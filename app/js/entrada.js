@@ -1,7 +1,7 @@
 "use strict";
 import { $ } from "./util.js";
 import { D, SERVIDOR, local } from "./estado.js";
-import { pedir, setSync, sincronizarAlAbrir, setListoParaSubir } from "./main.js";
+import { pedir, setSync, sincronizarAlAbrir, setListoParaSubir } from "./nube.js";
 /* ---------- entrada ---------- */
 export function alternarClave() {
   const i = $("#entClave"),

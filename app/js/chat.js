@@ -6,7 +6,7 @@ import { calc } from "./calculo.js";
 import { leerFoto } from "./fotos.js";
 import { sumarStock } from "./catalogo.js";
 import { aplicarVenta } from "./ventas.js";
-import { save, traerDeLaNubeManual } from "./main.js";
+import { save, traerDeLaNubeManual } from "./nube.js";
 
 /* ---------- cadastro por chat ---------- */
 var CHAT = {
