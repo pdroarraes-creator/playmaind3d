@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&amp;display=swap">
   <link rel="stylesheet" href="./primer-tokens.css">
   <link rel="stylesheet" href="./styles.css">
-  <link rel="preload" href="./assets/globe-texture.webp" as="image" type="image/webp">
+  <link rel="preload" href="./assets/logo-intro.webp" as="image" type="image/webp">
   <script>try { if (!sessionStorage.getItem('pm3d-intro-seen') && matchMedia('(prefers-reduced-motion: no-preference)').matches) document.documentElement.classList.add('intro'); } catch {}</script>
   <script type="module" src="./catalog.mjs"></script>
 </head>
@@ -38,7 +38,17 @@
   </svg>
   <div class="intro-screen" id="intro">
     <div class="printer" aria-hidden="true">
-      <span class="printer-rail"></span><span class="printer-rail"></span>
+      <div class="scene-env">
+        <span class="env-wall"></span><span class="env-glow"></span><span class="env-shelf"></span>
+        <span class="env-piece piece-cube"></span><span class="env-piece piece-cone"></span><span class="env-piece piece-ball"></span><span class="env-piece piece-spool"></span>
+        <span class="env-floor"></span><span class="env-floor-shadow"></span><span class="env-top"></span><span class="env-shadow"></span><span class="env-apron"></span>
+        <span class="env-leg" style="--x:-10.6rem;--z:-6.4rem"></span><span class="env-leg" style="--x:9.7rem;--z:-6.4rem"></span>
+        <span class="env-leg" style="--x:-10.6rem;--z:6.4rem"></span><span class="env-leg" style="--x:9.7rem;--z:6.4rem"></span>
+        <span class="table-cube"></span><span class="table-cone"></span>
+      </div>
+      <span class="printer-rail rail-l is-back"></span><span class="printer-rail rail-r is-back"></span>
+      <span class="printer-rail rail-l"></span><span class="printer-rail rail-r"></span>
+      <span class="printer-top"></span><span class="printer-spool"></span>
       <span class="printer-bed"></span>
       <div class="intro-build">
         <img class="intro-ghost" src="./assets/logo-intro.webp" width="560" height="561" alt="">
@@ -57,7 +67,7 @@
   <header class="site-header">
     <div class="container header-row">
       <a class="brand" href="#inicio">
-        <canvas class="brand-mark" id="brand-globe" width="128" height="128" aria-hidden="true"></canvas>
+        <img class="brand-mark" id="brand-logo" src="./assets/logo-intro.webp" width="560" height="561" alt="">
         <span class="brand-lockup"><span class="brand-name">PlayMind <span>3D</span></span><span class="brand-caption">Impresión 3D en Pilar</span></span>
       </a>
       <nav class="header-links" aria-label="Navegación principal">

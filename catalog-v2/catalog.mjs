@@ -1,7 +1,6 @@
 import { CATEGORIAS, adaptarCatalogo, linkWhatsApp, pedirCatalogo, totalesPedido } from './catalog-api.mjs';
 import { textoDeBusqueda } from './catalog-logic.mjs';
 import { introFinished } from './intro.mjs';
-import { mountGlobe } from './globe.mjs';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const money = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0, minimumGroupingDigits: 1 });
@@ -551,9 +550,6 @@ if (revealObserver) {
   }
   for (const node of document.querySelectorAll('.benefits li')) revealObserver.observe(node);
 }
-
-const brandGlobe = document.getElementById('brand-globe');
-mountGlobe(brandGlobe, { animate: motionOk }).catch(() => {});
 
 const heroVideo = document.getElementById('hero-video');
 const heroVideoToggle = document.getElementById('hero-video-toggle');

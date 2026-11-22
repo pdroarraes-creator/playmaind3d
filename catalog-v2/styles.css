@@ -45,8 +45,7 @@ button:disabled { cursor: default; opacity: .5; }
 .site-header { position: sticky; inset-block-start: 0; z-index: 5; border-bottom: 1px solid var(--border); background: var(--paper); }
 .header-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 3.75rem; }
 .brand { display: flex; align-items: center; gap: .6rem; min-width: 0; white-space: nowrap; }
-.brand-mark { width: 2.75rem; height: 2.75rem; flex: none; border-radius: 50%; background: url('./assets/logo-mark.webp') center / cover; filter: drop-shadow(0 2px 4px rgb(15 76 69 / 22%)); }
-.brand-mark.is-live { background: none; }
+.brand-mark { width: 3.25rem; height: 3.25rem; flex: none; object-fit: contain; }
 .brand-lockup { display: flex; flex-direction: column; gap: .2rem; line-height: 1; }
 .brand-name { font-size: clamp(1.15rem, 3.6vw, 1.5rem); font-weight: 800; letter-spacing: -.065em; }
 .brand-name span { color: var(--petrol); }
@@ -79,16 +78,40 @@ button:disabled { cursor: default; opacity: .5; }
 .intro body { overflow: hidden; }
 .intro .brand-mark { opacity: 0; }
 .intro-landing .brand-mark { opacity: 1; transition: opacity 320ms ease; }
-.intro .intro-screen { --print-ms: 2800ms; --bed-line: 91%; position: fixed; z-index: 20; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.75rem; animation: intro-failsafe 1ms 8s forwards; transition: opacity 650ms ease, scale 650ms cubic-bezier(.6, 0, .2, 1); }
-.intro-screen::before { content: ''; position: absolute; z-index: -1; inset: 0; background: radial-gradient(circle at 50% 42%, var(--card), var(--paper) 55%, var(--warm)); transition: opacity 750ms ease; }
+.intro .intro-screen { --print-ms: 2800ms; --cam-ms: 3320ms; --bed-line: 91%; --table: calc(91% + 1rem); --floor: calc(91% + 11.2rem); position: fixed; z-index: 20; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; perspective: 60rem; perspective-origin: 50% 38%; animation: intro-failsafe 1ms 8s forwards; transition: opacity 650ms ease, scale 650ms cubic-bezier(.6, 0, .2, 1); }
+.intro-screen::before { content: ''; position: absolute; z-index: -1; inset: 0; background: #EAE2D3; transition: opacity 750ms ease; }
 .intro-screen.is-flying::before { opacity: 0; }
 .intro-screen.is-leaving { opacity: 0; scale: 1.06; pointer-events: none; }
-.printer { position: relative; width: min(20rem, 78vmin); margin-block: 1.8rem .5rem; padding-inline: 1.1rem; }
-.printer-rail { position: absolute; inset-block: -1.8rem -.5rem; width: .5rem; border-radius: .25rem; background: linear-gradient(90deg, #3a3f42, var(--ink) 55%, #3a3f42); transition: opacity 350ms ease; }
-.printer-rail:first-of-type { inset-inline-start: .3rem; }
-.printer-rail:nth-of-type(2) { inset-inline-end: .3rem; }
-.printer-bed { position: absolute; z-index: 0; inset-block-start: var(--bed-line); inset-inline: -.35rem; height: 1rem; border-radius: .3rem; background: linear-gradient(var(--petrol), var(--petrol-dark)); box-shadow: 0 .9rem 1.4rem -.8rem rgb(15 76 69 / 55%); transition: opacity 350ms ease, translate 650ms ease; }
+.printer { position: relative; width: min(20rem, 78vmin); margin-block: 1.8rem 9rem; padding-inline: 1.1rem; transform-style: preserve-3d; transform-origin: 50% var(--bed-line); transform: rotateY(-18deg) translateZ(-5rem); }
+.is-printing .printer { animation: camera var(--cam-ms) cubic-bezier(.25, .6, .3, 1) forwards; }
+.scene-env { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.scene-env > * { position: absolute; transition: opacity 600ms ease; }
+.env-wall { top: -80rem; left: 50%; width: 200vmax; height: calc(var(--floor) + 80rem); margin-inline-start: -100vmax; background: linear-gradient(#F6F2EA 0, #F1EBDF 50%, #EAE2D3); transform: translateZ(-14rem); }
+.env-glow { top: -16rem; left: 50%; width: 46rem; height: 42rem; margin-inline-start: -23rem; background: radial-gradient(closest-side, rgb(255 255 255 / 95%), transparent); transform: translateZ(-13.9rem); }
+.env-shelf { top: -5.6rem; left: 50%; width: 22rem; height: .55rem; margin-inline-start: -11rem; border-radius: .15rem; background: linear-gradient(#C9A57A, #A9854F); box-shadow: 0 .6rem 1rem -.2rem rgb(24 26 27 / 28%); transform: translateZ(-13.6rem); }
+.env-piece { transform: translateZ(-13.5rem); }
+.piece-cube { top: -8.4rem; left: calc(50% - 9.5rem); width: 2.8rem; height: 2.8rem; border-radius: .25rem; background: linear-gradient(135deg, #E08C71, var(--terracotta) 55%, #A9553D); }
+.piece-cone { top: -9.1rem; left: calc(50% - 4.6rem); width: 2.8rem; height: 3.5rem; background: linear-gradient(90deg, #1C6A61, var(--petrol) 50%, var(--petrol-dark)); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.piece-ball { top: -8rem; left: calc(50% + 1.2rem); width: 2.4rem; height: 2.4rem; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #F1B9A2 45%, #D98A6D); }
+.piece-spool { top: -8.6rem; left: calc(50% + 5.6rem); width: 3rem; height: 3rem; border-radius: 50%; background: radial-gradient(circle, var(--paper) 0 .5rem, var(--petrol) .5rem 100%); box-shadow: inset 0 0 0 .4rem var(--petrol-dark); }
+.env-floor { top: var(--floor); left: 50%; width: 200vmax; height: 50rem; margin-inline-start: -100vmax; background: linear-gradient(#EAE2D3 0, rgb(234 226 211 / 0%) 10%), repeating-linear-gradient(90deg, rgb(24 26 27 / 12%) 0 1px, transparent 1px 5rem), repeating-linear-gradient(rgb(24 26 27 / 8%) 0 1px, transparent 1px 5rem), linear-gradient(#CDBA98, #AE9873); transform-origin: top; transform: translateZ(-14rem) rotateX(90deg); }
+.env-floor-shadow { top: calc(var(--floor) - 1px); inset-inline: -4rem; height: 16rem; background: radial-gradient(closest-side, rgb(24 26 27 / 38%), transparent); transform-origin: top; transform: translateZ(-8rem) rotateX(90deg); }
+.env-top { top: var(--table); inset-inline: -1.5rem; height: 14rem; background: repeating-linear-gradient(90deg, rgb(24 26 27 / 7%) 0 1px, transparent 1px 3.2rem), linear-gradient(#E6CFA8, #D2B88D); transform-origin: top; transform: translateZ(-7rem) rotateX(90deg); }
+.env-shadow { top: calc(var(--table) - 1px); inset-inline: -.5rem; height: 6rem; background: radial-gradient(closest-side, rgb(24 26 27 / 42%), transparent); transform-origin: top; transform: translateZ(-3rem) rotateX(90deg); }
+.env-apron { top: var(--table); inset-inline: -1.5rem; height: 1.6rem; background: linear-gradient(#B8935F, #9C7B49); box-shadow: 0 .5rem 1rem -.4rem rgb(24 26 27 / 35%); transform: translateZ(7rem); }
+.env-leg { top: var(--table); left: calc(50% + var(--x)); width: .9rem; height: 10.2rem; background: linear-gradient(90deg, #A9854F, #8B6A3B); transform: translateZ(var(--z)); }
+.table-cube { top: calc(var(--table) - 2.6rem); left: .2rem; width: 2.6rem; height: 2.6rem; border-radius: .2rem; background: linear-gradient(135deg, #E08C71, var(--terracotta) 55%, #A9553D); box-shadow: 0 .4rem .6rem -.2rem rgb(24 26 27 / 35%); transform: translateZ(4.6rem); }
+.table-cone { top: calc(var(--table) - 3.2rem); inset-inline-end: .2rem; width: 2.6rem; height: 3.2rem; background: linear-gradient(90deg, #1C6A61, var(--petrol) 50%, var(--petrol-dark)); clip-path: polygon(50% 0, 100% 100%, 0 100%); transform: translateZ(4.6rem); }
+.printer-rail { position: absolute; inset-block: -1.8rem -.5rem; width: .55rem; border-radius: .25rem; background: linear-gradient(90deg, #3a3f42, var(--ink) 55%, #3a3f42); transform: translateZ(.8rem); transition: opacity 350ms ease; }
+.rail-l { inset-inline-start: .3rem; }
+.rail-r { inset-inline-end: .3rem; }
+.printer-rail.is-back { background: linear-gradient(90deg, #5a6064, #3a3f42 55%, #5a6064); transform: translateZ(-3.2rem); }
+.printer-top { position: absolute; inset: -1.9rem .3rem auto; height: .6rem; border-radius: .3rem; background: linear-gradient(#3a3f42, var(--ink)); transform: translateZ(.8rem); transition: opacity 350ms ease; }
+.printer-spool { position: absolute; inset: -4.9rem 1.5rem auto auto; width: 2.9rem; aspect-ratio: 1; border-radius: 50%; background: repeating-conic-gradient(rgb(255 255 255 / 28%) 0 10deg, transparent 10deg 36deg), radial-gradient(circle, var(--ink) 0 .3rem, var(--warm) .3rem 52%, var(--terracotta) 52%); box-shadow: 0 .3rem .6rem -.2rem rgb(24 26 27 / 40%); transform: translateZ(-1rem); transition: opacity 350ms ease; }
+.is-printing .printer-spool { animation: spool-spin 3s linear infinite; }
+.printer-bed { position: absolute; z-index: 0; inset-block-start: var(--bed-line); inset-inline: -.35rem; height: 1rem; border-radius: .3rem; background: linear-gradient(var(--petrol), var(--petrol-dark)); box-shadow: 0 .9rem 1.4rem -.8rem rgb(15 76 69 / 55%); transform: translateZ(.5rem); transition: opacity 350ms ease, translate 650ms ease; }
 .printer-bed::before { content: ''; position: absolute; inset: -.3rem .55rem auto; height: .35rem; border: 1px solid var(--border); border-radius: .2rem; background: var(--warm); }
+.printer-bed::after { content: ''; position: absolute; inset: .3rem 1rem auto auto; width: 2.4rem; height: .4rem; border-radius: .1rem; background: var(--ink) radial-gradient(circle at .35rem 50%, var(--terracotta) 0 .12rem, transparent .14rem); }
 .intro-build { position: relative; z-index: 1; aspect-ratio: 1; will-change: transform; }
 .intro-build > img, .intro-layers { position: absolute; inset: 0; width: 100%; height: 100%; }
 .intro-ghost { opacity: .1; filter: grayscale(1); transition: opacity 350ms ease; }
@@ -107,14 +130,16 @@ button:disabled { cursor: default; opacity: .5; }
 .gantry-front { position: absolute; inset: 0 1.1rem auto; height: 2px; background: linear-gradient(90deg, transparent, var(--terracotta) 18%, var(--terracotta) 82%, transparent); box-shadow: 0 0 .6rem rgb(200 109 81 / 70%); opacity: 0; transition: opacity 300ms ease; }
 .is-printing .gantry-front { opacity: 1; }
 .is-printed .gantry-front { opacity: 0; }
-.intro-tagline { color: var(--petrol); font-size: .72rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; opacity: 0; translate: 0 .5rem; transition: opacity 500ms ease 700ms, translate 500ms cubic-bezier(.2, .8, .2, 1) 700ms; }
+.intro-tagline { position: absolute; inset: auto 0 5.5rem; text-align: center; color: var(--petrol); font-size: .72rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; opacity: 0; translate: 0 .5rem; transition: opacity 500ms ease 700ms, translate 500ms cubic-bezier(.2, .8, .2, 1) 700ms; }
 .intro-tagline span { color: var(--terracotta); }
 .is-printing .intro-tagline { opacity: 1; translate: 0 0; }
 .intro-skip { position: absolute; inset: auto auto max(1.25rem, env(safe-area-inset-bottom)) 50%; translate: -50% 0; min-height: var(--base-size-44); padding: .5rem 1rem; border: 1px solid var(--border); border-radius: 999px; background: var(--card); color: var(--muted); font-size: .75rem; font-weight: 750; transition: opacity 300ms ease; }
 .intro-skip:hover { color: var(--petrol); border-color: var(--petrol); }
-.is-flying :is(.printer-rail, .printer-gantry, .intro-ghost, .intro-tagline, .intro-skip) { opacity: 0; transition-delay: 0s; }
+.is-flying :is(.scene-env > *, .printer-rail, .printer-top, .printer-spool, .printer-gantry, .intro-ghost, .intro-tagline, .intro-skip) { opacity: 0; transition-delay: 0s; }
 .is-flying .printer-bed { opacity: 0; translate: 0 .8rem; }
 .intro-landing .intro-build { opacity: 0; transition: opacity 320ms ease; }
+@keyframes camera { to { transform: none; } }
+@keyframes spool-spin { to { rotate: 360deg; } }
 @keyframes print-reveal { to { clip-path: inset(8% 0 0 0); } }
 @keyframes gantry-up { to { translate: 0 8%; } }
 @keyframes gantry-lift { from { translate: 0 8%; opacity: 1; } to { translate: 0 -80%; opacity: 0; } }

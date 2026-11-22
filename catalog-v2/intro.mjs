@@ -3,8 +3,6 @@ const PRINT_MS = 2800;
 const LIFT_MS = 520;
 const FLY_MS = 950;
 const LEAVE_MS = 650;
-const GLOBE_SHARE = 0.51;
-const GLOBE_CENTER_Y = 0.455;
 
 const root = document.documentElement;
 const screen = document.getElementById('intro');
@@ -12,9 +10,9 @@ const screen = document.getElementById('intro');
 function flightKeyframes(build, mark) {
   const from = build.getBoundingClientRect();
   const to = mark.getBoundingClientRect();
-  const scale = to.width / (from.width * GLOBE_SHARE);
+  const scale = to.width / from.width;
   const dx = to.left + to.width / 2 - (from.left + from.width / 2);
-  const dy = to.top + to.height / 2 - (from.top + from.height / 2) + (0.5 - GLOBE_CENTER_Y) * from.height * scale;
+  const dy = to.top + to.height / 2 - (from.top + from.height / 2);
   return [{ transform: 'none' }, { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${scale.toFixed(4)})` }];
 }
 
@@ -46,7 +44,7 @@ function runIntro(resolve) {
 
   const flyToHeader = () => {
     const build = screen.querySelector('.intro-build');
-    const mark = document.getElementById('brand-globe');
+    const mark = document.getElementById('brand-logo');
     if (!build || !mark || !build.animate) { skip(); return; }
     screen.classList.add('is-flying');
     const flight = build.animate(flightKeyframes(build, mark), { duration: FLY_MS, easing: 'cubic-bezier(.65, 0, .2, 1)', fill: 'forwards' });
