@@ -1,20 +1,21 @@
 <!doctype html>
-<html lang="es-AR">
+<html lang="es-AR" data-color-mode="light" data-light-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#FAF9F6">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Fidgets silenciosos y compañeros de foco impresos en 3D en Pilar, con PLA vegetal.">
-  <title>PlayMind 3d · Catálogo (versión de prueba)</title>
-  <link rel="icon" href="../assets/logo-180.png">
+  <meta name="description" content="Juegos sensoriales, deco moderna y regalos personalizados impresos en 3D con PLA vegetal en Pilar, Argentina.">
+  <title>PlayMind 3D · Diseño e impresión en Pilar</title>
+  <link rel="icon" href="./assets/logo-mark.webp" type="image/webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&amp;display=swap">
-  <link rel="stylesheet" href="./estilo.css">
-  <script src="./logica.js" defer></script>
-  <script src="./datos.js" defer></script>
-  <script src="./pagina.js" defer></script>
+  <link rel="stylesheet" href="./primer-tokens.css">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./motion-showcase.css">
+  <link rel="preload" href="./assets/logo-intro.webp" as="image" type="image/webp">
+  <script type="module" src="./catalog.mjs"></script>
 </head>
 <body>
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -34,18 +35,19 @@
     <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></symbol>
     <symbol id="icon-ruler" viewBox="0 0 24 24"><path d="m2.5 16.5 14-14 5 5-14 14-5-5ZM7 12l2.5 2.5m1-6 2.5 2.5m1-6 2.5 2.5"/></symbol>
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path class="fill" d="M12.04 2a9.9 9.9 0 0 0-8.5 14.96L2.1 22l5.2-1.37A9.9 9.9 0 1 0 12.04 2Zm0 18.1a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.09.81.83-3.01-.2-.31a8.2 8.2 0 1 1 6.94 3.83Zm4.5-6.14c-.25-.12-1.46-.72-1.69-.8-.22-.09-.39-.13-.55.12-.16.25-.63.8-.78.96-.14.17-.29.19-.53.06a6.7 6.7 0 0 1-1.98-1.22 7.4 7.4 0 0 1-1.37-1.7c-.14-.25 0-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.16.04-.31-.02-.43-.06-.13-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47a.9.9 0 0 0-.65.3 2.75 2.75 0 0 0-.86 2.04c0 1.2.88 2.37 1 2.53.13.17 1.73 2.64 4.19 3.7.59.25 1.04.4 1.4.52.59.18 1.12.16 1.55.1.47-.07 1.46-.6 1.66-1.18.21-.58.21-1.07.15-1.18-.06-.1-.22-.16-.47-.29Z"/></symbol>
+    <symbol id="icon-instagram" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Zm1.5-4.87h.01"/></symbol>
   </svg>
   <a class="skip" href="#main">Ir al contenido</a>
-  <div class="announcement" id="inicio">Hecho en Pilar <span>•</span> Entregas coordinadas por WhatsApp</div>
+  <div class="announcement" id="inicio">Hecho en Pilar • Impreso a pedido</div>
   <header class="site-header">
     <div class="container header-row">
       <a class="brand" href="#inicio">
-        <img class="brand-mark" src="../assets/logo-app.png" width="44" height="44" alt="">
-        <span class="brand-lockup"><span class="brand-name">PlayMind <span>3d</span></span><span class="brand-caption">Impresión 3D en Pilar</span></span>
+        <img class="brand-mark" src="./assets/logo-intro.webp" width="560" height="561" alt="">
+        <span class="brand-name">PlayMind <span>3D</span></span>
       </a>
       <nav class="header-links" aria-label="Navegación principal">
         <a href="#catalogo" data-category-link="todos">Catálogo</a>
-        <a href="#catalogo" data-category-link="navidad" data-solo-navidad hidden>Especial Navidad</a>
+        <a href="#catalogo" data-category-link="todos" data-holiday-link hidden>Especial Navidad</a>
         <a href="#como-pedir">Cómo pedir</a>
       </nav>
       <div class="header-actions">
@@ -66,75 +68,131 @@
   <p class="sr-only" id="bag-status" role="status"></p>
   <main id="main" tabindex="-1" class="container">
     <section class="hero" aria-labelledby="hero-title">
+      <div class="float-field" aria-hidden="true">
+        <span class="float-icon" data-wide style="--x: 41%; --y: 9%; --s: 3.5rem; --tilt: -10deg; --bg: var(--card);" data-speed="0.22" data-spin="0.05"><svg class="icon"><use href="#icon-layers"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 46%; --y: 66%; --s: 3rem; --tilt: 12deg; --bg: var(--terracotta); --fg: var(--card);" data-speed="-0.18" data-spin="-0.06"><svg class="icon"><use href="#icon-gift"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 90%; --y: 10%; --s: 3.25rem; --tilt: 8deg; --bg: var(--petrol); --fg: var(--card);" data-speed="0.3" data-spin="0.07"><svg class="icon"><use href="#icon-ruler"/></svg></span>
+      </div>
       <div class="hero-copy">
-        <p class="eyebrow"><span class="signal"></span> Curado por Leti (10 años) <span class="hero-location">/ Diseñado en Pilar</span></p>
-        <h1 id="hero-title">Juguetes que se <span class="accent">tocan, se mueven</span> y calman.</h1>
-        <p class="hero-description">Fidgets silenciosos y compañeros de foco, sin pantallas. Impresos en 3D en Pilar con PLA, un bioplástico vegetal.</p>
+        <p class="eyebrow"><span class="signal"></span> Taller de impresión 3D <span class="hero-location">/ Pilar, AR</span></p>
+        <h1 id="hero-title" data-reveal>Objetos que <span class="accent">calman, decoran</span> y sorprenden.</h1>
+        <p class="hero-description">Diseño e impresión 3D en PLA vegetal. Piezas táctiles, deco moderna y regalos personalizados.</p>
         <a class="button primary" href="#catalogo" data-category-link="todos">Explorá el catálogo <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
       </div>
-      <figure class="hero-media"><img src="../assets/logo-app-full.png" width="419" height="420" alt="PlayMind 3d: un globo de arcilla con un cerebro"></figure>
+      <figure class="hero-media">
+        <video id="hero-video" width="1200" height="800" autoplay muted loop playsinline preload="auto" poster="./assets/studio-hero.webp" aria-label="Video: cubo terracota, cono verde petróleo y tortuga articulada en PLA sobre una base crema">
+          <source src="./assets/studio-hero.mp4" type="video/mp4">
+        </video>
+        <button class="media-toggle" id="hero-video-toggle" type="button" aria-pressed="false" aria-label="Pausar video"><svg class="icon" aria-hidden="true"><use href="#icon-pause"/></svg></button>
+        <figcaption><span><i></i> PLA VEGETAL</span><span>COLECCIÓN 01</span></figcaption>
+      </figure>
     </section>
 
-    <section class="holiday" id="seccion-navidad" aria-labelledby="holiday-title" hidden>
+    <section class="holiday" id="holiday-section" aria-labelledby="holiday-title" hidden>
       <div class="holiday-copy">
         <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#icon-gift"/></svg> Edición de temporada</p>
-        <h2 id="holiday-title">Especial Navidad</h2>
-        <p>Para decorar y regalar durante las fiestas.</p>
+        <h2 id="holiday-title" data-reveal>Especial Navidad</h2>
+        <p>Piezas para decorar y regalar durante las fiestas, impresas a pedido.</p>
       </div>
-      <a class="button holiday-button" href="#catalogo" data-category-link="navidad">Ver piezas navideñas <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
+      <a class="button holiday-button" href="#catalogo" data-category-link="todos" data-holiday-link hidden>Ver Especial Navidad <svg class="icon" aria-hidden="true"><use href="#icon-up-right"/></svg></a>
+    </section>
+
+    <section class="showcase" id="showcase" aria-labelledby="showcase-title" hidden>
+      <div class="float-field" aria-hidden="true">
+        <span class="float-icon" style="--x: 72%; --y: 3%; --s: 3.5rem; --tilt: -12deg; --bg: var(--card);" data-speed="0.26" data-spin="0.06"><svg class="icon"><use href="#icon-layers"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 92%; --y: 12%; --s: 3.25rem; --tilt: 10deg; --bg: var(--petrol); --fg: var(--card);" data-speed="-0.2" data-spin="-0.05"><svg class="icon"><use href="#icon-gift"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 5%; --y: 62%; --s: 3rem; --tilt: 14deg; --bg: var(--terracotta); --fg: var(--card);" data-speed="0.34" data-spin="0.08"><svg class="icon"><use href="#icon-ruler"/></svg></span>
+        <span class="float-icon" style="--x: 88%; --y: 82%; --s: 3.5rem; --tilt: -8deg; --bg: var(--rose); --fg: #783E30;" data-speed="-0.28" data-spin="-0.07"><svg class="icon"><use href="#icon-bag"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 48%; --y: 3%; --s: 2.75rem; --tilt: 6deg; --bg: var(--warm);" data-speed="0.4" data-spin="0.09"><svg class="icon"><use href="#icon-plus"/></svg></span>
+      </div>
+      <div class="showcase-head">
+        <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg> Selección del estudio</p>
+        <h2 id="showcase-title" data-reveal>Piezas <span class="accent">destacadas</span>.</h2>
+      </div>
+      <div class="showcase-stage" role="group" aria-roledescription="carrusel" aria-label="Piezas destacadas">
+        <button class="showcase-arrow" type="button" id="showcase-prev" aria-label="Pieza anterior" aria-controls="showcase-track"><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+        <div class="showcase-viewport">
+          <ul id="showcase-track" class="showcase-track" role="list"></ul>
+        </div>
+        <button class="showcase-arrow" type="button" id="showcase-next" aria-label="Pieza siguiente" aria-controls="showcase-track"><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+        <div class="showcase-dots" id="showcase-dots" role="group" aria-label="Elegir pieza"></div>
+      </div>
+      <p class="sr-only" id="showcase-counter" aria-live="polite"></p>
     </section>
 
     <section class="catalog" id="catalogo" aria-labelledby="catalog-title">
       <div class="section-heading">
-        <div><p class="eyebrow"><span class="signal"></span> Hecho a pedido, una por una</p><h2 id="catalog-title" tabindex="-1">Elegí tu pieza</h2></div>
+        <div><p class="eyebrow"><span class="signal"></span> Diseñado en Pilar</p><h2 id="catalog-title" tabindex="-1">Elegí tu pieza</h2></div>
         <p class="result-count" id="result-count" role="status"></p>
       </div>
-      <div class="filters" id="filtros" role="group" aria-label="Líneas del catálogo">
+      <div class="filters" role="group" aria-label="Categorías del catálogo">
         <button type="button" data-category="todos" aria-pressed="true">Todos</button>
-        <button type="button" data-category="sensartias" aria-pressed="false">Sensartias</button>
-        <button type="button" data-category="3corn" aria-pressed="false">3corn &amp; Deco</button>
-        <button type="button" data-category="navidad" aria-pressed="false" data-solo-navidad hidden>Navidad</button>
+        <button type="button" data-category="sensoriales" aria-pressed="false">Juegos Sensoriales</button>
+        <button type="button" data-category="deco" aria-pressed="false">D3cor</button>
+        <button type="button" data-category="personalizados" hidden aria-pressed="false">Personalizados</button>
+        <button type="button" data-category="kits" hidden aria-pressed="false">Kits para Regalo</button>
+        <button type="button" id="stock-filter" aria-pressed="false" hidden>Listas para llevar</button>
       </div>
-      <div class="product-grid" id="product-grid"><p class="catalog-error" id="cargando">Cargando piezas…</p></div>
+      <div class="product-grid" id="product-grid"></div>
       <div class="empty-catalog" id="empty-catalog" hidden><h3>No encontramos piezas</h3><p>Probá con otro nombre o volvé a ver todo el catálogo.</p><button type="button" class="button secondary" id="reset-catalog">Ver todo</button></div>
+      <div class="empty-catalog" id="catalog-error" role="alert" hidden><h3>No pudimos conectar con el catálogo</h3><p>No mostramos datos de ejemplo. Revisá tu conexión y volvé a intentar.</p><button type="button" class="button secondary" id="retry-catalog">Reintentar</button></div>
       <nav class="pagination" id="pagination" aria-label="Páginas del catálogo" hidden>
         <button id="page-prev" class="button secondary" type="button">Anterior</button><span id="page-label"></span><button id="page-next" class="button secondary" type="button">Siguiente</button>
       </nav>
-      <noscript><p>Activá JavaScript para explorar las piezas y armar tu bolsa.</p></noscript>
+      <noscript><p>Activá JavaScript para explorar los productos y armar tu bolsa.</p></noscript>
     </section>
 
     <section class="guide" id="como-pedir" aria-labelledby="guide-title">
-      <div class="section-heading"><div><p class="eyebrow"><span class="signal"></span> De Pilar a tus manos</p><h2 id="guide-title">Cómo pedir</h2></div></div>
+      <div class="float-field" aria-hidden="true">
+        <span class="float-icon" style="--x: 78%; --y: 2%; --s: 3rem; --tilt: 12deg; --bg: var(--petrol); --fg: var(--card);" data-speed="0.3" data-spin="0.07"><svg class="icon"><use href="#icon-pin"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 90%; --y: 9%; --s: 3.5rem; --tilt: -9deg; --bg: var(--card);" data-speed="-0.22" data-spin="-0.06"><svg class="icon"><use href="#icon-gift"/></svg></span>
+        <span class="float-icon" data-wide style="--x: 66%; --y: 5%; --s: 2.75rem; --tilt: 8deg; --bg: var(--rose); --fg: #783E30;" data-speed="0.4" data-spin="0.09"><svg class="icon"><use href="#icon-layers"/></svg></span>
+      </div>
+      <div class="section-heading"><div><p class="eyebrow"><span class="signal"></span> De Pilar a tus manos</p><h2 id="guide-title" data-reveal>Elegí sin vueltas</h2></div></div>
       <ul class="benefits" role="list">
-        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-ruler"/></svg></span><h3>Fotos y datos reales</h3><p>Cada ficha muestra las fotos de la pieza, el tiempo de impresión y, cuando lo tenemos, el tamaño real.</p></li>
-        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg></span><h3>PLA vegetal</h3><p>Piezas impresas en 3D con PLA, un bioplástico de origen vegetal.</p></li>
-        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></span><h3>Un solo pedido</h3><p>Armá tu bolsa y mandá todo junto por WhatsApp: confirmamos disponibilidad y entrega.</p></li>
-        <li id="entrega"><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg></span><h3>Hecho en Pilar</h3><p>Se imprime a pedido en Pilar. La entrega la coordinamos con vos por WhatsApp.</p></li>
+        <li id="entrega"><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg></span><h3>Hecho en Pilar</h3><p>Coordinamos el retiro o la entrega en Pilar y alrededores.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg></span><h3>PLA vegetal</h3><p>Piezas impresas en 3D con bioplástico de origen vegetal.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-ruler"/></svg></span><h3>Fotos y medidas</h3><p>Cada ficha muestra las fotos, la disponibilidad y el tiempo de impresión.</p></li>
+        <li><span class="benefit-icon"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></span><h3>Un solo pedido</h3><p>Armá tu bolsa y mandá todo junto por WhatsApp.</p></li>
       </ul>
     </section>
   </main>
+
+  <button class="mobile-order-bar" id="mobile-order-bar" type="button" aria-label="Ver pedido" hidden>
+    <span class="mobile-order-copy"><strong>Ver pedido</strong><span id="mobile-order-count">0 artículos</span></span>
+    <strong id="mobile-order-total"></strong>
+  </button>
 
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-lead">
         <p class="eyebrow">Hablemos</p>
-        <h2>¿Tenés alguna duda?</h2>
-        <p>Escribinos por disponibilidad, personalizaciones o entregas.</p>
-        <a class="button whatsapp" id="contact-link" target="_blank" rel="noopener noreferrer" hidden><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Escribinos por WhatsApp</a>
+        <h2 data-reveal>¿Tenés alguna duda?</h2>
+        <p>Consultanos por disponibilidad, personalizaciones o entregas en Pilar.</p>
+        <a class="button whatsapp" id="contact-link" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Escribinos por WhatsApp</a>
+        <div class="footer-social">
+          <h3>Seguinos</h3>
+          <ul role="list">
+            <li><a href="https://instagram.com/playmind3d" target="_blank" rel="noopener noreferrer" aria-label="PlayMind 3D en Instagram"><svg class="icon" aria-hidden="true"><use href="#icon-instagram"/></svg></a></li>
+          </ul>
+        </div>
       </div>
       <nav class="footer-nav" aria-label="Mapa del sitio">
         <div>
           <h3>Explorá</h3>
           <ul role="list">
-            <li><a href="#catalogo" data-category-link="sensartias">Sensartias</a></li>
-            <li><a href="#catalogo" data-category-link="3corn">3corn &amp; Deco</a></li>
-            <li><a href="#catalogo" data-category-link="navidad" data-solo-navidad hidden>Especial Navidad</a></li>
+            <li><a href="#catalogo" data-category-link="sensoriales">Juegos Sensoriales</a></li>
+            <li><a href="#catalogo" data-category-link="deco">D3cor</a></li>
+            <li><a href="#catalogo" data-category-link="personalizados" hidden>Personalizados</a></li>
+            <li><a href="#catalogo" data-category-link="kits" hidden>Kits para Regalo</a></li>
+            <li><a href="#catalogo" data-category-link="todos" data-holiday-link hidden>Especial Navidad</a></li>
           </ul>
         </div>
         <div>
           <h3>Te ayudamos</h3>
           <ul role="list">
-            <li><a href="#como-pedir">Cómo pedir</a></li>
+            <li><a href="#como-pedir">Cómo hacer un pedido</a></li>
+            <li><a href="#entrega">Entrega y retiro</a></li>
             <li><a href="#catalogo" data-category-link="todos">Ver todo el catálogo</a></li>
           </ul>
         </div>
@@ -142,26 +200,36 @@
     </div>
     <div class="container footer-signoff">
       <p><svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg> Diseñado e impreso en Pilar, Buenos Aires</p>
-      <a href="#inicio">Volver arriba <svg class="icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg></a>
+      <div class="footer-meta">
+        <span class="footer-version">Catálogo V2 · en desarrollo</span>
+        <a class="footer-admin" href="https://playmind3d.com/app/">Admin</a>
+        <a href="#inicio">Volver arriba <svg class="icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg></a>
+      </div>
     </div>
+    <p class="footer-wordmark" aria-hidden="true">playmind3d</p>
   </footer>
 
-  <a class="whatsapp-float" id="whatsapp-float" target="_blank" rel="noopener noreferrer" aria-label="Escribinos por WhatsApp" hidden><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></a>
+  <a class="whatsapp-float" id="whatsapp-float" target="_blank" rel="noopener noreferrer" aria-label="Escribinos por WhatsApp"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg></a>
   <p class="toast" id="toast" aria-hidden="true"></p>
 
   <dialog class="product-dialog" id="product-dialog" aria-labelledby="detail-title">
-    <div class="dialog-top"><p class="eyebrow">Ficha de la pieza</p><button class="icon-button" data-close type="button" aria-label="Cerrar ficha de la pieza"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
+    <div class="dialog-top"><p class="eyebrow">Ficha de producto</p><button class="icon-button" data-close type="button" aria-label="Cerrar ficha del producto"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
     <div class="detail-layout">
-      <div>
-        <div class="detail-media"><img id="detail-photo" width="480" height="480" alt=""></div>
-        <div class="view-tabs" id="view-tabs" role="group" aria-label="Vistas de la pieza" hidden></div>
+      <div class="detail-gallery">
+        <div class="detail-media">
+          <img id="detail-photo" width="480" height="480" alt="">
+          <a class="button secondary demo-button" id="video-link" target="_blank" rel="noopener noreferrer" hidden><svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg><span>Ver video</span></a>
+        </div>
+        <div class="detail-thumbs" id="detail-thumbs" role="group" aria-label="Vistas de la pieza" hidden></div>
       </div>
       <form class="detail-form" id="detail-form">
         <div class="tags" id="detail-tags"></div>
         <h2 id="detail-title" tabindex="-1"></h2>
+        <p class="detail-trait" id="detail-trait"></p>
         <p class="detail-price" id="detail-price"></p>
         <dl class="specs" id="detail-specs"></dl>
-        <label class="field" for="detail-name" id="detail-name-label" hidden>Nombre o texto a personalizar <input type="text" id="detail-name" maxlength="60" placeholder="Ej.: Sofi"></label>
+        <label class="field" id="detail-color-field" for="detail-color" hidden>Elegí el color<select id="detail-color" name="color"></select></label>
+        <label class="field" for="detail-name">Aclaración o personalización <input type="text" id="detail-name" maxlength="60" placeholder="Opcional · Ej.: con el nombre Sofi"></label>
         <button class="button primary" type="submit"><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Sumar a la bolsa</button>
       </form>
     </div>
@@ -175,8 +243,9 @@
         <ul class="bag-list" id="bag-list" aria-label="Artículos de tu bolsa"></ul>
       </div>
       <div class="drawer-summary" id="bag-summary" hidden>
-        <p class="subtotal">Subtotal <strong id="bag-total"></strong></p>
-        <p class="bag-note">Confirmamos disponibilidad y entrega por WhatsApp.</p>
+        <p class="bag-note" id="bag-discount" role="status" hidden></p>
+        <p class="subtotal">Total <strong id="bag-total"></strong></p>
+        <p class="bag-note">Coordinamos disponibilidad, envío o retiro en Pilar por WhatsApp.</p>
         <button class="button whatsapp" id="preview-order" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"/></svg> Enviar pedido por WhatsApp</button>
       </div>
       <section class="order-preview" id="order-preview" aria-labelledby="preview-title" hidden>

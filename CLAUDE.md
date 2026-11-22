@@ -29,6 +29,7 @@ navegador ──fetch──> Apps Script (/exec) ──> Google Sheets (aba `dat
 | `app/manifest.json` | PWA. `scope` e `start_url` = `/app/`. |
 | `index.html` (raiz) | Catálogo público. Consome `?action=catalogo`, não faz login. |
 | `vender/index.html` | Página curta de venda. |
+| `catalogo/` | **Versão de teste (noindex, só na branch de teste; não está na `main`)** do catálogo novo, importada do protótipo do v0 (branch `v0/catalog-v2`) e adaptada: módulos ES, sem build. Lê `?action=catalogo` do Apps Script, sem login. Ficha ao clicar na peça com abas "1. Limpia / 2. En mano / 3. En uso" (só as fotos que existem). Testes: `tests/catalogo-v2.test.js`; smoke: `node scripts/humo-catalogo.js`. Rodapé só com Instagram (os demais links não estão confirmados). O catálogo público atual continua sendo o `index.html` da raiz. |
 | `assets/` | Imagens. `logo-app.png` e `logo-app-full.png` são usados pela app. |
 | `server/Codigo.gs` | O Apps Script. **Não roda daqui** — é copiado e colado no editor. |
 | `CNAME` | Domínio do site: `playmind3d.com`. Não apagar, o GitHub Pages lê daí. |
