@@ -1,18 +1,18 @@
 :root {
-  --ink: #3a3a38;
-  --soft: #6e6e6a;
-  --line: #e4dccb;
-  --bg: #faf6ee;
+  --ink: #181a1b;
+  --soft: #5a6065;
+  --line: #dfddd6;
+  --bg: #faf9f6;
   --surface: #fff;
-  --deep: #2c7a7b;
-  --deep-soft: #e3efec;
-  --teal: #7fb8d3;
-  --leaf: #8fbf7f;
-  --clay: #e8895a;
-  --clay-soft: #f4a97f;
-  --sand: #c9a227;
-  --r: 18px;
-  --shadow: 0 2px 0 rgba(58, 58, 56, 0.04), 0 12px 30px rgba(58, 58, 56, 0.1);
+  --deep: #0f4c45;
+  --deep-soft: #efeae1;
+  --teal: #0f4c45;
+  --leaf: #49765d;
+  --clay: #c86d51;
+  --clay-soft: #e9a88f;
+  --sand: #9a7420;
+  --r: 8px;
+  --shadow: 0 1px 2px rgba(24, 26, 27, 0.06), 0 8px 24px rgba(24, 26, 27, 0.06);
   --safe: env(safe-area-inset-bottom, 0px);
 
   /* Escala de tamaños. Antes había 18 medidas sueltas (9,5 · 10,5 · 11 · 11,5 …):
@@ -1722,5 +1722,210 @@ body.modoventa .salirventa {
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+  }
+}
+
+/* Identidade compartilhada com a vitrine V2 */
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+h1,
+h2,
+h3,
+button,
+input,
+select,
+textarea,
+.num,
+.price,
+.postile b,
+.postotal b {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 80rem;
+  padding: 1.25rem 1rem calc(6rem + var(--safe));
+}
+
+header.top {
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+header.top h1,
+.card > h2,
+.pos header h2 {
+  color: var(--deep);
+  letter-spacing: -0.04em;
+}
+
+header.top h1 i {
+  color: var(--clay);
+}
+
+.logo {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.verCat,
+.salirBtn {
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  color: var(--deep);
+  font-weight: 700;
+}
+
+nav.tabs {
+  gap: 0.25rem;
+  padding: 0.375rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+nav.tabs button {
+  border-radius: 0.375rem;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+nav.tabs button[aria-selected='true'] {
+  border-radius: 0.375rem;
+  background: var(--deep);
+  color: var(--surface);
+}
+
+.card {
+  margin-bottom: 0.875rem;
+  padding: 1.125rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.card > h2 {
+  gap: 0.625rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.card > .hint {
+  margin: 0.375rem 0 1rem;
+}
+
+input,
+select,
+textarea,
+.posbuscar input {
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--deep);
+  box-shadow: 0 0 0 3px rgb(15 76 69 / 12%);
+}
+
+button.btn {
+  min-height: 2.75rem;
+  border: 1px solid var(--deep);
+  border-radius: 0.375rem;
+  background: var(--deep);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+button.btn.ghost {
+  background: var(--surface);
+  color: var(--deep);
+}
+
+button.btn.mini {
+  min-height: 2.5rem;
+  border-radius: 0.375rem;
+}
+
+.postile {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.postile.on {
+  border-color: var(--deep);
+  box-shadow: 0 0 0 2px rgb(15 76 69 / 12%);
+}
+
+.postile .im {
+  background: var(--deep-soft);
+}
+
+.postile .stockBadge,
+.postile .n {
+  background: var(--deep);
+}
+
+.postile u,
+.postotal b {
+  color: var(--deep);
+}
+
+.postile i.st.hay {
+  color: var(--deep);
+}
+
+.pos header {
+  background: var(--surface);
+}
+
+.formas button {
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.formas button.on {
+  border-color: var(--deep);
+  background: var(--deep-soft);
+  color: var(--deep);
+}
+
+.result {
+  border-radius: 0.5rem;
+  background: var(--deep);
+  box-shadow: none;
+}
+
+.result h2 {
+  color: #d7e4e1;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.result .price {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+@media (min-width: 700px) {
+  nav.tabs {
+    margin-bottom: 1rem;
   }
 }
