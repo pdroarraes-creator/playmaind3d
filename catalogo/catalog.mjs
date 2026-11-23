@@ -486,6 +486,11 @@ function applyCatalog(raw) {
   if (!hasHoliday) holiday = false;
   $('#holiday-section').hidden = !hasHoliday;
   for (const link of document.querySelectorAll('[data-holiday-link]')) (link.closest('li') ?? link).hidden = !hasHoliday;
+  // El botón de la portada lleva a la Navidad apenas hay piezas navideñas cargadas; mientras tanto, a la línea D3cor.
+  const heroCta = $('#hero-cta');
+  heroCta.dataset.categoryLink = hasHoliday ? 'todos' : 'deco';
+  heroCta.toggleAttribute('data-holiday-link', hasHoliday);
+  $('#hero-cta-text').textContent = hasHoliday ? 'Ver la Navidad D3cor' : 'Ver la línea D3cor';
   for (const line of ['kits', 'personalizados']) {
     const hasLine = productos.some((product) => product.linea === line);
     $(`[data-category="${line}"]`).hidden = !hasLine;
