@@ -26,6 +26,11 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FALLA') + ' ' + m); if (!c) f
   await page.goto(base + '/');
   await page.waitForSelector('.product-card', { timeout: 30000 });
   ok(await page.locator('.product-card').count() === 16, 'primera página con 16 tarjetas reales');
+  ok(/D3cor/.test(await page.textContent('#hero-title')), 'el hero habla de la novedad D3cor (Navidad)');
+  await page.click('.hero .button.primary');
+  const nDeco = await page.locator('.product-card').count();
+  ok(nDeco >= 1 && nDeco < 16 && (await page.locator('[data-category="deco"]').getAttribute('aria-pressed')) === 'true', 'el botón del hero abre la línea D3cor con piezas (' + nDeco + ')');
+  await page.click('[data-category="todos"]');
   ok(await page.locator('meta[name=robots]').count() === 0, 'sin noindex: la página se puede indexar');
   ok(await page.getAttribute('link[rel=canonical]', 'href') === 'https://playmind3d.com/', 'canonical apunta al dominio');
   ok(/\d+ piezas/.test(await page.textContent('#result-count')), 'contador de piezas');
@@ -60,7 +65,10 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FALLA') + ' ' + m); if (!c) f
   const p3 = await page.context().newPage();
   await p3.route('**/lh3.googleusercontent.com/**', (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   await p3.route('**/fonts.g*apis.com/**', (r) => r.abort());
-  await p3.route('https://ejemplo.test/**', (r) => r.fulfill({ status: 200, contentType: 'video/mp4', body: fs.readFileSync(path.join(RAIZ, 'catalogo/assets/studio-hero.mp4')) }));
+  const GIF = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+  await p3.route('https://ejemplo.test/**', (r) => (/\.gif$/.test(r.request().url())
+    ? r.fulfill({ status: 200, contentType: 'image/gif', body: GIF })
+    : r.fulfill({ status: 200, contentType: 'video/mp4', body: fs.readFileSync(path.join(RAIZ, 'catalogo/assets/studio-hero.mp4')) })));
   await p3.route('**/script.google.com/**', async (r) => {
     const resp = await r.fetch(); const j = await resp.json();
     j.catalogo.piezas.forEach((x) => { if (x.nome === 'Tortuga Articulada' || x.nome === 'Cono fidget toy') x.destacada = true; });
