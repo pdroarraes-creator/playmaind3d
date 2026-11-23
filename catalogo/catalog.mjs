@@ -501,9 +501,11 @@ function applyCatalog(raw) {
 }
 
 // Enlaces compartidos: /?pieza=Nombre abre la ficha de esa pieza (una sola vez).
+// Video que viene con el catálogo (el 1 del admin lo reemplaza). El anterior queda en assets/studio-hero.mp4.
+const HERO_POR_DEFECTO = new URL('./assets/hero-navidad.mp4', import.meta.url).href;
 let heroKey = '';
 function applyHero(videos) {
-  const lista = videosDeHero(videos, new URL('./assets/studio-hero.mp4', import.meta.url).href);
+  const lista = videosDeHero(videos, HERO_POR_DEFECTO);
   if (lista.join('|') === heroKey) return;
   heroKey = lista.join('|');
   let actual = 0;
@@ -511,8 +513,8 @@ function applyHero(videos) {
   heroVideo.onended = lista.length > 1 ? () => { actual = (actual + 1) % lista.length; poner(); } : null;
   heroVideo.loop = lista.length === 1;
   // si el video del admin no carga, vuelve el que viene con el catálogo
-  heroVideo.onerror = () => { heroVideo.onerror = null; heroVideo.onended = null; heroVideo.loop = true; heroVideo.src = new URL('./assets/studio-hero.mp4', import.meta.url).href; heroVideo.play().catch(() => {}); };
-  if (lista[0] !== new URL('./assets/studio-hero.mp4', import.meta.url).href) poner();
+  heroVideo.onerror = () => { heroVideo.onerror = null; heroVideo.onended = null; heroVideo.loop = true; heroVideo.src = HERO_POR_DEFECTO; heroVideo.play().catch(() => {}); };
+  if (lista[0] !== HERO_POR_DEFECTO) poner();
 }
 
 let urlHandled = false;
