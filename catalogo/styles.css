@@ -67,7 +67,8 @@ button:disabled { cursor: default; opacity: .5; }
 .hero h1 .accent { color: var(--petrol); }
 .hero-description { max-width: 35ch; color: var(--muted); font-size: clamp(.82rem, 1.45vw, 1rem); text-wrap: pretty; }
 .hero-media { position: relative; min-height: 0; background: #E0D5C4; }
-.hero-media video { display: block; width: 100%; height: clamp(10rem, 47vw, 17rem); object-fit: cover; object-position: 50% 62%; }
+/* El video de Navidad es vertical (9:16) y el conjunto ocupa del ~26% al ~82% de su alto: en el celular se muestra casi cuadrado para que no se corte. */
+.hero-media video { display: block; width: 100%; height: auto; aspect-ratio: 15 / 16; object-fit: cover; object-position: 50% 60%; }
 .media-toggle { position: absolute; z-index: 1; inset: .65rem .65rem auto auto; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: 50%; background: rgb(250 249 246 / 88%); color: var(--petrol); box-shadow: 0 1px 6px rgb(24 26 27 / 18%); transition: background-color 150ms ease; }
 .media-toggle:hover { background: var(--paper); }
 .media-toggle .icon { width: 1rem; height: 1rem; stroke-width: 2.4; }
@@ -247,7 +248,7 @@ dialog::backdrop { background: #181a1b80; }
 @media (min-width: 40rem) {
   :root { --gutter: var(--base-size-24); }
   .hero { grid-template-columns: 1.02fr 1fr; margin-block: 1.25rem; }
-  .hero-media video { position: absolute; inset: 0; height: 100%; }
+  .hero-media video { position: absolute; inset: 0; height: 100%; aspect-ratio: auto; object-position: 50% 58%; }
   .detail-layout { grid-template-columns: .85fr 1.15fr; }
 }
 @media (min-width: 48rem) {
